@@ -2,3 +2,16 @@
 .Rhistory
 .RData
 .Ruserdata
+*.Rproj.user
+
+# ArcGIS / GDAL sidecars (GeoTIFFs already carry CRS)
+*.ovr
+*.tfw
+*.tif.xml
+*.aux.xml
+*.vat.dbf
+*.vat.cpg
+*.sr.lock
+*.lock
+*.sbn
+*.sbx
