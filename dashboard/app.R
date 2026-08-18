@@ -1,16 +1,14 @@
 # Keweenaw + Houghton canopy explorer
 # From the project root: shiny::runApp("dashboard")
 
-Sys.setenv(PROJ_NETWORK = "OFF")
-
 suppressPackageStartupMessages({
   library(shiny)
   library(bslib)
   library(leaflet)
-  library(terra)
   library(sf)
   library(dplyr)
   library(plotly)
+  library(viridisLite)
 })
 
 proj_root <- if (dir.exists("data/processed")) {
@@ -22,205 +20,172 @@ proj_root <- if (dir.exists("data/processed")) {
 }
 
 processed <- file.path(proj_root, "data/processed")
-tcc_dir <- file.path(proj_root, "data/TCC_Houghton_Keweenaw")
 
-loss <- rast(file.path(processed, "hansen_lossyear.tif"))
-cover <- rast(file.path(processed, "hansen_treecover2000.tif"))
-tcc_2010 <- rast(file.path(tcc_dir, "HK_TCC_2010.tif"))
-tcc_2010 <- subst(tcc_2010, c(254, 255), NA)
-tcc_2010 <- mask(tcc_2010, loss)
-
-loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv"))
+loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv")) |>
+  filter(year >= 2010, year <= 2024)
 tcc_stats <- read.csv(file.path(processed, "tcc_by_county_year.csv"))
-patch_stats <- read.csv(file.path(processed, "loss_patch_stats.csv"))
-patch_sizes <- read.csv(file.path(processed, "loss_patch_sizes.csv"))
-
+loss_poly <- st_read(file.path(processed, "loss_by_year.gpkg"), quiet = TRUE)
 counties <- st_read(file.path(processed, "counties.gpkg"), quiet = TRUE) |>
   st_transform(4326)
 bb <- st_bbox(counties)
 
-tcc_cache <- new.env(parent = emptyenv())
-tcc_cache[["2010"]] <- tcc_2010
-
-get_tcc <- function(year) {
-  key <- as.character(year)
-  if (!exists(key, envir = tcc_cache, inherits = FALSE)) {
-    r <- rast(file.path(tcc_dir, sprintf("HK_TCC_%d.tif", year)))
-    r <- subst(r, c(254, 255), NA)
-    r <- mask(r, loss)
-    assign(key, r, envir = tcc_cache)
-  }
-  get(key, envir = tcc_cache, inherits = FALSE)
-}
-
-loss_year_code <- function(year) as.integer(year) - 2000
-
-mask_forest <- function(r, use_forest) {
-  if (isTRUE(use_forest)) ifel(cover >= 30, r, NA) else r
-}
+loss_annual <- loss_stats |>
+  group_by(year) |>
+  summarise(acres = sum(acres), .groups = "drop")
+loss_cumul <- loss_annual |>
+  mutate(cum_acres = cumsum(acres))
 
 county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
-
-theme <- bs_theme(
-  version = 5,
-  bootswatch = "minty",
-  primary = "#2d6a4f"
+year_pal <- colorNumeric(
+  palette = viridisLite::turbo(24),
+  domain = c(2010, 2024),
+  na.color = "transparent"
 )
+GOLD <- "#FFD166"
+CYAN <- "#00E5C7"
+
+theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
 
 ui <- page_sidebar(
-  title = "Keweenaw & Houghton tree canopy change",
+  title = "Keweenaw & Houghton canopy change",
   theme = theme,
+  fillable = TRUE,
   sidebar = sidebar(
-    width = 340,
-    p("Pixel-level explorer for USFS/NLCD tree canopy cover and Hansen stand-replacing disturbance. Loss is not a harvest inventory."),
+    width = 400,
     sliderInput(
       "year", "Year",
-      min = 2010, max = 2025, value = 2022, step = 1, sep = "",
-      ticks = FALSE, width = "100%"
-    ),
-    div(
-      class = "d-flex gap-2",
-      actionButton("play", "Play years", class = "btn-primary btn-sm"),
-      actionButton("stop", "Pause", class = "btn-outline-secondary btn-sm")
+      min = 2010, max = 2024, value = 2010, step = 1, sep = "",
+      width = "100%", animate = animationOptions(interval = 1200, loop = FALSE)
     ),
     radioButtons(
-      "mode", "Map layer",
+      "basemap", "Background",
       choices = c(
-        "Loss that year" = "loss",
-        "Cumulative loss (2010 through year)" = "cumulative",
-        "Canopy % (TCC)" = "tcc",
-        "Canopy change since 2010" = "tcc_change"
+        "Satellite" = "imagery",
+        "Dark map" = "dark",
+        "Light map" = "light"
       ),
-      selected = "loss"
+      selected = "imagery",
+      inline = TRUE
     ),
-    checkboxInput("forest_mask", "Mask Hansen to ≥30% tree cover in 2000", TRUE),
-    sliderInput(
-      "min_change", "Hide |TCC change| smaller than (percentage points)",
-      min = 0, max = 20, value = 5, step = 1
+    radioButtons(
+      "color_mode", "Map colors",
+      choices = c(
+        "This year vs earlier" = "highlight",
+        "Color by year" = "by_year"
+      ),
+      selected = "highlight"
     ),
-    accordion(
-      accordion_panel(
-        "Methods",
-        tags$ul(
-          tags$li(tags$b("TCC:"), " USFS NLCD annual percent tree canopy, 30 m, 2010–2025."),
-          tags$li(tags$b("Hansen lossyear:"), " year of stand-replacing disturbance, 2001–2024. Reprojected to the TCC grid."),
-          tags$li("Charts use pixels inside Houghton and Keweenaw. Disturbance includes harvest, blowdown, insects, and other clearing.")
-        )
-      )
+    uiOutput("color_key"),
+    uiOutput("box_year"),
+    uiOutput("box_cumul"),
+    uiOutput("box_tcc"),
+    card(
+      card_header("Disturbance acres by year"),
+      plotlyOutput("loss_chart", height = "200px")
+    ),
+    card(
+      card_header("Mean tree canopy %"),
+      plotlyOutput("tcc_chart", height = "200px")
+    ),
+    p(
+      class = "text-muted small mb-0",
+      "Patches are stand-replacing tree-cover loss (harvest, blowdown, insects, clearing), not a harvest inventory. Hansen data end in 2024. Hover a patch for its year."
     )
   ),
-  layout_columns(
-    col_widths = c(12, 4, 4, 4),
-    card(full_screen = TRUE, leafletOutput("map", height = "520px")),
-    card(card_header("Disturbance acres"), plotlyOutput("loss_chart", height = "260px")),
-    card(card_header("Mean canopy %"), plotlyOutput("tcc_chart", height = "260px")),
-    card(card_header("Patch size (selected year)"), plotlyOutput("patch_chart", height = "260px"))
+  card(
+    full_screen = TRUE,
+    class = "h-100",
+    card_header("Where disturbance happened"),
+    tags$style(HTML("#map { height: calc(100vh - 120px); min-height: 520px; }")),
+    leafletOutput("map", width = "100%", height = "calc(100vh - 120px)")
   )
 )
 
 server <- function(input, output, session) {
-  playing <- reactiveVal(FALSE)
+  yr <- reactive(as.integer(input$year))
 
-  observeEvent(input$play, playing(TRUE))
-  observeEvent(input$stop, playing(FALSE))
-
-  observe({
-    if (!playing()) return()
-    invalidateLater(900, session)
-    isolate({
-      nxt <- input$year + 1
-      if (nxt > 2025) nxt <- 2010
-      updateSliderInput(session, "year", value = nxt)
-    })
-  })
-
-  map_raster <- reactive({
-    year <- input$year
-    mode <- input$mode
-    if (mode == "loss") {
-      code <- loss_year_code(min(year, 2024))
-      r <- ifel(loss == code, loss, NA)
-      r <- mask_forest(r, input$forest_mask)
-      list(r = r, kind = "lossyear")
-    } else if (mode == "cumulative") {
-      end_code <- loss_year_code(min(year, 2024))
-      r <- ifel(loss >= 10 & loss <= end_code, loss, NA)
-      r <- mask_forest(r, input$forest_mask)
-      list(r = r, kind = "lossyear")
-    } else if (mode == "tcc") {
-      list(r = get_tcc(year), kind = "tcc")
-    } else {
-      r <- get_tcc(year) - tcc_2010
-      if (input$min_change > 0) {
-        r <- ifel(abs(r) >= input$min_change, r, NA)
-      }
-      list(r = r, kind = "change")
-    }
-  })
-
-  output$map <- renderLeaflet({
-    leaflet(counties, options = leafletOptions(minZoom = 8)) |>
-      addProviderTiles(providers$CartoDB.Positron) |>
-      addPolygons(
-        fill = FALSE, color = "#1b4332", weight = 2, opacity = 0.9
-      ) |>
-      fitBounds(bb[["xmin"]], bb[["ymin"]], bb[["xmax"]], bb[["ymax"]])
-  })
-
-  observe({
-    spec <- map_raster()
-    r <- spec$r
-    kind <- spec$kind
-    proxy <- leafletProxy("map") |>
-      clearImages() |>
-      clearControls()
-
-    vals <- values(r)
-    vals <- vals[is.finite(vals)]
-    if (length(vals) == 0) return()
-
-    if (kind == "lossyear") {
-      pal <- colorNumeric("YlOrRd", domain = c(10, 24), na.color = "transparent")
-      proxy |>
-        addRasterImage(r, colors = pal, opacity = 0.85, project = TRUE,
-                       maxBytes = 32 * 1024 * 1024) |>
-        addLegend(
-          pal = pal, values = c(10, 24), title = "Loss year",
-          labFormat = labelFormat(transform = function(x) x + 2000)
+  output$color_key <- renderUI({
+    if (identical(input$color_mode, "highlight")) {
+      tags$div(
+        class = "small mb-2",
+        tags$div(
+          class = "d-flex align-items-center gap-2 mb-1",
+          tags$span(style = paste0(
+            "display:inline-block;width:18px;height:12px;background:", GOLD, ";"
+          )),
+          tags$span("Already happened (2010 through year before)")
+        ),
+        tags$div(
+          class = "d-flex align-items-center gap-2",
+          tags$span(style = paste0(
+            "display:inline-block;width:18px;height:12px;background:", CYAN, ";"
+          )),
+          tags$span(paste("New in", yr()))
         )
-    } else if (kind == "tcc") {
-      pal <- colorNumeric("YlGn", domain = c(0, 100), na.color = "transparent")
-      proxy |>
-        addRasterImage(r, colors = pal, opacity = 0.8, project = TRUE,
-                       maxBytes = 32 * 1024 * 1024) |>
-        addLegend(pal = pal, values = c(0, 100), title = "Canopy %")
-    } else {
-      pal <- colorNumeric(
-        "RdBu", domain = c(-30, 30), reverse = TRUE, na.color = "transparent"
       )
-      proxy |>
-        addRasterImage(r, colors = pal, opacity = 0.85, project = TRUE,
-                       maxBytes = 32 * 1024 * 1024) |>
-        addLegend(pal = pal, values = c(-30, 30), title = "TCC change (pp)")
+    } else {
+      tags$div(
+        class = "small mb-2",
+        p(class = "mb-1", "Rainbow = year of loss. White outline = the slider year."),
+        tags$div(
+          class = "d-flex justify-content-between",
+          tags$span("2010"),
+          tags$span("2024")
+        ),
+        tags$div(style = paste0(
+          "height:10px;border-radius:2px;background:linear-gradient(to right,",
+          paste(viridisLite::turbo(8), collapse = ","),
+          ");"
+        ))
+      )
     }
+  })
+
+  output$box_year <- renderUI({
+    acres <- loss_annual$acres[loss_annual$year == yr()]
+    value_box(
+      title = paste("Disturbance in", yr()),
+      value = paste(format(round(acres), big.mark = ","), "acres"),
+      theme = "primary"
+    )
+  })
+
+  output$box_cumul <- renderUI({
+    acres <- loss_cumul$cum_acres[loss_cumul$year == yr()]
+    value_box(
+      title = paste("Cumulative 2010–", yr(), sep = ""),
+      value = paste(format(round(acres), big.mark = ","), "acres"),
+      theme = "secondary"
+    )
+  })
+
+  output$box_tcc <- renderUI({
+    tcc <- tcc_stats |>
+      filter(year == yr()) |>
+      summarise(m = mean(mean_tcc)) |>
+      pull(m)
+    value_box(
+      title = paste("Mean canopy in", yr()),
+      value = paste0(sprintf("%.1f", tcc), "%"),
+      theme = "success"
+    )
   })
 
   output$loss_chart <- renderPlotly({
-    d <- loss_stats |>
-      filter(year >= 2010, year <= 2024)
+    d <- loss_stats
+    d$selected <- d$year == yr()
     plot_ly(d, x = ~year, y = ~acres, color = ~county, colors = county_colors,
-            type = "bar") |>
+            type = "bar", customdata = ~year) |>
       layout(
         barmode = "stack",
-        xaxis = list(title = "", dtick = 1, tickangle = -45),
+        xaxis = list(title = "", dtick = 1),
         yaxis = list(title = "acres"),
-        legend = list(orientation = "h"),
+        legend = list(orientation = "h", font = list(size = 10)),
         shapes = list(list(
-          type = "line", x0 = input$year, x1 = input$year,
-          y0 = 0, y1 = 1, yref = "paper",
-          line = list(color = "#333", dash = "dot")
+          type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
+          line = list(color = "#111", width = 2)
         )),
-        margin = list(t = 10)
+        margin = list(t = 4, b = 28, l = 40, r = 8)
       ) |>
       config(displayModeBar = FALSE)
   })
@@ -229,39 +194,134 @@ server <- function(input, output, session) {
     plot_ly(tcc_stats, x = ~year, y = ~mean_tcc, color = ~county,
             colors = county_colors, type = "scatter", mode = "lines+markers") |>
       layout(
-        xaxis = list(title = "", dtick = 1, tickangle = -45),
-        yaxis = list(title = "mean TCC %", rangemode = "tozero"),
-        legend = list(orientation = "h"),
+        xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
+        yaxis = list(title = "percent", range = c(60, 70)),
+        legend = list(orientation = "h", font = list(size = 10)),
         shapes = list(list(
-          type = "line", x0 = input$year, x1 = input$year,
-          y0 = 0, y1 = 1, yref = "paper",
-          line = list(color = "#333", dash = "dot")
+          type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
+          line = list(color = "#111", width = 2)
         )),
-        margin = list(t = 10)
+        margin = list(t = 4, b = 28, l = 40, r = 8)
       ) |>
       config(displayModeBar = FALSE)
   })
 
-  output$patch_chart <- renderPlotly({
-    yr <- min(input$year, 2024)
-    d <- patch_sizes |> filter(year == yr)
-    if (nrow(d) == 0) {
-      return(plotly_empty() |> layout(title = "No Hansen loss in 2025"))
-    }
-    med <- patch_stats$median_acres[patch_stats$year == yr]
-    plot_ly(d, x = ~acres, type = "histogram",
-            marker = list(color = "#2d6a4f")) |>
-      layout(
-        xaxis = list(title = "patch acres", type = "log"),
-        yaxis = list(title = "count"),
-        annotations = list(list(
-          x = 0.5, y = 1.05, xref = "paper", yref = "paper", showarrow = FALSE,
-          text = sprintf("%d: %s patches, median %.1f ac",
-                         yr, format(nrow(d), big.mark = ","), med)
-        )),
-        margin = list(t = 30)
+  output$map <- renderLeaflet({
+    leaflet(options = leafletOptions(minZoom = 8)) |>
+      addMapPane("counties", zIndex = 410) |>
+      addMapPane("loss", zIndex = 420) |>
+      addProviderTiles(providers$Esri.WorldImagery, group = "tiles") |>
+      addPolygons(
+        data = counties,
+        group = "counties",
+        options = pathOptions(pane = "counties"),
+        fill = FALSE,
+        color = "#1a1a1a",
+        weight = 1.6,
+        opacity = 0.95
       ) |>
-      config(displayModeBar = FALSE)
+      fitBounds(bb[["xmin"]], bb[["ymin"]], bb[["xmax"]], bb[["ymax"]])
+  })
+
+  observe({
+    basemap <- input$basemap
+    proxy <- leafletProxy("map") |>
+      clearTiles() |>
+      clearGroup("counties")
+
+    if (identical(basemap, "imagery")) {
+      proxy <- proxy |>
+        addProviderTiles(providers$Esri.WorldImagery, group = "tiles") |>
+        addPolygons(
+          data = counties,
+          group = "counties",
+          options = pathOptions(pane = "counties"),
+          fill = FALSE,
+          color = "#1a1a1a",
+          weight = 1.6,
+          opacity = 0.95
+        )
+    } else if (identical(basemap, "dark")) {
+      proxy <- proxy |>
+        addProviderTiles(providers$CartoDB.DarkMatter, group = "tiles") |>
+        addPolygons(
+          data = counties,
+          group = "counties",
+          options = pathOptions(pane = "counties"),
+          fillColor = "#2b2b2b",
+          fillOpacity = 0.45,
+          color = "#111111",
+          weight = 1.6,
+          opacity = 1
+        )
+    } else {
+      proxy <- proxy |>
+        addProviderTiles(providers$CartoDB.Positron, group = "tiles") |>
+        addPolygons(
+          data = counties,
+          group = "counties",
+          options = pathOptions(pane = "counties"),
+          fillColor = "#3a3a3a",
+          fillOpacity = 0.78,
+          color = "#1a1a1a",
+          weight = 1.4,
+          opacity = 1
+        )
+    }
+    proxy
+  })
+
+  observe({
+    shown <- loss_poly |> filter(year <= yr())
+    proxy <- leafletProxy("map") |> clearGroup("loss")
+    if (nrow(shown) == 0) return()
+
+    earlier <- shown |> filter(year < yr())
+    current <- shown |> filter(year == yr())
+    highlight <- identical(input$color_mode, "highlight")
+
+    if (nrow(earlier) > 0) {
+      if (highlight) {
+        proxy <- proxy |>
+          addPolygons(
+            data = earlier, group = "loss",
+            options = pathOptions(pane = "loss"),
+            fillColor = GOLD, fillOpacity = 0.9,
+            color = "#7a5c00", weight = 0.4, opacity = 0.9,
+            label = ~as.character(year)
+          )
+      } else {
+        proxy <- proxy |>
+          addPolygons(
+            data = earlier, group = "loss",
+            options = pathOptions(pane = "loss"),
+            fillColor = ~year_pal(year), fillOpacity = 0.88,
+            color = ~year_pal(year), weight = 0.4, opacity = 0.95,
+            label = ~as.character(year)
+          )
+      }
+    }
+    if (nrow(current) > 0) {
+      if (highlight) {
+        proxy <- proxy |>
+          addPolygons(
+            data = current, group = "loss",
+            options = pathOptions(pane = "loss"),
+            fillColor = CYAN, fillOpacity = 0.95,
+            color = "#ffffff", weight = 1.1, opacity = 1,
+            label = ~paste(year, "(this year)")
+          )
+      } else {
+        proxy <- proxy |>
+          addPolygons(
+            data = current, group = "loss",
+            options = pathOptions(pane = "loss"),
+            fillColor = ~year_pal(year), fillOpacity = 0.95,
+            color = "#ffffff", weight = 1.4, opacity = 1,
+            label = ~paste(year, "(this year)")
+          )
+      }
+    }
   })
 }
 

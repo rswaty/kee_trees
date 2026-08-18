@@ -143,6 +143,15 @@ for (code in 10:24) {
 write.csv(bind_rows(patch_sum_list), file.path(out_dir, "loss_patch_stats.csv"), row.names = FALSE)
 write.csv(bind_rows(patch_size_list), file.path(out_dir, "loss_patch_sizes.csv"), row.names = FALSE)
 
+message("Polygonizing 2010–2024 loss by year for the dashboard map...")
+loss_map <- ifel(loss_forest >= 10 & loss_forest <= 24, loss_forest, NA)
+loss_poly <- as.polygons(loss_map, dissolve = TRUE, na.rm = TRUE)
+loss_sf <- sf::st_as_sf(loss_poly)
+loss_sf$year <- as.integer(loss_sf[[1]]) + 2000
+loss_sf <- loss_sf[, "year"]
+loss_sf <- sf::st_transform(loss_sf, 4326)
+sf::st_write(loss_sf, file.path(out_dir, "loss_by_year.gpkg"), delete_dsn = TRUE, quiet = TRUE)
+
 aligned <- compareGeom(loss, cover, tcc_template, tcc_change, stopOnError = FALSE)
 message("Hansen/TCC/change share TCC grid: ", aligned)
 message("Wrote ", normalizePath(out_dir))
