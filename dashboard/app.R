@@ -37,7 +37,7 @@ loss_cumul <- loss_annual |>
 
 county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
 year_pal <- colorNumeric(
-  palette = viridisLite::turbo(24),
+  palette = colorRampPalette(c("#1b4332", "#40916c", "#95d5b2", "#d8f3dc", "#ffffff"))(15),
   domain = c(2010, 2024),
   na.color = "transparent"
 )
@@ -47,7 +47,7 @@ CYAN <- "#00E5C7"
 theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
 
 ui <- page_sidebar(
-  title = "Keweenaw & Houghton canopy change",
+  title = "Keweenaw & Houghton Forest Canopy Change Explorer, 2010-2025",
   theme = theme,
   fillable = TRUE,
   sidebar = sidebar(
@@ -87,9 +87,34 @@ ui <- page_sidebar(
       card_header("Mean tree canopy %"),
       plotlyOutput("tcc_chart", height = "200px")
     ),
-    p(
-      class = "text-muted small mb-0",
-      "Patches are stand-replacing tree-cover loss (harvest, blowdown, insects, clearing), not a harvest inventory. Hansen data end in 2024. Hover a patch for its year."
+    card(
+      class = "bg-light",
+      card_header(class = "fw-bold small", "What am I seeing?"),
+      tags$div(
+        class = "small p-2",
+        tags$p(
+          class = "mb-1",
+          tags$b("Map patches and disturbance acres"),
+          " come from the ",
+          tags$a(href = "https://glad.earthengine.app/view/global-forest-change",
+                 "Hansen Global Forest Change"),
+          " dataset. Hansen flags pixels where Landsat imagery detected a ",
+          tags$b("stand-replacing"), " loss event (forest to non-forest) in a given year.",
+          " Only pixels with tree cover \u2265 30% in year 2000 are included.",
+          " This is ", tags$em("not"), " a user-adjustable threshold\u2014the algorithm decides internally what counts as stand-replacement."
+        ),
+        tags$p(
+          class = "mb-1",
+          tags$b("Mean canopy %"),
+          " (green box and chart) is a separate product: the USFS/NLCD annual Tree Canopy Cover percentage, averaged across all pixels in both counties.",
+          " It provides context on the overall canopy trend but does ", tags$em("not"), " drive the map or acre totals."
+        ),
+        tags$p(
+          class = "mb-0",
+          "Disturbance includes harvest, blowdown, insects, fire, and other clearing\u2014it is ", tags$b("not a harvest inventory."),
+          " Hansen data end in 2024. Hover a patch for its year."
+        )
+      )
     )
   ),
   card(
@@ -113,7 +138,7 @@ server <- function(input, output, session) {
           tags$span(style = paste0(
             "display:inline-block;width:18px;height:12px;background:", GOLD, ";"
           )),
-          tags$span("Already happened (2010 through year before)")
+          tags$span("Already happened (2010 to year prior to selected one)")
         ),
         tags$div(
           class = "d-flex align-items-center gap-2",
@@ -134,7 +159,7 @@ server <- function(input, output, session) {
         ),
         tags$div(style = paste0(
           "height:10px;border-radius:2px;background:linear-gradient(to right,",
-          paste(viridisLite::turbo(8), collapse = ","),
+          paste(colorRampPalette(c("#1b4332", "#40916c", "#95d5b2", "#d8f3dc", "#ffffff"))(8), collapse = ","),
           ");"
         ))
       )
@@ -180,7 +205,7 @@ server <- function(input, output, session) {
         barmode = "stack",
         xaxis = list(title = "", dtick = 1),
         yaxis = list(title = "acres"),
-        legend = list(orientation = "h", font = list(size = 10)),
+        legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.25, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
           line = list(color = "#111", width = 2)
@@ -196,7 +221,7 @@ server <- function(input, output, session) {
       layout(
         xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
         yaxis = list(title = "percent", range = c(60, 70)),
-        legend = list(orientation = "h", font = list(size = 10)),
+        legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.25, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
           line = list(color = "#111", width = 2)

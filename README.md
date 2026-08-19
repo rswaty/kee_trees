@@ -5,7 +5,11 @@ Pixel-level explorer for **Houghton and Keweenaw** counties, Michigan:
 - **USFS / NLCD tree canopy cover (TCC)** — annual percent canopy, 2010–2025
 - **Hansen Global Forest Change `lossyear`** — year of stand-replacing disturbance, 2001–2024
 
-Hansen layers are reprojected onto the TCC 30 m Albers grid. Loss is **disturbance**, not a harvest inventory.
+Hansen layers are reprojected onto the TCC 30 m Albers grid.
+
+**Important:** the map patches and acre totals come from Hansen `lossyear`, which flags pixels where Landsat detected a **stand-replacing** disturbance (forest → non-forest). Only pixels with tree cover ≥ 30% in 2000 are included. This is not a user-adjustable threshold — the algorithm decides internally what qualifies. Disturbance includes harvest, blowdown, insects, fire, and other clearing — **it is not a harvest inventory.**
+
+The mean canopy % chart uses the separate USFS/NLCD Tree Canopy Cover product. It shows the overall trend but does **not** drive the map or acre totals.
 
 ## Run the dashboard
 
