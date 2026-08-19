@@ -1,0 +1,19 @@
+# Raw inputs — not needed at runtime (dashboard uses data/processed only)
+data/TCC_Houghton_Keweenaw/
+data/Hansen_Houghton_Keweenaw/
+data/houghton_keweenaw_counties.*
+
+# Processed rasters/stats not used by the Shiny app
+data/processed/*.tif
+data/processed/loss_patch_*.csv
+
+# Prep script pulls in heavy deps (terra, etc.) if scanned during deploy
+R/
+
+errors_notes
+README.md
+.gitignore
+.Rhistory
+.Rproj.user/
+rsconnect/
+dashboard/rsconnect/

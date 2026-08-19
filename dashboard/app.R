@@ -8,7 +8,6 @@ suppressPackageStartupMessages({
   library(sf)
   library(dplyr)
   library(plotly)
-  library(viridisLite)
 })
 
 cwd <- normalizePath(getwd())
