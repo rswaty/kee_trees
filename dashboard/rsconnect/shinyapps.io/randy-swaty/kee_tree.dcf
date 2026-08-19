@@ -1,0 +1,12 @@
+name: kee_tree
+title: kee_tree
+username: randy-swaty
+account: randy-swaty
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17723918
+bundleId: 12433471
+url: https://randy-swaty.shinyapps.io/kee_tree/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

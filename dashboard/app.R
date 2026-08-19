@@ -78,11 +78,11 @@ ui <- page_sidebar(
     uiOutput("color_key"),
     tags$p(
       class = "small text-muted mb-1",
-      tags$b("Disturbance boxes"), " (blue/grey) = acres of stand-replacing loss from ",
+      tags$b("Disturbance boxes"), " (dark green/pink) = acres of stand-replacing loss from ",
       tags$a(href = "https://glad.earthengine.app/view/global-forest-change",
              "Hansen Global Forest Change", target = "_blank"), ", masked to areas with \u2265 30% tree cover in 2000.",
       tags$br(),
-      tags$b("Canopy box"), " (green) = mean percent tree canopy from the ",
+      tags$b("Canopy box"), " (light green) = mean percent tree canopy from the ",
       tags$a(href = "https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/",
              "USFS/NLCD Tree Canopy Cover", target = "_blank"),
       " product\u2014a separate dataset that does not drive the map or acre totals."
@@ -111,7 +111,6 @@ ui <- page_sidebar(
                  "Hansen Global Forest Change"),
           " dataset. Hansen flags pixels where Landsat imagery detected a ",
           tags$b("stand-replacing"), " loss event (forest to non-forest) in a given year.",
-          " Only pixels with tree cover \u2265 30% in year 2000 are included.",
           " This is ", tags$em("not"), " a user-adjustable threshold\u2014the algorithm decides internally what counts as stand-replacement."
         ),
         tags$p(

@@ -1,0 +1,10 @@
+
+## ERRORS
+- error #1 when posting to shiny server:
+Error in .rs.rpc.get_rsconnect_app_list("USER", "shinyapps.io") : 
+  object 'isPositConnectCloudServer' not found
+  
+## NEED CLARIFICATION
+ 
+ - are acres area weighted?  do they need to be?  
+ - is the mean canopy cover percents for all forested pixels?
