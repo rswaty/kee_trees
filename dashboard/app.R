@@ -85,7 +85,7 @@ ui <- page_sidebar(
       tags$b("Canopy box"), " (light green) = mean percent tree canopy from the ",
       tags$a(href = "https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/",
              "USFS/NLCD Tree Canopy Cover", target = "_blank"),
-      " product\u2014a separate dataset that does not drive the map or acre totals."
+      " product, averaged only over pixels with \u2265 30% tree cover in 2000\u2014a separate dataset that does not drive the map or acre totals."
     ),
     uiOutput("box_year"),
     uiOutput("box_cumul"),
@@ -119,7 +119,7 @@ ui <- page_sidebar(
           " (green box and chart) is a separate product: the ",
           tags$a(href = "https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/",
                  "USFS/NLCD annual Tree Canopy Cover", target = "_blank"),
-          " percentage, averaged across all pixels in both counties.",
+          " percentage, averaged over forested pixels (\u2265 30% tree cover in 2000) in both counties.",
           " It provides context on the overall canopy trend but does ", tags$em("not"), " drive the map or acre totals."
         ),
         tags$p(
@@ -233,7 +233,7 @@ server <- function(input, output, session) {
             colors = county_colors, type = "scatter", mode = "lines+markers") |>
       layout(
         xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
-        yaxis = list(title = "Percent", range = c(60, 70), tickformat = ",.1f"),
+        yaxis = list(title = "Percent", tickformat = ",.1f"),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",

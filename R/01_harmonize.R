@@ -101,6 +101,7 @@ tcc_stack <- mask(tcc_stack, county_mask)
 years <- as.integer(gsub(".*HK_TCC_([0-9]{4})\\.tif$", "\\1", tcc_files))
 names(tcc_stack) <- as.character(years)
 
+tcc_stack <- mask(tcc_stack, ifel(forest, 1, NA))
 tcc_extract <- terra::extract(tcc_stack, counties_v, fun = mean, na.rm = TRUE, ID = TRUE)
 tcc_stats <- tcc_extract |>
   mutate(county = counties_v$COUNTY[ID]) |>
