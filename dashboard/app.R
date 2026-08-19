@@ -11,17 +11,23 @@ suppressPackageStartupMessages({
   library(viridisLite)
 })
 
-script_dir <- normalizePath(dirname(sys.frame(1)$ofile))
-proj_root <- normalizePath(file.path(script_dir, ".."))
+cwd <- normalizePath(getwd())
+processed_candidates <- c(
+  file.path(cwd, "data/processed"),
+  file.path(cwd, "../data/processed"),
+  file.path(cwd, "../../data/processed")
+)
+existing_processed <- processed_candidates[dir.exists(processed_candidates)]
 
-processed <- file.path(proj_root, "data/processed")
-if (!dir.exists(processed)) {
+if (length(existing_processed) == 0) {
   stop(
-    "Cannot find data/processed relative to this app.\n",
-    "Expected: ", processed, "\n",
-    "Run R/01_harmonize.R from the project root first."
+    "Cannot find data/processed. Checked:\n- ",
+    paste(processed_candidates, collapse = "\n- "),
+    "\nRun R/01_harmonize.R from the project root first."
   )
 }
+
+processed <- existing_processed[[1]]
 
 loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv")) |>
   filter(year >= 2010, year <= 2024)

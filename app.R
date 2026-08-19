@@ -1,7 +1,10 @@
 ## Deployment entrypoint wrapper.
-## ShinyApps often bundles relative to the app root; this wrapper ensures the
-## dashboard code runs with the project root as working directory.
+## In shinyapps.io, working directory is the app bundle root.
+## Source the dashboard app from there.
 
-setwd(normalizePath(dirname(sys.frame(1)$ofile)))
-source("dashboard/app.R")
+if (file.exists("dashboard/app.R")) {
+  source("dashboard/app.R")
+} else {
+  stop("Cannot find dashboard/app.R from app root.")
+}
 
