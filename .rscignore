@@ -1,19 +1,6 @@
-# Raw inputs — not needed at runtime (dashboard uses data/processed only)
-data/TCC_Houghton_Keweenaw/
-data/Hansen_Houghton_Keweenaw/
-data/houghton_keweenaw_counties.*
-
-# Processed rasters/stats not used by the Shiny app
-data/processed/*.tif
-data/processed/loss_patch_*.csv
-
-# Prep script pulls in heavy deps (terra, etc.) if scanned during deploy
-R/
-
+# NOTE: rsconnect .rscignore only excludes TOP-LEVEL files/folders in appDir.
+# It cannot ignore files inside subfolders (e.g. data/TCC_*). Use deploy.R instead.
+R
 errors_notes
 README.md
-.gitignore
-.Rhistory
-.Rproj.user/
-rsconnect/
-dashboard/rsconnect/
+rsconnect
