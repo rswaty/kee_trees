@@ -10,23 +10,19 @@ suppressPackageStartupMessages({
   library(plotly)
 })
 
-cwd <- normalizePath(getwd())
 processed_candidates <- c(
-  file.path(cwd, "data/processed"),
-  file.path(cwd, "../data/processed"),
-  file.path(cwd, "../../data/processed")
+  file.path(getwd(), "data/processed"),
+  file.path(getwd(), "../data/processed")
 )
-existing_processed <- processed_candidates[dir.exists(processed_candidates)]
+processed <- processed_candidates[dir.exists(processed_candidates)][1]
 
-if (length(existing_processed) == 0) {
+if (is.na(processed)) {
   stop(
     "Cannot find data/processed. Checked:\n- ",
     paste(processed_candidates, collapse = "\n- "),
     "\nRun R/01_harmonize.R from the project root first."
   )
 }
-
-processed <- existing_processed[[1]]
 
 loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv")) |>
   filter(year >= 2010, year <= 2024)
@@ -394,4 +390,6 @@ server <- function(input, output, session) {
   })
 }
 
-shinyApp(ui, server)
+if (!identical(Sys.getenv("KEE_DEPLOY_FROM_ROOT"), "true")) {
+  shinyApp(ui, server)
+}
