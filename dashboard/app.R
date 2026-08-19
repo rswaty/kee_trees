@@ -42,7 +42,7 @@ year_pal <- colorNumeric(
   na.color = "transparent"
 )
 GOLD <- "#FFD166"
-CYAN <- "#00E5C7"
+PURPLE <- "#9b5de5"
 
 theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
 
@@ -76,6 +76,17 @@ ui <- page_sidebar(
       selected = "highlight"
     ),
     uiOutput("color_key"),
+    tags$p(
+      class = "small text-muted mb-1",
+      tags$b("Disturbance boxes"), " (blue/grey) = acres of stand-replacing loss from ",
+      tags$a(href = "https://glad.earthengine.app/view/global-forest-change",
+             "Hansen Global Forest Change", target = "_blank"), ", masked to areas with \u2265 30% tree cover in 2000.",
+      tags$br(),
+      tags$b("Canopy box"), " (green) = mean percent tree canopy from the ",
+      tags$a(href = "https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/",
+             "USFS/NLCD Tree Canopy Cover", target = "_blank"),
+      " product\u2014a separate dataset that does not drive the map or acre totals."
+    ),
     uiOutput("box_year"),
     uiOutput("box_cumul"),
     uiOutput("box_tcc"),
@@ -106,7 +117,10 @@ ui <- page_sidebar(
         tags$p(
           class = "mb-1",
           tags$b("Mean canopy %"),
-          " (green box and chart) is a separate product: the USFS/NLCD annual Tree Canopy Cover percentage, averaged across all pixels in both counties.",
+          " (green box and chart) is a separate product: the ",
+          tags$a(href = "https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/",
+                 "USFS/NLCD annual Tree Canopy Cover", target = "_blank"),
+          " percentage, averaged across all pixels in both counties.",
           " It provides context on the overall canopy trend but does ", tags$em("not"), " drive the map or acre totals."
         ),
         tags$p(
@@ -120,7 +134,7 @@ ui <- page_sidebar(
   card(
     full_screen = TRUE,
     class = "h-100",
-    card_header("Where stand replacing disturbance happened.  Map data from Hansen's Global Forest Loss Analysis."),
+    card_header("Where stand-replacing disturbance happened. Map data from Hansen Global Forest Loss. Satellite basemap: Esri World Imagery (~2020\u20132023 composites)."),
     tags$style(HTML("#map { height: calc(100vh - 120px); min-height: 520px; }")),
     leafletOutput("map", width = "100%", height = "calc(100vh - 120px)")
   )
@@ -138,12 +152,12 @@ server <- function(input, output, session) {
           tags$span(style = paste0(
             "display:inline-block;width:18px;height:12px;background:", GOLD, ";"
           )),
-          tags$span("2010 to year prior to highighted one)")
+          tags$span("2010 to year prior to highlighted one")
         ),
         tags$div(
           class = "d-flex align-items-center gap-2",
           tags$span(style = paste0(
-            "display:inline-block;width:18px;height:12px;background:", CYAN, ";"
+            "display:inline-block;width:18px;height:12px;background:", PURPLE, ";"
           )),
           tags$span(paste("Selected year:", yr()))
         )
@@ -151,7 +165,7 @@ server <- function(input, output, session) {
     } else {
       tags$div(
         class = "small mb-2",
-        p(class = "mb-1", "Darker greens are older disturbances. White outline = the slider year."),
+        p(class = "mb-1", "Darker greens are older disturbances. Purple outline = the slider year."),
         tags$div(
           class = "d-flex justify-content-between",
           tags$span("2010"),
@@ -204,13 +218,13 @@ server <- function(input, output, session) {
       layout(
         barmode = "stack",
         xaxis = list(title = "", dtick = 1),
-        yaxis = list(title = "acres"),
+        yaxis = list(title = "Acres", tickformat = ","),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
           line = list(color = "#111", width = 2)
         )),
-        margin = list(t = 4, b = 28, l = 40, r = 8)
+        margin = list(t = 4, b = 28, l = 50, r = 8)
       ) |>
       config(displayModeBar = FALSE)
   })
@@ -220,7 +234,7 @@ server <- function(input, output, session) {
             colors = county_colors, type = "scatter", mode = "lines+markers") |>
       layout(
         xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
-        yaxis = list(title = "percent", range = c(60, 70)),
+        yaxis = list(title = "Percent", range = c(60, 70), tickformat = ",.1f"),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
@@ -332,7 +346,7 @@ server <- function(input, output, session) {
           addPolygons(
             data = current, group = "loss",
             options = pathOptions(pane = "loss"),
-            fillColor = CYAN, fillOpacity = 0.95,
+            fillColor = PURPLE, fillOpacity = 0.95,
             color = "#ffffff", weight = 1.1, opacity = 1,
             label = ~paste(year, "(this year)")
           )
@@ -342,7 +356,7 @@ server <- function(input, output, session) {
             data = current, group = "loss",
             options = pathOptions(pane = "loss"),
             fillColor = ~year_pal(year), fillOpacity = 0.95,
-            color = "#ffffff", weight = 1.4, opacity = 1,
+            color = PURPLE, weight = 1.4, opacity = 1,
             label = ~paste(year, "(this year)")
           )
       }
