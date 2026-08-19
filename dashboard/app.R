@@ -120,7 +120,7 @@ ui <- page_sidebar(
   card(
     full_screen = TRUE,
     class = "h-100",
-    card_header("Where disturbance happened"),
+    card_header("Where stand replacing disturbance happened.  Map data from Hansen's Global Forest Loss Analysis."),
     tags$style(HTML("#map { height: calc(100vh - 120px); min-height: 520px; }")),
     leafletOutput("map", width = "100%", height = "calc(100vh - 120px)")
   )
@@ -138,20 +138,20 @@ server <- function(input, output, session) {
           tags$span(style = paste0(
             "display:inline-block;width:18px;height:12px;background:", GOLD, ";"
           )),
-          tags$span("Already happened (2010 to year prior to selected one)")
+          tags$span("2010 to year prior to highighted one)")
         ),
         tags$div(
           class = "d-flex align-items-center gap-2",
           tags$span(style = paste0(
             "display:inline-block;width:18px;height:12px;background:", CYAN, ";"
           )),
-          tags$span(paste("New in", yr()))
+          tags$span(paste("Selected year:", yr()))
         )
       )
     } else {
       tags$div(
         class = "small mb-2",
-        p(class = "mb-1", "Rainbow = year of loss. White outline = the slider year."),
+        p(class = "mb-1", "Darker greens are older disturbances. White outline = the slider year."),
         tags$div(
           class = "d-flex justify-content-between",
           tags$span("2010"),
@@ -190,7 +190,7 @@ server <- function(input, output, session) {
       summarise(m = mean(mean_tcc)) |>
       pull(m)
     value_box(
-      title = paste("Mean canopy in", yr()),
+      title = paste("Mean tree canopy cover in", yr()),
       value = paste0(sprintf("%.1f", tcc), "%"),
       theme = "success"
     )
@@ -205,7 +205,7 @@ server <- function(input, output, session) {
         barmode = "stack",
         xaxis = list(title = "", dtick = 1),
         yaxis = list(title = "acres"),
-        legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.25, xanchor = "left"),
+        legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
           line = list(color = "#111", width = 2)
@@ -221,7 +221,7 @@ server <- function(input, output, session) {
       layout(
         xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
         yaxis = list(title = "percent", range = c(60, 70)),
-        legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.25, xanchor = "left"),
+        legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
           line = list(color = "#111", width = 2)
