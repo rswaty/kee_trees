@@ -11,15 +11,17 @@ suppressPackageStartupMessages({
   library(viridisLite)
 })
 
-proj_root <- if (dir.exists("data/processed")) {
-  normalizePath(".")
-} else if (dir.exists("../data/processed")) {
-  normalizePath("..")
-} else {
-  stop("Cannot find data/processed. Run R/01_harmonize.R from the project root first.")
-}
+script_dir <- normalizePath(dirname(sys.frame(1)$ofile))
+proj_root <- normalizePath(file.path(script_dir, ".."))
 
 processed <- file.path(proj_root, "data/processed")
+if (!dir.exists(processed)) {
+  stop(
+    "Cannot find data/processed relative to this app.\n",
+    "Expected: ", processed, "\n",
+    "Run R/01_harmonize.R from the project root first."
+  )
+}
 
 loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv")) |>
   filter(year >= 2010, year <= 2024)
@@ -92,11 +94,11 @@ ui <- page_sidebar(
     uiOutput("box_tcc"),
     card(
       card_header("Disturbance acres by year"),
-      plotlyOutput("loss_chart", height = "200px")
+      plotlyOutput("loss_chart", height = "240px")
     ),
     card(
       card_header("Mean tree canopy %"),
-      plotlyOutput("tcc_chart", height = "200px")
+      plotlyOutput("tcc_chart", height = "240px")
     ),
     card(
       class = "bg-light",
@@ -212,12 +214,24 @@ server <- function(input, output, session) {
   output$loss_chart <- renderPlotly({
     d <- loss_stats
     d$selected <- d$year == yr()
+    max_acres <- max(d$acres, na.rm = TRUE)
     plot_ly(d, x = ~year, y = ~acres, color = ~county, colors = county_colors,
-            type = "bar", customdata = ~year) |>
+            type = "bar",
+            customdata = ~year,
+            hovertemplate = paste(
+              "Year %{x}<br>",
+              "Acres %{y:,.0f} acres<br>",
+              "County %{fullData.name}",
+              "<extra></extra>"
+            )) |>
       layout(
         barmode = "stack",
         xaxis = list(title = "", dtick = 1),
-        yaxis = list(title = "Acres", tickformat = ","),
+        yaxis = list(
+          title = "Acres",
+          tickformat = ",.0f",
+          range = c(0, max_acres * 1.15)
+        ),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
@@ -229,11 +243,23 @@ server <- function(input, output, session) {
   })
 
   output$tcc_chart <- renderPlotly({
+    min_tcc <- min(tcc_stats$mean_tcc, na.rm = TRUE)
+    max_tcc <- max(tcc_stats$mean_tcc, na.rm = TRUE)
     plot_ly(tcc_stats, x = ~year, y = ~mean_tcc, color = ~county,
-            colors = county_colors, type = "scatter", mode = "lines+markers") |>
+            colors = county_colors, type = "scatter", mode = "lines+markers",
+            hovertemplate = paste(
+              "Year %{x}<br>",
+              "%{y:.0f}%<br>",
+              "County %{fullData.name}",
+              "<extra></extra>"
+            )) |>
       layout(
         xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
-        yaxis = list(title = "Percent", tickformat = ",.1f"),
+        yaxis = list(
+          title = "Percent",
+          tickformat = ".0f",
+          range = c(max(0, floor(min_tcc) - 2), ceiling(max_tcc) + 2)
+        ),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.70, xanchor = "left"),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
