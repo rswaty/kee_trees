@@ -1,5 +1,6 @@
 # Align Hansen to the NLCD TCC grid and write dashboard summaries.
-# Run from the project root: Rscript R/01_harmonize.R
+# Run from the project root: Rscript scripts/01_harmonize.R
+# NOTE: Keep this outside an app-root R/ folder — shiny::runApp(".") auto-sources R/*.R.
 
 Sys.setenv(PROJ_NETWORK = "OFF")
 
@@ -70,7 +71,8 @@ writeRaster(tcc_change, file.path(out_dir, "tcc_change_2010_2025.tif"),
             overwrite = TRUE, wopt = list(datatype = "INT2S", gdal = gdal_opts))
 
 px_acres <- prod(res(tcc_template)) / 4046.8564224
-forest <- cover >= 30
+# Forest mask matches the analysis start year: NLCD TCC 2010 >= 30%.
+forest <- tcc_2010 >= 30
 county_id <- rasterize(counties_v, tcc_template, field = "county_id")
 id_lookup <- data.frame(
   county_id = counties_v$county_id,
@@ -150,8 +152,49 @@ loss_poly <- as.polygons(loss_map, dissolve = TRUE, na.rm = TRUE)
 loss_sf <- sf::st_as_sf(loss_poly)
 loss_sf$year <- as.integer(loss_sf[[1]]) + 2000
 loss_sf <- loss_sf[, "year"]
-loss_sf <- sf::st_transform(loss_sf, 4326)
+loss_sf <- sf::st_make_valid(sf::st_transform(loss_sf, 4326))
 sf::st_write(loss_sf, file.path(out_dir, "loss_by_year.gpkg"), delete_dsn = TRUE, quiet = TRUE)
+saveRDS(loss_sf, file.path(out_dir, "loss_by_year.rds"), compress = "xz")
+message(
+  "Map polygons (native 30 m): ", nrow(loss_sf), " year features, ~",
+  format(as.integer(sum(lengths(sf::st_coordinates(sf::st_geometry(loss_sf))) / 2)), big.mark = ","),
+  " vertices"
+)
+
+message("Building TCC canopy-decline layer (2010 to 2025, drop >= 15 pp)...")
+# County-masked only (no 30% forest gate) so already-open / partial-canopy
+# clearings that still lost >=15 pp are not hidden.
+# Dissolve by rounded drop (pp) so tiles can ramp by magnitude (not one flat blob).
+tcc_drop <- tcc_2010 - tcc_2025
+decline_mag <- ifel(!is.na(tcc_2010) & (tcc_drop >= 15), round(tcc_drop), NA)
+names(decline_mag) <- "drop_pp"
+writeRaster(
+  decline_mag, file.path(out_dir, "tcc_decline_pp_2010_2025.tif"),
+  overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts)
+)
+decline_acres <- global(!is.na(decline_mag), "sum", na.rm = TRUE)[1, 1] * px_acres
+decline_freq <- terra::freq(decline_mag)
+decline_freq <- decline_freq[!is.na(decline_freq$value), c("value", "count")]
+names(decline_freq) <- c("drop_pp", "n_pixels")
+decline_freq$acres <- decline_freq$n_pixels * px_acres
+write.csv(decline_freq, file.path(out_dir, "tcc_decline_by_drop_pp.csv"), row.names = FALSE)
+
+decline_poly <- as.polygons(decline_mag, dissolve = TRUE, na.rm = TRUE)
+decline_sf <- sf::st_as_sf(decline_poly)
+decline_sf$drop_pp <- as.integer(decline_sf$drop_pp)
+decline_sf <- decline_sf |>
+  dplyr::left_join(decline_freq[, c("drop_pp", "acres")], by = "drop_pp")
+decline_sf$label <- paste0("TCC drop ", decline_sf$drop_pp, " pp (2010\u20132025)")
+decline_sf <- decline_sf[, c("drop_pp", "acres", "label")]
+decline_sf <- sf::st_make_valid(sf::st_transform(decline_sf, 4326))
+sf::st_write(decline_sf, file.path(out_dir, "tcc_decline_2010_2025.gpkg"), delete_dsn = TRUE, quiet = TRUE)
+saveRDS(decline_sf, file.path(out_dir, "tcc_decline_2010_2025.rds"), compress = "xz")
+message(
+  "TCC decline map layer: ~", format(round(decline_acres), big.mark = ","),
+  " acres, ", nrow(decline_sf), " drop classes (native 30 m), ~",
+  format(as.integer(sum(lengths(sf::st_coordinates(sf::st_geometry(decline_sf))) / 2)), big.mark = ","),
+  " vertices"
+)
 
 aligned <- compareGeom(loss, cover, tcc_template, tcc_change, stopOnError = FALSE)
 message("Hansen/TCC/change share TCC grid: ", aligned)

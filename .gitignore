@@ -15,3 +15,7 @@
 *.lock
 *.sbn
 *.sbx
+
+# Local PMTiles / MapLibre widget dumps (geometry hosted on Cloudflare R2)
+data/tiles/
+hello.txt
