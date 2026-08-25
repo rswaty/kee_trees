@@ -44,7 +44,8 @@ county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
 # server ignores HTTP Range, which breaks PMTiles — so we serve tiles ourselves
 # with byte-range support (see ui function below). R2 / jsDelivr are fallbacks.
 TILE_BASE_R2 <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
-TILE_BASE_JSDELIVR <- "https://cdn.jsdelivr.net/gh/rswaty/kee_trees@main/www/tiles"
+# raw.githubusercontent.com supports HTTP Range + CORS (jsDelivr cached a bad size once).
+TILE_BASE_GITHUB <- "https://raw.githubusercontent.com/rswaty/kee_trees/main/www/tiles"
 tile_dir_candidates <- c(
   file.path(proj_root, "www", "tiles"),
   file.path(proj_root, "data", "tiles")
@@ -117,8 +118,8 @@ app_tile_url <- function(session, filename) {
   on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
 
   # Local runApp: serve via ui() Range handler (same origin).
-  # shinyapps.io does not forward /kee_tiles/* into R, so use jsDelivr there
-  # (GitHub-hosted www/tiles; supports HTTP Range + CORS).
+  # shinyapps.io does not forward /kee_tiles/* into R, so use GitHub raw there
+  # (www/tiles on main; supports HTTP Range + CORS).
   if (!isTRUE(on_shinyapps) && !is.null(local_tile_dir)) {
     proto <- session$clientData$url_protocol
     port <- session$clientData$url_port
@@ -134,7 +135,7 @@ app_tile_url <- function(session, filename) {
     return(paste0(proto, "//", host, port_part, path, "kee_tiles/", filename))
   }
 
-  paste0(TILE_BASE_JSDELIVR, "/", filename)
+  paste0(TILE_BASE_GITHUB, "/", filename)
 }
 
 # Year may be string or number in tiles; coerce before comparing.
@@ -352,11 +353,11 @@ server <- function(input, output, session) {
     host <- session$clientData$url_hostname
     on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
     if (isTRUE(on_shinyapps)) {
-      "Polygon tiles: jsDelivr CDN (GitHub). Hard-refresh if layers are empty."
+      "Polygon tiles: GitHub raw CDN. Hard-refresh if layers are empty."
     } else if (!is.null(local_tile_dir)) {
       "Polygon tiles: local same-origin with HTTP Range (www/tiles)."
     } else {
-      "Polygon tiles: jsDelivr CDN fallback."
+      "Polygon tiles: GitHub raw CDN fallback."
     }
   })
 
