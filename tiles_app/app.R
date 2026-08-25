@@ -40,9 +40,11 @@ tcc_mean_by_year <- tcc_stats |>
 
 county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
 
-# Prefer same-origin tiles (www/tiles or data/tiles) so GIS firewalls that block
-# Cloudflare R2 still get polygons. R2 remains a fallback.
+# Prefer same-origin tiles (www/tiles or data/tiles). shinyapps' static file
+# server ignores HTTP Range, which breaks PMTiles — so we serve tiles ourselves
+# with byte-range support (see ui function below). R2 / jsDelivr are fallbacks.
 TILE_BASE_R2 <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
+TILE_BASE_JSDELIVR <- "https://cdn.jsdelivr.net/gh/rswaty/kee_trees@main/www/tiles"
 tile_dir_candidates <- c(
   file.path(proj_root, "www", "tiles"),
   file.path(proj_root, "data", "tiles")
@@ -55,14 +57,70 @@ for (d in tile_dir_candidates) {
     break
   }
 }
-if (!is.null(local_tile_dir)) {
-  shiny::addResourcePath("kee_tiles", local_tile_dir)
+
+serve_pmtiles_range <- function(path, request) {
+  info <- file.info(path)
+  if (is.na(info$size)) {
+    return(shiny::httpResponse(404L, content_type = "text/plain", content = "Not found"))
+  }
+  file_size <- as.integer(info$size)
+  range_header <- request$HTTP_RANGE
+  if (is.null(range_header) || !nzchar(range_header)) {
+    return(shiny::httpResponse(
+      status = 200L,
+      content_type = "application/octet-stream",
+      content = readBin(path, what = "raw", n = file_size),
+      headers = list(
+        "Accept-Ranges" = "bytes",
+        "Content-Length" = as.character(file_size),
+        "Access-Control-Allow-Origin" = "*",
+        "Access-Control-Expose-Headers" = "Accept-Ranges, Content-Range, Content-Length, ETag"
+      )
+    ))
+  }
+  m <- regmatches(range_header, regexec("^bytes=([0-9]+)-([0-9]*)$", range_header))[[1]]
+  if (length(m) < 2) {
+    return(shiny::httpResponse(416L, content_type = "text/plain", content = "Invalid Range"))
+  }
+  start <- as.integer(m[2])
+  end <- if (identical(m[3], "") || is.na(m[3])) file_size - 1L else as.integer(m[3])
+  if (is.na(start) || is.na(end) || start > end || start >= file_size) {
+    return(shiny::httpResponse(
+      416L,
+      content_type = "text/plain",
+      content = "Range Not Satisfiable",
+      headers = list("Content-Range" = paste0("bytes */", file_size))
+    ))
+  }
+  end <- min(end, file_size - 1L)
+  nbytes <- end - start + 1L
+  con <- file(path, "rb")
+  on.exit(close(con), add = TRUE)
+  seek(con, where = start, origin = "start")
+  data <- readBin(con, what = "raw", n = nbytes)
+  shiny::httpResponse(
+    status = 206L,
+    content_type = "application/octet-stream",
+    content = data,
+    headers = list(
+      "Accept-Ranges" = "bytes",
+      "Content-Range" = sprintf("bytes %d-%d/%d", start, end, file_size),
+      "Content-Length" = as.character(nbytes),
+      "Access-Control-Allow-Origin" = "*",
+      "Access-Control-Expose-Headers" = "Accept-Ranges, Content-Range, Content-Length, ETag"
+    )
+  )
 }
 
 app_tile_url <- function(session, filename) {
-  if (!is.null(local_tile_dir)) {
+  host <- session$clientData$url_hostname
+  on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
+
+  # Local runApp: serve via ui() Range handler (same origin).
+  # shinyapps.io does not forward /kee_tiles/* into R, so use jsDelivr there
+  # (GitHub-hosted www/tiles; supports HTTP Range + CORS).
+  if (!isTRUE(on_shinyapps) && !is.null(local_tile_dir)) {
     proto <- session$clientData$url_protocol
-    host <- session$clientData$url_hostname
     port <- session$clientData$url_port
     path <- session$clientData$url_pathname
     req(nzchar(host))
@@ -73,10 +131,10 @@ app_tile_url <- function(session, filename) {
     } else {
       ""
     }
-    paste0(proto, "//", host, port_part, path, "kee_tiles/", filename)
-  } else {
-    paste0(TILE_BASE_R2, "/", filename)
+    return(paste0(proto, "//", host, port_part, path, "kee_tiles/", filename))
   }
+
+  paste0(TILE_BASE_JSDELIVR, "/", filename)
 }
 
 # Year may be string or number in tiles; coerce before comparing.
@@ -171,7 +229,7 @@ summary_stat_box <- function(title_id, value_id, theme_class) {
 
 theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
 
-ui <- page_sidebar(
+app_ui <- page_sidebar(
   title = "Keweenaw & Houghton — fast tile explorer",
   theme = theme,
   fillable = TRUE,
@@ -258,14 +316,47 @@ ui <- page_sidebar(
   )
 )
 
+# Intercept /kee_tiles/* with Range support (PMTiles needs 206 responses).
+ui <- function(request) {
+  path <- request$PATH_INFO
+  if (is.null(path)) path <- ""
+  if (grepl("(^|/)kee_tiles/", path) && !is.null(local_tile_dir)) {
+    if (identical(request$REQUEST_METHOD, "OPTIONS")) {
+      return(shiny::httpResponse(
+        status = 204L,
+        content = "",
+        headers = list(
+          "Access-Control-Allow-Origin" = "*",
+          "Access-Control-Allow-Methods" = "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers" = "Range, If-Match, *",
+          "Access-Control-Expose-Headers" = "Accept-Ranges, Content-Range, Content-Length, ETag",
+          "Access-Control-Max-Age" = "3600"
+        )
+      ))
+    }
+    fname <- sub(".*(^|/)kee_tiles/", "", path)
+    fname <- sub("\\?.*$", "", fname)
+    fpath <- file.path(local_tile_dir, fname)
+    if (file.exists(fpath)) {
+      return(serve_pmtiles_range(fpath, request))
+    }
+    return(shiny::httpResponse(404L, content_type = "text/plain", content = "Tile not found"))
+  }
+  app_ui
+}
+
 server <- function(input, output, session) {
   yr <- reactive(as.integer(input$year))
 
   output$tile_source_note <- renderText({
-    if (!is.null(local_tile_dir)) {
-      "Polygon tiles: served with this app (same origin — works behind many GIS firewalls)."
+    host <- session$clientData$url_hostname
+    on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
+    if (isTRUE(on_shinyapps)) {
+      "Polygon tiles: jsDelivr CDN (GitHub). Hard-refresh if layers are empty."
+    } else if (!is.null(local_tile_dir)) {
+      "Polygon tiles: local same-origin with HTTP Range (www/tiles)."
     } else {
-      "Polygon tiles: Cloudflare R2 (blocked on some networks — keep www/tiles/*.pmtiles with the app)."
+      "Polygon tiles: jsDelivr CDN fallback."
     }
   })
 
