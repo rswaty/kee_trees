@@ -40,7 +40,44 @@ tcc_mean_by_year <- tcc_stats |>
 
 county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
 
-TILE_BASE <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
+# Prefer same-origin tiles (www/tiles or data/tiles) so GIS firewalls that block
+# Cloudflare R2 still get polygons. R2 remains a fallback.
+TILE_BASE_R2 <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
+tile_dir_candidates <- c(
+  file.path(proj_root, "www", "tiles"),
+  file.path(proj_root, "data", "tiles")
+)
+local_tile_dir <- NULL
+for (d in tile_dir_candidates) {
+  if (file.exists(file.path(d, "hansen_loss.pmtiles")) &&
+      file.exists(file.path(d, "tcc_decline.pmtiles"))) {
+    local_tile_dir <- d
+    break
+  }
+}
+if (!is.null(local_tile_dir)) {
+  shiny::addResourcePath("kee_tiles", local_tile_dir)
+}
+
+app_tile_url <- function(session, filename) {
+  if (!is.null(local_tile_dir)) {
+    proto <- session$clientData$url_protocol
+    host <- session$clientData$url_hostname
+    port <- session$clientData$url_port
+    path <- session$clientData$url_pathname
+    req(nzchar(host))
+    if (is.null(path) || !nzchar(path)) path <- "/"
+    if (!grepl("/$", path)) path <- paste0(path, "/")
+    port_part <- if (!is.null(port) && nzchar(port) && !(port %in% c("80", "443"))) {
+      paste0(":", port)
+    } else {
+      ""
+    }
+    paste0(proto, "//", host, port_part, path, "kee_tiles/", filename)
+  } else {
+    paste0(TILE_BASE_R2, "/", filename)
+  }
+}
 
 # Year may be string or number in tiles; coerce before comparing.
 # Important: do NOT put this filter on add_fill_layer — mapgl keeps that as a
@@ -195,6 +232,7 @@ ui <- page_sidebar(
       "Both miss some visible clearing; click a patch for details. ",
       "Summaries/charts still use the CSV acre / mean-TCC stats."
     ),
+    tags$p(class = "small text-muted mb-2", textOutput("tile_source_note", inline = TRUE)),
     summary_stat_box("box_year_title", "box_year_value", "text-bg-primary"),
     summary_stat_box("box_cumul_title", "box_cumul_value", "text-bg-secondary"),
     summary_stat_box("box_tcc_title", "box_tcc_value", "text-bg-success"),
@@ -212,9 +250,9 @@ ui <- page_sidebar(
     class = "h-100",
     card_header(
       tags$strong("Map"),
-      " — If the map is blank in RStudio/Positron Viewer, click ",
+      " — Blank in RStudio/Positron Viewer? Use ",
       tags$em("Open in Browser"),
-      " (MapLibre needs a real browser). Same URL works after deploy."
+      ". Polygons are served with the app (not R2) when possible."
     ),
     maplibreOutput("map", height = "75vh")
   )
@@ -222,6 +260,14 @@ ui <- page_sidebar(
 
 server <- function(input, output, session) {
   yr <- reactive(as.integer(input$year))
+
+  output$tile_source_note <- renderText({
+    if (!is.null(local_tile_dir)) {
+      "Polygon tiles: served with this app (same origin — works behind many GIS firewalls)."
+    } else {
+      "Polygon tiles: Cloudflare R2 (blocked on some networks — keep www/tiles/*.pmtiles with the app)."
+    }
+  })
 
   output$box_year_title <- renderText(paste("Disturbance in", yr()))
   output$box_year_value <- renderText({
@@ -283,6 +329,11 @@ server <- function(input, output, session) {
   })
 
   output$map <- renderMaplibre({
+    # Need host/path so same-origin tile URLs resolve on shinyapps and localhost.
+    req(session$clientData$url_hostname)
+    hansen_url <- app_tile_url(session, "hansen_loss.pmtiles")
+    tcc_url <- app_tile_url(session, "tcc_decline.pmtiles")
+
     maplibre(
       style = basemap_style_url("dark"),
       center = c(-88.41, 47.30),
@@ -291,11 +342,11 @@ server <- function(input, output, session) {
     ) |>
       add_pmtiles_source(
         id = "tcc-tiles",
-        url = paste0(TILE_BASE, "/tcc_decline.pmtiles")
+        url = tcc_url
       ) |>
       add_pmtiles_source(
         id = "hansen-tiles",
-        url = paste0(TILE_BASE, "/hansen_loss.pmtiles")
+        url = hansen_url
       ) |>
       add_fill_layer(
         id = "tcc_decline",
