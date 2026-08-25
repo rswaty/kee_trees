@@ -142,7 +142,7 @@ ui <- page_sidebar(
     width = 380,
     sliderInput(
       "year", "Hansen loss year",
-      min = 2010, max = 2024, value = 2010, step = 1, sep = "",
+      min = 2010, max = 2024, value = 2024, step = 1, sep = "",
       width = "100%",
       animate = animationOptions(interval = 1200, loop = FALSE)
     ),
@@ -210,7 +210,12 @@ ui <- page_sidebar(
   card(
     full_screen = TRUE,
     class = "h-100",
-    card_header("MapLibre + PMTiles (open in browser if RStudio Viewer looks empty)"),
+    card_header(
+      tags$strong("Map"),
+      " — If the map is blank in RStudio/Positron Viewer, click ",
+      tags$em("Open in Browser"),
+      " (MapLibre needs a real browser). Same URL works after deploy."
+    ),
     maplibreOutput("map", height = "75vh")
   )
 )
