@@ -174,12 +174,19 @@ tcc_fill_ramp <- list(
   80, tcc_drop_colors[[4]]
 )
 
-# LANDFIRE disturbance types — bright, distinct hues for dark/light basemaps.
+# LANDFIRE disturbance types — bright hues; darker shade = more recent within type.
 fdist_agent_colors <- c(
   harvest_remove = "#39FF14",
   mech_unknown = "#00E5FF",
   insects = "#FF2EEA",
   fire = "#FF3B00"
+)
+# Per-type shade ramp by years_since_bin (1 = most recent / darkest).
+fdist_bin_colors <- list(
+  harvest_remove = c("1" = "#146600", "2" = "#39FF14", "3" = "#C5FF9A", "4" = "#E8FFD6"),
+  mech_unknown = c("1" = "#006677", "2" = "#00E5FF", "3" = "#9AEEFF", "4" = "#D6F7FF"),
+  insects = c("1" = "#8A008A", "2" = "#FF2EEA", "3" = "#FFA8F4", "4" = "#FFE0FA"),
+  fire = c("1" = "#8B1400", "2" = "#FF3B00", "3" = "#FF9A70", "4" = "#FFD0BC")
 )
 fdist_plain_labels <- c(
   harvest_remove = "Timber harvest or clearing",
@@ -187,12 +194,29 @@ fdist_plain_labels <- c(
   insects = "Insects or disease",
   fire = "Fire"
 )
-fdist_fill_ramp <- match_expr(
-  column = "agent",
-  values = names(fdist_agent_colors),
-  stops = unname(fdist_agent_colors),
-  default = "#FFD60A"
+fdist_years_since_bins <- c(
+  "1" = "About 1 year",
+  "2" = "About 2–5 years",
+  "3" = "About 6–10 years",
+  "4" = "About 11+ years"
 )
+# Match on class_id = agent_id*10 + years_since_bin (severity collapsed out).
+fdist_fill_ramp <- {
+  id_lookup <- c(harvest_remove = 1L, mech_unknown = 2L, insects = 3L, fire = 4L)
+  pairs <- list()
+  for (agent in names(id_lookup)) {
+    shades <- fdist_bin_colors[[agent]]
+    for (bin in names(shades)) {
+      class_id <- id_lookup[[agent]] * 10L + as.integer(bin)
+      pairs <- c(pairs, list(class_id, shades[[bin]]))
+    }
+  }
+  c(
+    list("match", list("to-number", list("get", "class_id"))),
+    pairs,
+    list("#FFD60A")
+  )
+}
 has_fdist_tiles <- any(file.exists(file.path(tile_dir_candidates, "landfire_fdist.pmtiles"))) ||
   nrow(fdist_acres) > 0
 
@@ -265,7 +289,7 @@ theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
 fdist_total_acres <- if (nrow(fdist_acres) > 0) sum(fdist_acres$acres, na.rm = TRUE) else 0
 
 app_ui <- page_sidebar(
-  title = "Keweenaw & Houghton — fast tile explorer",
+  title = "Keweenaw & Houghton Counties — Tree canopy change explorer",
   theme = theme,
   fillable = TRUE,
   sidebar = sidebar(
@@ -292,17 +316,17 @@ app_ui <- page_sidebar(
       ),
       selected = "cumulative"
     ),
-    checkboxInput("show_hansen", "Show Hansen loss (orange ramp by year)", TRUE),
+    checkboxInput("show_hansen", "Show Hansen loss (orange ramp by year)", FALSE),
     checkboxInput(
       "show_tcc",
       "Show USFS FIA TCC drop ≥15 pp (blue ramp by magnitude)",
-      TRUE
+      FALSE
     ),
     if (isTRUE(has_fdist_tiles)) {
       checkboxInput(
         "show_fdist",
         "Show LANDFIRE disturbances (cause of change)",
-        TRUE
+        FALSE
       )
     },
     selectInput(
@@ -335,24 +359,41 @@ app_ui <- page_sidebar(
         tagList(
           tags$div(
             class = "mt-3 mb-1",
-            "LANDFIRE disturbance type (2014–2024)"
+            "LANDFIRE disturbance type + years since (2014–2024)"
           ),
           tags$div(
             class = "small text-muted mb-2",
-            "LANDFIRE records disturbances over 2014–2024; individual patches are not dated to a single year."
+            "Hue = cause. Shade = years since disturbance (darker = more recent). ",
+            "No calendar year on patches."
           ),
           tags$div(
             class = "small",
-            style = "display:flex;flex-direction:column;gap:0.65rem;",
-            lapply(names(fdist_agent_colors), function(a) {
+            style = "display:flex;flex-direction:column;gap:0.75rem;",
+            lapply(names(fdist_bin_colors), function(a) {
+              shades <- fdist_bin_colors[[a]]
               tags$div(
-                style = "display:flex;align-items:center;gap:0.5rem;",
-                tags$span(style = paste0(
-                  "flex:0 0 auto;width:16px;height:16px;border-radius:2px;background:",
-                  fdist_agent_colors[[a]],
-                  ";box-shadow:0 0 0 1px rgba(0,0,0,0.25);"
-                )),
-                tags$span(fdist_plain_labels[[a]])
+                tags$div(
+                  style = "display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;",
+                  tags$span(style = paste0(
+                    "flex:0 0 auto;width:16px;height:16px;border-radius:2px;background:",
+                    fdist_agent_colors[[a]],
+                    ";box-shadow:0 0 0 1px rgba(0,0,0,0.25);"
+                  )),
+                  tags$span(fdist_plain_labels[[a]])
+                ),
+                tags$div(
+                  style = paste0(
+                    "height:10px;border-radius:2px;margin-left:1.5rem;background:linear-gradient(to right,",
+                    paste(unname(shades[c("1", "2", "3")]), collapse = ","),
+                    ");box-shadow:0 0 0 1px rgba(0,0,0,0.15);"
+                  )
+                ),
+                tags$div(
+                  class = "d-flex justify-content-between text-muted",
+                  style = "margin-left:1.5rem;font-size:0.75rem;",
+                  tags$span("Most recent"),
+                  tags$span("Older")
+                )
               )
             })
           )
@@ -365,7 +406,7 @@ app_ui <- page_sidebar(
       "Blue = USFS FIA tree canopy % drop ≥15 pp (2010–2025). ",
       if (isTRUE(has_fdist_tiles)) {
         paste0(
-          "Bright green / cyan / magenta / red-orange = LANDFIRE disturbance cause (2014–2024). ",
+          "LANDFIRE: color family = cause; darker = more recent years-since bin (2014–2024). ",
           "“Other mechanical change” is not confirmed harvest. "
         )
       },
@@ -460,10 +501,8 @@ app_ui <- page_sidebar(
     full_screen = TRUE,
     class = "h-100",
     card_header(
-      tags$strong("Map"),
-      " — Blank in RStudio/Positron Viewer? Use ",
-      tags$em("Open in Browser"),
-      "."
+      "Click on datasets in the left column to explore change. ",
+      "Each dataset has specific traits—read the info in the column to learn more."
     ),
     maplibreOutput("map", height = "75vh")
   )
@@ -503,23 +542,24 @@ server <- function(input, output, session) {
 
   output$box_year_title <- renderText(paste("Hansen loss in", yr()))
   output$box_year_value <- renderText({
-    paste(format(round(acres_by_year[[as.character(yr())]]), big.mark = ","), "acres")
+    paste(format(round(acres_by_year[[as.character(yr())]]), big.mark = ",", scientific = FALSE), "acres")
   })
   output$box_cumul_title <- renderText(paste0("Hansen loss cumulative 2010\u2013", yr()))
   output$box_cumul_value <- renderText({
-    paste(format(round(cum_acres_by_year[[as.character(yr())]]), big.mark = ","), "acres")
+    paste(format(round(cum_acres_by_year[[as.character(yr())]]), big.mark = ",", scientific = FALSE), "acres")
   })
   output$box_tcc_title <- renderText(paste("Mean tree canopy cover in", yr()))
   output$box_tcc_value <- renderText({
-    paste0(sprintf("%.1f", tcc_mean_by_year[[as.character(yr())]]), "%")
+    paste0(format(round(tcc_mean_by_year[[as.character(yr())]]), scientific = FALSE), "%")
   })
   output$box_fdist_title <- renderText("LANDFIRE disturbances (2014–2024)")
   output$box_fdist_value <- renderText({
-    paste(format(round(fdist_total_acres), big.mark = ","), "acres")
+    paste(format(round(fdist_total_acres), big.mark = ",", scientific = FALSE), "acres")
   })
 
   output$loss_chart <- renderPlotly({
     d <- loss_stats
+    d$acres <- round(d$acres)
     max_acres <- max(d$acres, na.rm = TRUE)
     plot_ly(
       d, x = ~year, y = ~acres, color = ~county, colors = county_colors,
@@ -529,7 +569,7 @@ server <- function(input, output, session) {
       layout(
         barmode = "stack",
         xaxis = list(title = "", dtick = 1),
-        yaxis = list(title = "Acres", tickformat = ",.0f", range = c(0, max_acres * 1.15)),
+        yaxis = list(title = "Acres", tickformat = ",d", range = c(0, max_acres * 1.15)),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.55),
         shapes = list(list(
           type = "line", x0 = yr(), x1 = yr(), y0 = 0, y1 = 1, yref = "paper",
@@ -541,18 +581,20 @@ server <- function(input, output, session) {
   })
 
   output$tcc_chart <- renderPlotly({
-    min_tcc <- min(tcc_stats$mean_tcc, na.rm = TRUE)
-    max_tcc <- max(tcc_stats$mean_tcc, na.rm = TRUE)
+    d <- tcc_stats
+    d$mean_tcc <- round(d$mean_tcc)
+    min_tcc <- min(d$mean_tcc, na.rm = TRUE)
+    max_tcc <- max(d$mean_tcc, na.rm = TRUE)
     plot_ly(
-      tcc_stats, x = ~year, y = ~mean_tcc, color = ~county,
+      d, x = ~year, y = ~mean_tcc, color = ~county,
       colors = county_colors, type = "scatter", mode = "lines+markers",
       hovertemplate = "Year %{x}<br>%{y:.0f}%<br>%{fullData.name}<extra></extra>"
     ) |>
       layout(
         xaxis = list(title = "", dtick = 1, range = c(2009.5, 2025.5)),
         yaxis = list(
-          title = "Percent", tickformat = ".0f",
-          range = c(max(0, floor(min_tcc) - 2), ceiling(max_tcc) + 2)
+          title = "Percent", tickformat = "d",
+          range = c(max(0, min_tcc - 2), max_tcc + 2)
         ),
         legend = list(orientation = "h", font = list(size = 9), x = 0, y = -0.55),
         shapes = list(list(
@@ -569,19 +611,20 @@ server <- function(input, output, session) {
     d <- fdist_acres
     d$label <- unname(fdist_plain_labels[d$agent])
     d$label[is.na(d$label)] <- d$agent[is.na(d$label)]
-    # Vertical bars (coord flip from prior horizontal layout), largest first.
-    d <- d[order(-d$acres), , drop = FALSE]
+    d$acres <- round(d$acres)
+    # Horizontal bars; largest acres at top (plotly draws first factor level at bottom).
+    d <- d[order(d$acres), , drop = FALSE]
     d$label <- factor(d$label, levels = d$label)
     cols <- unname(fdist_agent_colors[d$agent])
     plot_ly(
-      d, x = ~label, y = ~acres, type = "bar",
+      d, x = ~acres, y = ~label, type = "bar", orientation = "h",
       marker = list(color = cols),
-      hovertemplate = "%{x}<br>%{y:,.0f} acres<extra></extra>"
+      hovertemplate = "%{y}<br>%{x:,.0f} acres<extra></extra>"
     ) |>
       layout(
-        xaxis = list(title = "", tickangle = -25),
-        yaxis = list(title = "Acres", tickformat = ",.0f"),
-        margin = list(t = 8, b = 70, l = 50, r = 8),
+        xaxis = list(title = "Acres", tickformat = ",d"),
+        yaxis = list(title = ""),
+        margin = list(t = 8, b = 40, l = 160, r = 8),
         showlegend = FALSE
       ) |>
       config(displayModeBar = FALSE)
@@ -612,13 +655,14 @@ server <- function(input, output, session) {
           source_layer = "landfire_fdist",
           fill_color = fdist_fill_ramp,
           fill_opacity = 0.8,
-          popup = paste0(
+          popup = concat(
             "<strong>LANDFIRE disturbance (2014–2024)</strong><br>",
-            "{label}<br>",
-            "{acres} acres of this type in the map area<br>",
-            "<em>Patches are not dated to a single year</em>"
+            get_column("label"), "<br>",
+            get_column("years_since"), "<br>",
+            "<em>No calendar year — time-since bins only. ",
+            "Acre totals by type are in the sidebar chart.</em>"
           ),
-          visibility = "visible"
+          visibility = "none"
         )
     }
 
@@ -629,12 +673,23 @@ server <- function(input, output, session) {
         source_layer = "tcc_decline",
         fill_color = tcc_fill_ramp,
         fill_opacity = 0.55,
-        popup = paste0(
+        popup = concat(
           "<strong>USFS FIA TCC canopy drop</strong><br>",
-          "{drop_pp} percentage points (2010→2025)<br>",
-          "Class acres (this drop size): {acres}"
+          number_format(
+            "drop_pp",
+            maximum_fraction_digits = 0,
+            minimum_fraction_digits = 0
+          ),
+          " percentage points (2010→2025)<br>",
+          "Class acres (this drop size): ",
+          number_format(
+            "acres",
+            maximum_fraction_digits = 0,
+            minimum_fraction_digits = 0,
+            use_grouping = TRUE
+          )
         ),
-        visibility = "visible"
+        visibility = "none"
       ) |>
       add_fill_layer(
         id = "hansen",
@@ -642,8 +697,16 @@ server <- function(input, output, session) {
         source_layer = "hansen",
         fill_color = hansen_fill_ramp,
         fill_opacity = 0.8,
-        popup = "<strong>Hansen stand-replacing loss</strong><br>Year: {year}",
-        visibility = "visible"
+        popup = concat(
+          "<strong>Hansen stand-replacing loss</strong><br>Year: ",
+          number_format(
+            "year",
+            maximum_fraction_digits = 0,
+            minimum_fraction_digits = 0,
+            use_grouping = FALSE
+          )
+        ),
+        visibility = "none"
       )
     m
   })
@@ -682,17 +745,20 @@ server <- function(input, output, session) {
     )
   }
 
+  apply_all_layer_visibility <- function() {
+    apply_hansen_view()
+    apply_tcc_visibility()
+    apply_fdist_visibility()
+  }
+
   observeEvent(
     list(input$year, input$hansen_mode, input$show_hansen),
     apply_hansen_view(),
     ignoreInit = FALSE
   )
-  # Re-apply once after paint (isolate: onFlushed is not a reactive consumer).
+  # Re-apply all overlays after paint (observers can race before the map exists).
   session$onFlushed(function() {
-    isolate({
-      apply_hansen_view()
-      apply_fdist_visibility()
-    })
+    isolate(apply_all_layer_visibility())
   }, once = TRUE)
 
   observeEvent(input$show_tcc, apply_tcc_visibility(), ignoreInit = FALSE)
@@ -707,9 +773,7 @@ server <- function(input, output, session) {
       style = basemap_style_url(input$basemap),
       preserve_layers = TRUE
     )
-    apply_hansen_view()
-    apply_tcc_visibility()
-    apply_fdist_visibility()
+    apply_all_layer_visibility()
   }, ignoreInit = TRUE)
 }
 

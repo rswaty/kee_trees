@@ -4,6 +4,9 @@
 # Input:  data/lf_hist_dist.tif  (FDist codes 111–733 despite "hist" name)
 # Output: data/processed/landfire_fdist_*.{rds,gpkg,csv,tif}
 #         www/tiles/landfire_fdist.pmtiles (+ copy under data/tiles/)
+#
+# Map features are dissolved by disturbance agent + years-since bin
+# (severity is ignored / collapsed).
 
 Sys.setenv(PROJ_NETWORK = "OFF")
 
@@ -45,12 +48,26 @@ agent_from_code <- function(code) {
   )
 }
 
+# Ones digit = LANDFIRE FDist years-since bin (not a calendar year).
+years_since_from_code <- function(code) {
+  as.integer(code) %% 10L
+}
+
 agent_label <- c(
   harvest_remove = "Timber harvest or clearing",
   mech_unknown = "Other mechanical change",
   insects = "Insects or disease",
   fire = "Fire"
 )
+
+years_since_label <- c(
+  "1" = "About 1 year since disturbance",
+  "2" = "About 2–5 years since disturbance",
+  "3" = "About 6–10 years since disturbance",
+  "4" = "About 11+ years since disturbance"
+)
+
+id_lookup <- c(harvest_remove = 1L, mech_unknown = 2L, insects = 3L, fire = 4L)
 
 message("Loading TCC template + counties...")
 tcc_template <- rast(file.path(tcc_dir, "HK_TCC_2010.tif"))
@@ -64,7 +81,7 @@ message("Reprojecting FDist raster onto TCC Albers grid...")
 fdist_src <- rast(src_tif)
 fdist <- project(fdist_src, tcc_template, method = "near")
 fdist <- mask(fdist, county_mask)
-# Keep only mapped agents; everything else → NA
+
 codes <- as.integer(unique(freq(fdist)$value))
 codes <- codes[!is.na(codes) & codes > 0]
 keep <- codes[!is.na(agent_from_code(codes))]
@@ -72,36 +89,61 @@ drop <- setdiff(codes, keep)
 if (length(drop)) {
   message("Dropping FDist codes (Add/Mastication/etc.): ", paste(sort(drop), collapse = ", "))
 }
-id_lookup <- c(harvest_remove = 1L, mech_unknown = 2L, insects = 3L, fire = 4L)
-rcl <- cbind(keep, unname(id_lookup[agent_from_code(keep)]))
-agent_ras <- classify(fdist, rcl = rcl, others = NA)
-names(agent_ras) <- "agent_id"
+
+# class_id = agent_id * 10 + years_since_bin (severity collapsed).
+class_id_from_code <- function(code) {
+  agent <- agent_from_code(code)
+  agent_id <- unname(id_lookup[agent])
+  ys <- years_since_from_code(code)
+  as.integer(agent_id * 10L + ys)
+}
+
+rcl <- cbind(keep, vapply(keep, class_id_from_code, integer(1)))
+class_ras <- classify(fdist, rcl = rcl, others = NA)
+names(class_ras) <- "class_id"
 writeRaster(
-  agent_ras, file.path(out_dir, "landfire_fdist_agent.tif"),
+  class_ras, file.path(out_dir, "landfire_fdist_agent.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts)
 )
 
 px_acres <- prod(res(tcc_template)) / 4046.8564224
-fr <- terra::freq(agent_ras)
-fr <- fr[!is.na(fr$value), c("value", "count")]
-names(fr) <- c("agent_id", "n_pixels")
-fr$agent <- names(id_lookup)[match(fr$agent_id, id_lookup)]
-fr$label <- unname(agent_label[fr$agent])
-fr$acres <- fr$n_pixels * px_acres
-fr <- fr[order(-fr$acres), ]
-write.csv(fr, file.path(out_dir, "landfire_fdist_by_agent.csv"), row.names = FALSE)
-message("Acres by agent:")
-print(fr[, c("agent", "label", "acres", "n_pixels")], row.names = FALSE)
+fr_class <- terra::freq(class_ras)
+fr_class <- fr_class[!is.na(fr_class$value), c("value", "count")]
+names(fr_class) <- c("class_id", "n_pixels")
+fr_class$agent_id <- as.integer(fr_class$class_id %/% 10L)
+fr_class$years_since_bin <- as.integer(fr_class$class_id %% 10L)
+fr_class$agent <- names(id_lookup)[match(fr_class$agent_id, id_lookup)]
+fr_class$label <- unname(agent_label[fr_class$agent])
+fr_class$years_since <- unname(years_since_label[as.character(fr_class$years_since_bin)])
+fr_class$acres <- fr_class$n_pixels * px_acres
+fr_class <- fr_class[order(fr_class$agent_id, fr_class$years_since_bin), ]
 
-message("Polygonizing by agent...")
-poly <- as.polygons(agent_ras, dissolve = TRUE, na.rm = TRUE)
+# Chart / summary still by agent (all time bins summed).
+fr_agent <- fr_class |>
+  group_by(agent_id, agent, label) |>
+  summarise(
+    n_pixels = sum(n_pixels),
+    acres = sum(acres),
+    .groups = "drop"
+  ) |>
+  arrange(desc(acres))
+write.csv(fr_agent, file.path(out_dir, "landfire_fdist_by_agent.csv"), row.names = FALSE)
+write.csv(fr_class, file.path(out_dir, "landfire_fdist_by_agent_years.csv"), row.names = FALSE)
+message("Acres by agent:")
+print(as.data.frame(fr_agent[, c("agent", "label", "acres", "n_pixels")]), row.names = FALSE)
+message("Acres by agent + years since:")
+print(as.data.frame(fr_class[, c("agent", "years_since", "acres", "n_pixels")]), row.names = FALSE)
+
+message("Polygonizing by agent + years since...")
+poly <- as.polygons(class_ras, dissolve = TRUE, na.rm = TRUE)
 sf_poly <- st_as_sf(poly)
-sf_poly$agent_id <- as.integer(sf_poly$agent_id)
-sf_poly$agent <- names(id_lookup)[match(sf_poly$agent_id, id_lookup)]
-sf_poly$label <- unname(agent_label[sf_poly$agent])
+sf_poly$class_id <- as.integer(sf_poly$class_id)
 sf_poly <- sf_poly |>
-  left_join(fr[, c("agent", "acres")], by = "agent")
-sf_poly <- sf_poly[, c("agent", "label", "acres", "agent_id")]
+  left_join(
+    fr_class[, c("class_id", "agent", "label", "years_since", "acres", "agent_id")],
+    by = "class_id"
+  )
+sf_poly <- sf_poly[, c("agent", "label", "years_since", "acres", "agent_id", "class_id")]
 sf_poly <- st_make_valid(st_transform(sf_poly, 4326))
 st_write(sf_poly, file.path(out_dir, "landfire_fdist_by_agent.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 saveRDS(sf_poly, file.path(out_dir, "landfire_fdist_by_agent.rds"), compress = "xz")
