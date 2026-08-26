@@ -40,7 +40,103 @@ tcc_mean_by_year <- tcc_stats |>
 
 county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
 
-TILE_BASE <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
+# Prefer same-origin tiles (www/tiles or data/tiles). shinyapps' static file
+# server ignores HTTP Range, which breaks PMTiles — so we serve tiles ourselves
+# with byte-range support (see ui function below). R2 / jsDelivr are fallbacks.
+TILE_BASE_R2 <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
+# raw.githubusercontent.com supports HTTP Range + CORS (jsDelivr cached a bad size once).
+TILE_BASE_GITHUB <- "https://raw.githubusercontent.com/rswaty/kee_trees/main/www/tiles"
+tile_dir_candidates <- c(
+  file.path(proj_root, "www", "tiles"),
+  file.path(proj_root, "data", "tiles")
+)
+local_tile_dir <- NULL
+for (d in tile_dir_candidates) {
+  if (file.exists(file.path(d, "hansen_loss.pmtiles")) &&
+      file.exists(file.path(d, "tcc_decline.pmtiles"))) {
+    local_tile_dir <- d
+    break
+  }
+}
+
+serve_pmtiles_range <- function(path, request) {
+  info <- file.info(path)
+  if (is.na(info$size)) {
+    return(shiny::httpResponse(404L, content_type = "text/plain", content = "Not found"))
+  }
+  file_size <- as.integer(info$size)
+  range_header <- request$HTTP_RANGE
+  if (is.null(range_header) || !nzchar(range_header)) {
+    return(shiny::httpResponse(
+      status = 200L,
+      content_type = "application/octet-stream",
+      content = readBin(path, what = "raw", n = file_size),
+      headers = list(
+        "Accept-Ranges" = "bytes",
+        "Content-Length" = as.character(file_size),
+        "Access-Control-Allow-Origin" = "*",
+        "Access-Control-Expose-Headers" = "Accept-Ranges, Content-Range, Content-Length, ETag"
+      )
+    ))
+  }
+  m <- regmatches(range_header, regexec("^bytes=([0-9]+)-([0-9]*)$", range_header))[[1]]
+  if (length(m) < 2) {
+    return(shiny::httpResponse(416L, content_type = "text/plain", content = "Invalid Range"))
+  }
+  start <- as.integer(m[2])
+  end <- if (identical(m[3], "") || is.na(m[3])) file_size - 1L else as.integer(m[3])
+  if (is.na(start) || is.na(end) || start > end || start >= file_size) {
+    return(shiny::httpResponse(
+      416L,
+      content_type = "text/plain",
+      content = "Range Not Satisfiable",
+      headers = list("Content-Range" = paste0("bytes */", file_size))
+    ))
+  }
+  end <- min(end, file_size - 1L)
+  nbytes <- end - start + 1L
+  con <- file(path, "rb")
+  on.exit(close(con), add = TRUE)
+  seek(con, where = start, origin = "start")
+  data <- readBin(con, what = "raw", n = nbytes)
+  shiny::httpResponse(
+    status = 206L,
+    content_type = "application/octet-stream",
+    content = data,
+    headers = list(
+      "Accept-Ranges" = "bytes",
+      "Content-Range" = sprintf("bytes %d-%d/%d", start, end, file_size),
+      "Content-Length" = as.character(nbytes),
+      "Access-Control-Allow-Origin" = "*",
+      "Access-Control-Expose-Headers" = "Accept-Ranges, Content-Range, Content-Length, ETag"
+    )
+  )
+}
+
+app_tile_url <- function(session, filename) {
+  host <- session$clientData$url_hostname
+  on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
+
+  # Local runApp: serve via ui() Range handler (same origin).
+  # shinyapps.io does not forward /kee_tiles/* into R, so use GitHub raw there
+  # (www/tiles on main; supports HTTP Range + CORS).
+  if (!isTRUE(on_shinyapps) && !is.null(local_tile_dir)) {
+    proto <- session$clientData$url_protocol
+    port <- session$clientData$url_port
+    path <- session$clientData$url_pathname
+    req(nzchar(host))
+    if (is.null(path) || !nzchar(path)) path <- "/"
+    if (!grepl("/$", path)) path <- paste0(path, "/")
+    port_part <- if (!is.null(port) && nzchar(port) && !(port %in% c("80", "443"))) {
+      paste0(":", port)
+    } else {
+      ""
+    }
+    return(paste0(proto, "//", host, port_part, path, "kee_tiles/", filename))
+  }
+
+  paste0(TILE_BASE_GITHUB, "/", filename)
+}
 
 # Year may be string or number in tiles; coerce before comparing.
 # Important: do NOT put this filter on add_fill_layer — mapgl keeps that as a
@@ -134,7 +230,7 @@ summary_stat_box <- function(title_id, value_id, theme_class) {
 
 theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
 
-ui <- page_sidebar(
+app_ui <- page_sidebar(
   title = "Keweenaw & Houghton — fast tile explorer",
   theme = theme,
   fillable = TRUE,
@@ -195,6 +291,7 @@ ui <- page_sidebar(
       "Both miss some visible clearing; click a patch for details. ",
       "Summaries/charts still use the CSV acre / mean-TCC stats."
     ),
+    tags$p(class = "small text-muted mb-2", textOutput("tile_source_note", inline = TRUE)),
     summary_stat_box("box_year_title", "box_year_value", "text-bg-primary"),
     summary_stat_box("box_cumul_title", "box_cumul_value", "text-bg-secondary"),
     summary_stat_box("box_tcc_title", "box_tcc_value", "text-bg-success"),
@@ -212,16 +309,57 @@ ui <- page_sidebar(
     class = "h-100",
     card_header(
       tags$strong("Map"),
-      " — If the map is blank in RStudio/Positron Viewer, click ",
+      " — Blank in RStudio/Positron Viewer? Use ",
       tags$em("Open in Browser"),
-      " (MapLibre needs a real browser). Same URL works after deploy."
+      ". Polygons are served with the app (not R2) when possible."
     ),
     maplibreOutput("map", height = "75vh")
   )
 )
 
+# Intercept /kee_tiles/* with Range support (PMTiles needs 206 responses).
+ui <- function(request) {
+  path <- request$PATH_INFO
+  if (is.null(path)) path <- ""
+  if (grepl("(^|/)kee_tiles/", path) && !is.null(local_tile_dir)) {
+    if (identical(request$REQUEST_METHOD, "OPTIONS")) {
+      return(shiny::httpResponse(
+        status = 204L,
+        content = "",
+        headers = list(
+          "Access-Control-Allow-Origin" = "*",
+          "Access-Control-Allow-Methods" = "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers" = "Range, If-Match, *",
+          "Access-Control-Expose-Headers" = "Accept-Ranges, Content-Range, Content-Length, ETag",
+          "Access-Control-Max-Age" = "3600"
+        )
+      ))
+    }
+    fname <- sub(".*(^|/)kee_tiles/", "", path)
+    fname <- sub("\\?.*$", "", fname)
+    fpath <- file.path(local_tile_dir, fname)
+    if (file.exists(fpath)) {
+      return(serve_pmtiles_range(fpath, request))
+    }
+    return(shiny::httpResponse(404L, content_type = "text/plain", content = "Tile not found"))
+  }
+  app_ui
+}
+
 server <- function(input, output, session) {
   yr <- reactive(as.integer(input$year))
+
+  output$tile_source_note <- renderText({
+    host <- session$clientData$url_hostname
+    on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
+    if (isTRUE(on_shinyapps)) {
+      "Polygon tiles: GitHub raw CDN. Hard-refresh if layers are empty."
+    } else if (!is.null(local_tile_dir)) {
+      "Polygon tiles: local same-origin with HTTP Range (www/tiles)."
+    } else {
+      "Polygon tiles: GitHub raw CDN fallback."
+    }
+  })
 
   output$box_year_title <- renderText(paste("Disturbance in", yr()))
   output$box_year_value <- renderText({
@@ -283,6 +421,11 @@ server <- function(input, output, session) {
   })
 
   output$map <- renderMaplibre({
+    # Need host/path so same-origin tile URLs resolve on shinyapps and localhost.
+    req(session$clientData$url_hostname)
+    hansen_url <- app_tile_url(session, "hansen_loss.pmtiles")
+    tcc_url <- app_tile_url(session, "tcc_decline.pmtiles")
+
     maplibre(
       style = basemap_style_url("dark"),
       center = c(-88.41, 47.30),
@@ -291,11 +434,11 @@ server <- function(input, output, session) {
     ) |>
       add_pmtiles_source(
         id = "tcc-tiles",
-        url = paste0(TILE_BASE, "/tcc_decline.pmtiles")
+        url = tcc_url
       ) |>
       add_pmtiles_source(
         id = "hansen-tiles",
-        url = paste0(TILE_BASE, "/hansen_loss.pmtiles")
+        url = hansen_url
       ) |>
       add_fill_layer(
         id = "tcc_decline",
