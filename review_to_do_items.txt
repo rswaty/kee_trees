@@ -1,0 +1,3 @@
+## From Jim
+	- I think you should call it the USFS FIA Total Canopy Cover product (not NLCD because they do not produce it they just use it
+	- Try to make scroll bar easier to use
