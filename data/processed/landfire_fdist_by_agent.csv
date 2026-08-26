@@ -1,0 +1,5 @@
+"agent_id","n_pixels","agent","label","acres"
+2,364996,"mech_unknown","Other mechanical change",81173.2282325905
+1,84095,"harvest_remove","Timber harvest or clearing",18702.2943490331
+3,22094,"insects","Insects or disease",4913.591668322
+4,2379,"fire","Fire",529.077332259348

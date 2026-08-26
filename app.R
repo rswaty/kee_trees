@@ -10,4 +10,6 @@ if (!file.exists("tiles_app/app.R")) {
 message("Starting Keweenaw canopy tile explorer...")
 Sys.setenv(KEE_DEPLOY_FROM_ROOT = "true")
 source("tiles_app/app.R", local = FALSE)
-shinyApp(ui, server)
+# uiPattern must match /kee_tiles/* so the Range httpResponse handler runs
+# (default uiPattern is "/" only — PMTiles would 404 and the map shows basemap alone).
+shinyApp(ui, server, uiPattern = ".*")

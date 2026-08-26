@@ -24,6 +24,12 @@ processed <- file.path(proj_root, "data/processed")
 loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv")) |>
   filter(year >= 2010, year <= 2024)
 tcc_stats <- read.csv(file.path(processed, "tcc_by_county_year.csv"))
+fdist_acres_path <- file.path(processed, "landfire_fdist_by_agent.csv")
+fdist_acres <- if (file.exists(fdist_acres_path)) {
+  read.csv(fdist_acres_path)
+} else {
+  data.frame(agent = character(), label = character(), acres = numeric())
+}
 
 loss_annual <- loss_stats |>
   group_by(year) |>
@@ -168,6 +174,29 @@ tcc_fill_ramp <- list(
   80, tcc_drop_colors[[4]]
 )
 
+# LANDFIRE disturbance types — bright, distinct hues for dark/light basemaps.
+fdist_agent_colors <- c(
+  harvest_remove = "#39FF14",
+  mech_unknown = "#00E5FF",
+  insects = "#FF2EEA",
+  fire = "#FF3B00"
+)
+fdist_plain_labels <- c(
+  harvest_remove = "Timber harvest or clearing",
+  mech_unknown = "Other mechanical change",
+  insects = "Insects or disease",
+  fire = "Fire"
+)
+fdist_fill_ramp <- match_expr(
+  column = "agent",
+  values = names(fdist_agent_colors),
+  stops = unname(fdist_agent_colors),
+  default = "#FFD60A"
+)
+has_fdist_tiles <- any(file.exists(file.path(tile_dir_candidates, "landfire_fdist.pmtiles"))) ||
+  nrow(fdist_acres) > 0
+
+
 # Free styles only (no Mapbox/MapTiler key). Satellite = Esri World Imagery raster.
 basemap_choices <- c(
   "Dark (default)" = "dark",
@@ -217,18 +246,23 @@ hansen_fill_ramp <- {
   c(list("match", list("to-number", list("get", "year"))), pairs, list("#ea580c"))
 }
 
-summary_stat_box <- function(title_id, value_id, theme_class) {
+summary_stat_box <- function(title_id, value_id, theme_class, source = NULL) {
   tags$div(
-    class = paste("card mb-2", theme_class),
+    class = paste("card mb-3", theme_class),
     tags$div(
       class = "card-body py-2 px-3",
       tags$div(class = "small opacity-75", textOutput(title_id, inline = TRUE)),
-      tags$div(class = "fs-4 fw-semibold", textOutput(value_id, inline = TRUE))
+      tags$div(class = "fs-4 fw-semibold", textOutput(value_id, inline = TRUE)),
+      if (!is.null(source)) {
+        tags$div(class = "small opacity-75 mt-1", source)
+      }
     )
   )
 }
 
 theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
+
+fdist_total_acres <- if (nrow(fdist_acres) > 0) sum(fdist_acres$acres, na.rm = TRUE) else 0
 
 app_ui <- page_sidebar(
   title = "Keweenaw & Houghton — fast tile explorer",
@@ -236,6 +270,14 @@ app_ui <- page_sidebar(
   fillable = TRUE,
   sidebar = sidebar(
     width = 380,
+    tags$style(HTML("
+      .kee-sidebar-gap > * { margin-bottom: 1rem !important; }
+      .kee-sidebar-gap .form-group { margin-bottom: 1rem !important; }
+      .kee-sidebar-gap .shiny-input-container { margin-bottom: 1rem !important; }
+      .kee-sidebar-gap .card { margin-bottom: 1.15rem !important; }
+    ")),
+    tags$div(
+      class = "kee-sidebar-gap",
     sliderInput(
       "year", "Hansen loss year",
       min = 2010, max = 2024, value = 2024, step = 1, sep = "",
@@ -253,9 +295,16 @@ app_ui <- page_sidebar(
     checkboxInput("show_hansen", "Show Hansen loss (orange ramp by year)", TRUE),
     checkboxInput(
       "show_tcc",
-      "Show NLCD TCC drop ≥15 pp (blue ramp by magnitude)",
+      "Show USFS FIA TCC drop ≥15 pp (blue ramp by magnitude)",
       TRUE
     ),
+    if (isTRUE(has_fdist_tiles)) {
+      checkboxInput(
+        "show_fdist",
+        "Show LANDFIRE disturbances (cause of change)",
+        TRUE
+      )
+    },
     selectInput(
       "basemap", "Basemap",
       choices = basemap_choices,
@@ -263,7 +312,7 @@ app_ui <- page_sidebar(
       width = "100%"
     ),
     tags$div(
-      class = "small mb-2",
+      class = "small",
       tags$div("Hansen year (dark = older, bright = newer)"),
       tags$div(
         class = "d-flex justify-content-between",
@@ -273,7 +322,7 @@ app_ui <- page_sidebar(
         "height:10px;border-radius:2px;background:linear-gradient(to right,",
         paste(hansen_year_colors, collapse = ","), ");"
       )),
-      tags$div(class = "mt-2", "NLCD TCC drop 2010→2025 (pale = 15 pp, deep = larger)"),
+      tags$div(class = "mt-3", "USFS FIA TCC drop 2010→2025 (pale = 15 pp, deep = larger)"),
       tags$div(
         class = "d-flex justify-content-between",
         tags$span("15 pp"), tags$span("80+ pp")
@@ -281,20 +330,71 @@ app_ui <- page_sidebar(
       tags$div(style = paste0(
         "height:10px;border-radius:2px;background:linear-gradient(to right,",
         paste(tcc_drop_colors, collapse = ","), ");"
-      ))
+      )),
+      if (isTRUE(has_fdist_tiles)) {
+        tagList(
+          tags$div(
+            class = "mt-3 mb-1",
+            "LANDFIRE disturbance type (2014–2024)"
+          ),
+          tags$div(
+            class = "small text-muted mb-2",
+            "LANDFIRE records disturbances over 2014–2024; individual patches are not dated to a single year."
+          ),
+          tags$div(
+            class = "small",
+            style = "display:flex;flex-direction:column;gap:0.65rem;",
+            lapply(names(fdist_agent_colors), function(a) {
+              tags$div(
+                style = "display:flex;align-items:center;gap:0.5rem;",
+                tags$span(style = paste0(
+                  "flex:0 0 auto;width:16px;height:16px;border-radius:2px;background:",
+                  fdist_agent_colors[[a]],
+                  ";box-shadow:0 0 0 1px rgba(0,0,0,0.25);"
+                )),
+                tags$span(fdist_plain_labels[[a]])
+              )
+            })
+          )
+        )
+      }
     ),
     tags$p(
       class = "small text-muted",
       "Orange = Hansen stand-replacing loss by year (slider). ",
-      "Blue = USFS/NLCD tree canopy % drop from 2010 to 2025 where the drop is ≥15 percentage points ",
-      "(not the same as Hansen; no year; county mask only). Deeper blue = larger canopy drop. ",
-      "Both miss some visible clearing; click a patch for details. ",
-      "Summaries/charts still use the CSV acre / mean-TCC stats."
+      "Blue = USFS FIA tree canopy % drop ≥15 pp (2010–2025). ",
+      if (isTRUE(has_fdist_tiles)) {
+        paste0(
+          "Bright green / cyan / magenta / red-orange = LANDFIRE disturbance cause (2014–2024). ",
+          "“Other mechanical change” is not confirmed harvest. "
+        )
+      },
+      "Click a patch for details."
     ),
-    tags$p(class = "small text-muted mb-2", textOutput("tile_source_note", inline = TRUE)),
-    summary_stat_box("box_year_title", "box_year_value", "text-bg-primary"),
-    summary_stat_box("box_cumul_title", "box_cumul_value", "text-bg-secondary"),
-    summary_stat_box("box_tcc_title", "box_tcc_value", "text-bg-success"),
+    tags$p(
+      class = "small text-muted",
+      "Summary boxes below are county totals from processed tables ",
+      "(not drawn from the map tiles): Hansen loss acres, USFS FIA TCC means",
+      if (isTRUE(has_fdist_tiles)) ", and LANDFIRE disturbance acres." else "."
+    ),
+    summary_stat_box(
+      "box_year_title", "box_year_value", "text-bg-primary",
+      source = "Source: Hansen Global Forest Change loss acres"
+    ),
+    summary_stat_box(
+      "box_cumul_title", "box_cumul_value", "text-bg-secondary",
+      source = "Source: Hansen Global Forest Change (summed by year)"
+    ),
+    summary_stat_box(
+      "box_tcc_title", "box_tcc_value", "text-bg-success",
+      source = "Source: USFS FIA Total Canopy Cover (county mean)"
+    ),
+    if (isTRUE(has_fdist_tiles) && nrow(fdist_acres) > 0) {
+      summary_stat_box(
+        "box_fdist_title", "box_fdist_value", "text-bg-warning",
+        source = "Source: LANDFIRE FDist (2014–2024), all mapped types"
+      )
+    },
     card(
       card_header("Disturbance acres by year"),
       plotlyOutput("loss_chart", height = "220px")
@@ -302,7 +402,59 @@ app_ui <- page_sidebar(
     card(
       card_header("Mean tree canopy %"),
       plotlyOutput("tcc_chart", height = "220px")
+    ),
+    if (isTRUE(has_fdist_tiles) && nrow(fdist_acres) > 0) {
+      card(
+        card_header("LANDFIRE disturbance acres by type (2014–2024)"),
+        plotlyOutput("fdist_chart", height = "240px")
+      )
+    },
+    tags$hr(),
+    tags$div(
+      class = "small text-muted",
+      tags$p(
+        class = "fw-semibold mb-2",
+        "What is mapped where (forest vs all land)"
+      ),
+      tags$p(
+        class = "mb-2",
+        "All layers are clipped to Houghton and Keweenaw Counties. ",
+        "They are ", tags$em("not"), " forced onto the same forest-only mask, ",
+        "so footprints can differ."
+      ),
+      tags$ul(
+        class = "mb-2 ps-3",
+        tags$li(
+          tags$strong("Hansen loss (map + acre boxes/chart): "),
+          "limited to pixels with USFS FIA tree canopy ≥ 30% in 2010, ",
+          "so acre totals emphasize stand-replacing loss in forested areas."
+        ),
+        tags$li(
+          tags$strong("Mean tree canopy % (box/chart): "),
+          "averaged only over that same 2010 ≥ 30% canopy mask."
+        ),
+        tags$li(
+          tags$strong("USFS FIA TCC drop ≥ 15 pp (map): "),
+          "county extent only—no 30% forest gate—so canopy loss on ",
+          "partially open or already-thin cover can still appear."
+        ),
+        if (isTRUE(has_fdist_tiles)) {
+          tags$li(
+            tags$strong("LANDFIRE disturbances (map + acres/chart): "),
+            "county extent and disturbance type only—no forest mask. ",
+            "Includes change on non-forest and low-canopy land ",
+            "(especially “other mechanical change”). ",
+            "Window is 2014–2024; patches are not dated to a single year."
+          )
+        }
+      ),
+      tags$p(
+        class = "mb-0",
+        "Use layers together for context, not as identical forest-only footprints. ",
+        "Summary boxes come from processed county tables, not from counting map tiles."
+      )
     )
+    ) # kee-sidebar-gap
   ),
   card(
     full_screen = TRUE,
@@ -311,7 +463,7 @@ app_ui <- page_sidebar(
       tags$strong("Map"),
       " — Blank in RStudio/Positron Viewer? Use ",
       tags$em("Open in Browser"),
-      ". Polygons are served with the app (not R2) when possible."
+      "."
     ),
     maplibreOutput("map", height = "75vh")
   )
@@ -349,29 +501,21 @@ ui <- function(request) {
 server <- function(input, output, session) {
   yr <- reactive(as.integer(input$year))
 
-  output$tile_source_note <- renderText({
-    host <- session$clientData$url_hostname
-    on_shinyapps <- !is.null(host) && grepl("shinyapps\\.io$", host, ignore.case = TRUE)
-    if (isTRUE(on_shinyapps)) {
-      "Polygon tiles: GitHub raw CDN. Hard-refresh if layers are empty."
-    } else if (!is.null(local_tile_dir)) {
-      "Polygon tiles: local same-origin with HTTP Range (www/tiles)."
-    } else {
-      "Polygon tiles: GitHub raw CDN fallback."
-    }
-  })
-
-  output$box_year_title <- renderText(paste("Disturbance in", yr()))
+  output$box_year_title <- renderText(paste("Hansen loss in", yr()))
   output$box_year_value <- renderText({
     paste(format(round(acres_by_year[[as.character(yr())]]), big.mark = ","), "acres")
   })
-  output$box_cumul_title <- renderText(paste0("Cumulative 2010\u2013", yr()))
+  output$box_cumul_title <- renderText(paste0("Hansen loss cumulative 2010\u2013", yr()))
   output$box_cumul_value <- renderText({
     paste(format(round(cum_acres_by_year[[as.character(yr())]]), big.mark = ","), "acres")
   })
   output$box_tcc_title <- renderText(paste("Mean tree canopy cover in", yr()))
   output$box_tcc_value <- renderText({
     paste0(sprintf("%.1f", tcc_mean_by_year[[as.character(yr())]]), "%")
+  })
+  output$box_fdist_title <- renderText("LANDFIRE disturbances (2014–2024)")
+  output$box_fdist_value <- renderText({
+    paste(format(round(fdist_total_acres), big.mark = ","), "acres")
   })
 
   output$loss_chart <- renderPlotly({
@@ -420,26 +564,65 @@ server <- function(input, output, session) {
       config(displayModeBar = FALSE)
   })
 
+  output$fdist_chart <- renderPlotly({
+    req(nrow(fdist_acres) > 0)
+    d <- fdist_acres
+    d$label <- unname(fdist_plain_labels[d$agent])
+    d$label[is.na(d$label)] <- d$agent[is.na(d$label)]
+    # Vertical bars (coord flip from prior horizontal layout), largest first.
+    d <- d[order(-d$acres), , drop = FALSE]
+    d$label <- factor(d$label, levels = d$label)
+    cols <- unname(fdist_agent_colors[d$agent])
+    plot_ly(
+      d, x = ~label, y = ~acres, type = "bar",
+      marker = list(color = cols),
+      hovertemplate = "%{x}<br>%{y:,.0f} acres<extra></extra>"
+    ) |>
+      layout(
+        xaxis = list(title = "", tickangle = -25),
+        yaxis = list(title = "Acres", tickformat = ",.0f"),
+        margin = list(t = 8, b = 70, l = 50, r = 8),
+        showlegend = FALSE
+      ) |>
+      config(displayModeBar = FALSE)
+  })
+
   output$map <- renderMaplibre({
     # Need host/path so same-origin tile URLs resolve on shinyapps and localhost.
     req(session$clientData$url_hostname)
     hansen_url <- app_tile_url(session, "hansen_loss.pmtiles")
     tcc_url <- app_tile_url(session, "tcc_decline.pmtiles")
+    fdist_url <- app_tile_url(session, "landfire_fdist.pmtiles")
 
-    maplibre(
+    m <- maplibre(
       style = basemap_style_url("dark"),
       center = c(-88.41, 47.30),
       zoom = 9,
       scrollZoom = TRUE
     ) |>
-      add_pmtiles_source(
-        id = "tcc-tiles",
-        url = tcc_url
-      ) |>
-      add_pmtiles_source(
-        id = "hansen-tiles",
-        url = hansen_url
-      ) |>
+      add_pmtiles_source(id = "tcc-tiles", url = tcc_url) |>
+      add_pmtiles_source(id = "hansen-tiles", url = hansen_url)
+
+    if (isTRUE(has_fdist_tiles)) {
+      m <- m |>
+        add_pmtiles_source(id = "fdist-tiles", url = fdist_url) |>
+        add_fill_layer(
+          id = "landfire_fdist",
+          source = "fdist-tiles",
+          source_layer = "landfire_fdist",
+          fill_color = fdist_fill_ramp,
+          fill_opacity = 0.8,
+          popup = paste0(
+            "<strong>LANDFIRE disturbance (2014–2024)</strong><br>",
+            "{label}<br>",
+            "{acres} acres of this type in the map area<br>",
+            "<em>Patches are not dated to a single year</em>"
+          ),
+          visibility = "visible"
+        )
+    }
+
+    m <- m |>
       add_fill_layer(
         id = "tcc_decline",
         source = "tcc-tiles",
@@ -447,7 +630,7 @@ server <- function(input, output, session) {
         fill_color = tcc_fill_ramp,
         fill_opacity = 0.55,
         popup = paste0(
-          "<strong>NLCD TCC canopy drop</strong><br>",
+          "<strong>USFS FIA TCC canopy drop</strong><br>",
           "{drop_pp} percentage points (2010→2025)<br>",
           "Class acres (this drop size): {acres}"
         ),
@@ -459,10 +642,10 @@ server <- function(input, output, session) {
         source_layer = "hansen",
         fill_color = hansen_fill_ramp,
         fill_opacity = 0.8,
-        # No initial filter: mapgl ANDs layer "base" filter with set_filter().
         popup = "<strong>Hansen stand-replacing loss</strong><br>Year: {year}",
         visibility = "visible"
       )
+    m
   })
 
   # Keep Hansen filter in sync with the year slider / mode.
@@ -488,15 +671,34 @@ server <- function(input, output, session) {
     )
   }
 
+  apply_fdist_visibility <- function() {
+    if (!isTRUE(has_fdist_tiles)) return(invisible())
+    vis <- if (isTRUE(input$show_fdist)) "visible" else "none"
+    set_layout_property(
+      maplibre_proxy("map"),
+      layer_id = "landfire_fdist",
+      name = "visibility",
+      value = vis
+    )
+  }
+
   observeEvent(
     list(input$year, input$hansen_mode, input$show_hansen),
     apply_hansen_view(),
     ignoreInit = FALSE
   )
   # Re-apply once after paint (isolate: onFlushed is not a reactive consumer).
-  session$onFlushed(function() isolate(apply_hansen_view()), once = TRUE)
+  session$onFlushed(function() {
+    isolate({
+      apply_hansen_view()
+      apply_fdist_visibility()
+    })
+  }, once = TRUE)
 
   observeEvent(input$show_tcc, apply_tcc_visibility(), ignoreInit = FALSE)
+  if (isTRUE(has_fdist_tiles)) {
+    observeEvent(input$show_fdist, apply_fdist_visibility(), ignoreInit = FALSE)
+  }
 
   # Switch basemap; preserve overlay layers, then re-apply filter/visibility.
   observeEvent(input$basemap, {
@@ -507,9 +709,12 @@ server <- function(input, output, session) {
     )
     apply_hansen_view()
     apply_tcc_visibility()
+    apply_fdist_visibility()
   }, ignoreInit = TRUE)
 }
 
 if (!identical(Sys.getenv("KEE_DEPLOY_FROM_ROOT"), "true")) {
-  shinyApp(ui, server)
+  # uiPattern must match /kee_tiles/* so the Range httpResponse handler runs
+  # (default uiPattern is "/" only — PMTiles would 404 and the map shows basemap alone).
+  shinyApp(ui, server, uiPattern = ".*")
 }
