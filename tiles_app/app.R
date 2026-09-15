@@ -710,12 +710,12 @@ cfp_explorer_ui <- if (isTRUE(has_cfp)) {
       class = "cfp-sankey-card",
       fill = FALSE,
       full_screen = TRUE,
-      card_header("Ownership type — 2020 → 2026 (GIS acres on TCC 30 m grid)"),
+      card_header("Ownership type — 2020 → 2026 (GIS acres)"),
       card_body(
         fillable = FALSE,
         tags$p(
           class = "small text-muted mb-2",
-          "Commercial Forest Program parcels meeting the minimum size above."
+          "Commercial Forest Program transitions with parcels meeting the minimum size above."
         ),
         div(
           class = "cfp-sankey-host",
@@ -727,18 +727,18 @@ cfp_explorer_ui <- if (isTRUE(has_cfp)) {
       class = "cfp-sankey-card",
       fill = FALSE,
       full_screen = TRUE,
-      card_header("Legal / search name — 2020 → 2026"),
+      card_header("Ownership change by name — 2020 → 2026 "),
       card_body(
         fillable = FALSE,
         tags$p(
           class = "small text-muted mb-2",
           "2020 search names on the left, 2026 legal names on the right, matched by location. ",
           "Spelling and punctuation often differ between years, so both formatting changes and ",
-          "real ownership transfers appear as flows (for example Threshold → Verdant)."
+          "real ownership transfers appear as flows (for example 'Verdant Timber Cub' is likely a misspelling.  Retained here for now)."
         ),
         sliderInput(
           "cfp_name_top_n",
-          "Largest N name-to-name transitions (by GIS acres)",
+          "Number of name-to-name transitions (descending order by acres)",
           min = 10, max = 80, value = 25, step = 5, width = "420px"
         ),
         tags$p(

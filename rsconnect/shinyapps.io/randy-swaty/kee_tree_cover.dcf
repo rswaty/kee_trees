@@ -5,6 +5,8 @@ account: randy-swaty
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 17725641
-bundleId: 12466815
+bundleId: 12558447
 url: https://randy-swaty.shinyapps.io/kee_tree_cover/
 version: 1
+asMultiple: FALSE
+asStatic: FALSE
