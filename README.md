@@ -57,6 +57,7 @@ This writes aligned rasters and county summaries to `data/processed/`.
 | `data/processed/cfp_owner_sankey.csv` | CFP owner-type 2020→2026 GIS-acre flows (TCC 30 m) |
 | `data/processed/cfp_name_sankey.csv` | CFP search/legal-name 2020→2026 GIS-acre flows |
 | `data/processed/cfp_owner_*.tif` / `cfp_name_*.tif` | Class rasters on the TCC grid for stacking |
+| `www/tiles/cfp_owner_{2020,2026,change}.pmtiles` | CFP ownership / change vector tiles for the map |
 | `data/processed/loss_by_year.rds` | Loss polygons by year for the map (preferred load path) |
 | `data/processed/loss_by_year.gpkg` | Same map polygons in GeoPackage form |
 | `data/processed/tcc_decline_2010_2025.rds` | TCC drop ≥ 15 pp (2010–2025), dissolved by `drop_pp` magnitude |
@@ -73,7 +74,13 @@ row-set per threshold for the Shiny parcel-size slider:
 Rscript scripts/04_cfp_ownership_change.R
 ```
 
-Then open the **CFP 2020–2026** tab in the Shiny app.
+Then open the **CFP 2020–2026** tab (Sankeys) and **CFP map** tab in the Shiny app.
+
+Rebuild CFP ownership map tiles (after script 04):
+
+```r
+Rscript scripts/05_cfp_owner_tiles.R
+```
 
 Rebuild TCC decline tiles (and optionally upload):
 

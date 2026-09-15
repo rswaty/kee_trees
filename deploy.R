@@ -13,12 +13,16 @@ if (!dir.exists("data/processed")) {
 tile_files <- c(
   "www/tiles/hansen_loss.pmtiles",
   "www/tiles/tcc_decline.pmtiles",
-  "www/tiles/landfire_fdist.pmtiles"
+  "www/tiles/landfire_fdist.pmtiles",
+  "www/tiles/cfp_owner_2020.pmtiles",
+  "www/tiles/cfp_owner_2026.pmtiles",
+  "www/tiles/cfp_owner_change.pmtiles"
 )
 if (!all(file.exists(tile_files))) {
   stop(
-    "Missing www/tiles PMTiles. Need hansen_loss, tcc_decline, landfire_fdist.\n",
-    "Rebuild with scripts/02_rebuild_tcc_decline_tiles.R and scripts/03_landfire_fdist_tiles.R"
+    "Missing www/tiles PMTiles. Need hansen_loss, tcc_decline, landfire_fdist, ",
+    "and cfp_owner_{2020,2026,change}.\n",
+    "Rebuild with scripts/02_*, 03_*, 04_*, and 05_cfp_owner_tiles.R"
   )
 }
 
@@ -28,6 +32,11 @@ app_files <- c(
   "data/processed/loss_by_county_year.csv",
   "data/processed/tcc_by_county_year.csv",
   "data/processed/landfire_fdist_by_agent.csv",
+  "data/processed/cfp_owner_sankey.csv",
+  "data/processed/cfp_name_sankey.csv",
+  "data/processed/cfp_owner_sankey_summary.csv",
+  "data/processed/cfp_name_sankey_summary.csv",
+  "data/processed/cfp_min_parcel_acres.csv",
   tile_files
 )
 

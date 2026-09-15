@@ -183,6 +183,66 @@ for (d in tile_dir_candidates) {
   }
 }
 
+has_cfp_tiles <- any(vapply(
+  tile_dir_candidates,
+  function(d) {
+    file.exists(file.path(d, "cfp_owner_2020.pmtiles")) &&
+      file.exists(file.path(d, "cfp_owner_2026.pmtiles")) &&
+      file.exists(file.path(d, "cfp_owner_change.pmtiles"))
+  },
+  logical(1)
+))
+
+# Shared categorical colors for CFP owner-type layers (2020 + 2026).
+cfp_owner_colors <- c(
+  "Forest Industry" = "#1b9e77",
+  "Private Individual(s)" = "#d95f02",
+  "Other Business" = "#7570b3",
+  "Other" = "#e7298a",
+  "Club or Group" = "#66a61e",
+  "Private Group" = "#a6d854",
+  "Trust" = "#e6ab02",
+  "(missing owner type)" = "#7f7f7f"
+)
+cfp_owner_fill_ramp <- {
+  pairs <- list()
+  for (nm in names(cfp_owner_colors)) {
+    pairs <- c(pairs, list(nm, unname(cfp_owner_colors[[nm]])))
+  }
+  c(list("match", list("get", "owner_type")), pairs, list("#999999"))
+}
+
+cfp_change_colors <- c(
+  stable = "#94a3b8",
+  type_changed = "#f59e0b",
+  entered = "#22c55e",
+  exited = "#ef4444"
+)
+cfp_change_plain_labels <- c(
+  stable = "Stable (same owner type)",
+  type_changed = "Owner type changed",
+  entered = "Entered CFP",
+  exited = "Left CFP (non-CFP in 2026)"
+)
+cfp_change_fill_ramp <- {
+  pairs <- list()
+  for (nm in names(cfp_change_colors)) {
+    pairs <- c(pairs, list(nm, unname(cfp_change_colors[[nm]])))
+  }
+  c(list("match", list("get", "change_class")), pairs, list("#cccccc"))
+}
+
+cfp_legend_row <- function(color, label) {
+  tags$div(
+    style = "display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;",
+    tags$span(style = paste0(
+      "flex:0 0 auto;width:14px;height:14px;border-radius:2px;background:",
+      color, ";box-shadow:0 0 0 1px rgba(0,0,0,0.2);"
+    )),
+    tags$span(label)
+  )
+}
+
 serve_pmtiles_range <- function(path, request) {
   info <- file.info(path)
   if (is.na(info$size)) {
@@ -766,6 +826,62 @@ cfp_explorer_ui <- if (isTRUE(has_cfp)) {
   )
 }
 
+cfp_map_ui <- if (isTRUE(has_cfp_tiles)) {
+  page_sidebar(
+    title = NULL,
+    theme = NULL,
+    fillable = TRUE,
+    sidebar = sidebar(
+      width = 340,
+      tags$p(
+        class = "small text-muted",
+        "Commercial Forest Program ownership on the TCC 30 m grid ",
+        "(parcels ≥ 20 attribute acres). Click a patch for details."
+      ),
+      checkboxInput("show_cfp_change", "Show ownership change (2020→2026)", TRUE),
+      checkboxInput("show_cfp_2020", "Show 2020 owner type", FALSE),
+      checkboxInput("show_cfp_2026", "Show 2026 owner type", FALSE),
+      selectInput(
+        "cfp_basemap", "Basemap",
+        choices = basemap_choices,
+        selected = "dark",
+        width = "100%"
+      ),
+      tags$hr(),
+      tags$div(
+        class = "small",
+        tags$div(class = "fw-semibold mb-2", "Change classes"),
+        cfp_legend_row(cfp_change_colors[["stable"]], cfp_change_plain_labels[["stable"]]),
+        cfp_legend_row(cfp_change_colors[["type_changed"]], cfp_change_plain_labels[["type_changed"]]),
+        cfp_legend_row(cfp_change_colors[["entered"]], cfp_change_plain_labels[["entered"]]),
+        cfp_legend_row(cfp_change_colors[["exited"]], cfp_change_plain_labels[["exited"]]),
+        tags$div(class = "fw-semibold mt-3 mb-2", "Owner types (2020 / 2026)"),
+        lapply(names(cfp_owner_colors), function(nm) {
+          cfp_legend_row(cfp_owner_colors[[nm]], nm)
+        })
+      )
+    ),
+    card(
+      full_screen = TRUE,
+      class = "h-100",
+      card_header(
+        "CFP ownership map — toggle layers in the sidebar; click polygons for 2020→2026 details."
+      ),
+      maplibreOutput("cfp_map", height = "75vh")
+    )
+  )
+} else {
+  page_fillable(
+    card(
+      card_header("CFP ownership map"),
+      card_body(
+        tags$p("CFP owner PMTiles not found. From the project root run:"),
+        tags$pre("Rscript scripts/04_cfp_ownership_change.R\nRscript scripts/05_cfp_owner_tiles.R")
+      )
+    )
+  )
+}
+
 app_ui <- page_navbar(
   title = "Keweenaw & Houghton Counties — Tree canopy & CFP change",
   theme = theme,
@@ -776,7 +892,8 @@ app_ui <- page_navbar(
     }
   ")),
   nav_panel("Canopy explorer", map_explorer_ui),
-  nav_panel("CFP 2020–2026", cfp_explorer_ui)
+  nav_panel("CFP 2020–2026", cfp_explorer_ui),
+  nav_panel("CFP map", cfp_map_ui)
 )
 
 # Intercept /kee_tiles/* with Range support (PMTiles needs 206 responses).
@@ -1087,6 +1204,118 @@ server <- function(input, output, session) {
     )
     apply_all_layer_visibility()
   }, ignoreInit = TRUE)
+
+  # --- CFP ownership map ---
+  if (isTRUE(has_cfp_tiles)) {
+    output$cfp_map <- renderMaplibre({
+      req(session$clientData$url_hostname)
+      url_2020 <- app_tile_url(session, "cfp_owner_2020.pmtiles")
+      url_2026 <- app_tile_url(session, "cfp_owner_2026.pmtiles")
+      url_chg <- app_tile_url(session, "cfp_owner_change.pmtiles")
+
+      maplibre(
+        style = basemap_style_url("dark"),
+        center = c(-88.41, 47.30),
+        zoom = 9,
+        scrollZoom = TRUE
+      ) |>
+        add_pmtiles_source(id = "cfp-2020-tiles", url = url_2020) |>
+        add_pmtiles_source(id = "cfp-2026-tiles", url = url_2026) |>
+        add_pmtiles_source(id = "cfp-change-tiles", url = url_chg) |>
+        add_fill_layer(
+          id = "cfp_owner_2020",
+          source = "cfp-2020-tiles",
+          source_layer = "cfp_owner_2020",
+          fill_color = cfp_owner_fill_ramp,
+          fill_opacity = 0.75,
+          popup = concat(
+            "<strong>2020 owner type</strong><br>",
+            get_column("owner_type"), "<br>",
+            "Class acres: ",
+            number_format(
+              "acres",
+              maximum_fraction_digits = 0,
+              minimum_fraction_digits = 0,
+              use_grouping = TRUE
+            )
+          ),
+          visibility = "none"
+        ) |>
+        add_fill_layer(
+          id = "cfp_owner_2026",
+          source = "cfp-2026-tiles",
+          source_layer = "cfp_owner_2026",
+          fill_color = cfp_owner_fill_ramp,
+          fill_opacity = 0.75,
+          popup = concat(
+            "<strong>2026 owner type</strong><br>",
+            get_column("owner_type"), "<br>",
+            "Class acres: ",
+            number_format(
+              "acres",
+              maximum_fraction_digits = 0,
+              minimum_fraction_digits = 0,
+              use_grouping = TRUE
+            )
+          ),
+          visibility = "none"
+        ) |>
+        add_fill_layer(
+          id = "cfp_owner_change",
+          source = "cfp-change-tiles",
+          source_layer = "cfp_owner_change",
+          fill_color = cfp_change_fill_ramp,
+          fill_opacity = 0.8,
+          popup = concat(
+            "<strong>CFP ownership change</strong><br>",
+            get_column("change_label"), "<br>",
+            get_column("from_type"), " → ", get_column("to_type"), "<br>",
+            "GIS acres (this transition): ",
+            number_format(
+              "acres",
+              maximum_fraction_digits = 0,
+              minimum_fraction_digits = 0,
+              use_grouping = TRUE
+            )
+          ),
+          visibility = "visible"
+        )
+    })
+
+    apply_cfp_layer_visibility <- function() {
+      proxy <- maplibre_proxy("cfp_map")
+      set_layout_property(
+        proxy, layer_id = "cfp_owner_change", name = "visibility",
+        value = if (isTRUE(input$show_cfp_change)) "visible" else "none"
+      )
+      set_layout_property(
+        proxy, layer_id = "cfp_owner_2020", name = "visibility",
+        value = if (isTRUE(input$show_cfp_2020)) "visible" else "none"
+      )
+      set_layout_property(
+        proxy, layer_id = "cfp_owner_2026", name = "visibility",
+        value = if (isTRUE(input$show_cfp_2026)) "visible" else "none"
+      )
+    }
+
+    observeEvent(
+      list(input$show_cfp_change, input$show_cfp_2020, input$show_cfp_2026),
+      apply_cfp_layer_visibility(),
+      ignoreInit = FALSE
+    )
+    session$onFlushed(function() {
+      isolate(apply_cfp_layer_visibility())
+    }, once = TRUE)
+
+    observeEvent(input$cfp_basemap, {
+      set_style(
+        maplibre_proxy("cfp_map"),
+        style = basemap_style_url(input$cfp_basemap),
+        preserve_layers = TRUE
+      )
+      apply_cfp_layer_visibility()
+    }, ignoreInit = TRUE)
+  }
 }
 
 if (!identical(Sys.getenv("KEE_DEPLOY_FROM_ROOT"), "true")) {
