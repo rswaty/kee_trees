@@ -50,9 +50,13 @@ This writes aligned rasters and county summaries to `data/processed/`.
 |------|------|
 | `data/TCC_Houghton_Keweenaw/HK_TCC_YYYY.tif` | Annual NLCD TCC clips |
 | `data/Hansen_Houghton_Keweenaw/` | Original Hansen clips (WGS84) |
+| `data/cfp_data/cfp_hk_2020.shp` / `cfp_hk_2026.shp` | Commercial Forest Program parcels (Houghton/Keweenaw) |
 | `data/processed/hansen_lossyear.tif` | Hansen lossyear on the TCC grid |
 | `data/processed/hansen_treecover2000.tif` | Hansen 2000 canopy on the TCC grid |
 | `data/processed/tcc_change_2010_2025.tif` | TCC 2025 − 2010 |
+| `data/processed/cfp_owner_sankey.csv` | CFP owner-type 2020→2026 GIS-acre flows (TCC 30 m) |
+| `data/processed/cfp_name_sankey.csv` | CFP search/legal-name 2020→2026 GIS-acre flows |
+| `data/processed/cfp_owner_*.tif` / `cfp_name_*.tif` | Class rasters on the TCC grid for stacking |
 | `data/processed/loss_by_year.rds` | Loss polygons by year for the map (preferred load path) |
 | `data/processed/loss_by_year.gpkg` | Same map polygons in GeoPackage form |
 | `data/processed/tcc_decline_2010_2025.rds` | TCC drop ≥ 15 pp (2010–2025), dissolved by `drop_pp` magnitude |
@@ -60,6 +64,16 @@ This writes aligned rasters and county summaries to `data/processed/`.
 | `data/processed/tcc_decline_by_drop_pp.csv` | Acres by drop magnitude class |
 | `data/tiles/*.pmtiles` | Vector tiles for `tiles_app` (hosted on Cloudflare R2) |
 | `data/houghton_keweenaw_counties.*` | County polygons |
+
+Rebuild CFP Sankey tables (and class rasters on the TCC grid). Excludes parcels
+below each minimum attribute-acre threshold (default **20 ac**); writes one CSV
+row-set per threshold for the Shiny parcel-size slider:
+
+```r
+Rscript scripts/04_cfp_ownership_change.R
+```
+
+Then open the **CFP 2020–2026** tab in the Shiny app.
 
 Rebuild TCC decline tiles (and optionally upload):
 

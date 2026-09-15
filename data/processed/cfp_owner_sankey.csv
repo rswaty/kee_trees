@@ -1,0 +1,175 @@
+"kind","from","to","n_pixels","acres","changed","min_parcel_acres"
+"owner_type","Forest Industry","Forest Industry",943426,209813.077454438,FALSE,20
+"owner_type","Forest Industry","Other Business",167196,37183.5282238058,TRUE,20
+"owner_type","Private Individual(s)","Private Individual(s)",122017,27135.9515974312,FALSE,20
+"owner_type","Other Business","Other Business",87875,19542.9468567844,FALSE,20
+"owner_type","Forest Industry","non-CFP in 2026",23521,5230.94910974028,TRUE,20
+"owner_type","Other Business","Forest Industry",22315,4962.74092869581,TRUE,20
+"owner_type","Forest Industry","Private Individual(s)",19071,4241.29205696428,TRUE,20
+"owner_type","Private Individual(s)","Trust",16841,3745.35155635968,TRUE,20
+"owner_type","Private Individual(s)","non-CFP in 2026",14972,3329.69559419376,TRUE,20
+"owner_type","Forest Industry","Trust",14690,3266.98024837739,TRUE,20
+"owner_type","Private Individual(s)","Other Business",13204,2936.50151120321,TRUE,20
+"owner_type","Private Individual(s)","Forest Industry",6882,1530.52131173133,TRUE,20
+"owner_type","Other Business","non-CFP in 2026",6109,1358.61009784462,TRUE,20
+"owner_type","Other Business","Other",5223,1161.5682666627,TRUE,20
+"owner_type","Private Individual(s)","Private Group",4695,1044.14378938951,TRUE,20
+"owner_type","Forest Industry","Other",4406,979.871679669897,TRUE,20
+"owner_type","non-CFP in 2020","Other Business",4047,900.031930917856,TRUE,20
+"owner_type","Other","Other",3600,800.621435953616,FALSE,20
+"owner_type","Other Business","Private Individual(s)",3107,690.980778196634,TRUE,20
+"owner_type","non-CFP in 2020","Private Individual(s)",2021,449.459978350627,TRUE,20
+"owner_type","Club or Group","Other",1604,356.721328686,TRUE,20
+"owner_type","non-CFP in 2020","Forest Industry",1177,261.758730588168,TRUE,20
+"owner_type","Other","non-CFP in 2026",755,167.908106706939,TRUE,20
+"owner_type","Other","Other Business",358,79.6173539087207,TRUE,20
+"owner_type","Other","Private Individual(s)",350,77.8381951621571,TRUE,20
+"owner_type","Forest Industry","Private Group",176,39.141492424399,TRUE,20
+"owner_type","non-CFP in 2020","Other",3,0.667184529961346,TRUE,20
+"owner_type","non-CFP in 2020","Trust",2,0.444789686640898,TRUE,20
+"owner_type","Other Business","Trust",1,0.222394843320449,TRUE,20
+"owner_type","Forest Industry","Forest Industry",930084,206845.885454856,FALSE,40
+"owner_type","Forest Industry","Other Business",165959,36908.4258026184,TRUE,40
+"owner_type","Private Individual(s)","Private Individual(s)",119111,26489.672182742,FALSE,40
+"owner_type","Other Business","Other Business",86916,19329.6702020401,FALSE,40
+"owner_type","Forest Industry","non-CFP in 2026",24235,5389.73902787108,TRUE,40
+"owner_type","Other Business","Forest Industry",21554,4793.49845292895,TRUE,40
+"owner_type","Forest Industry","Private Individual(s)",18362,4083.61411305008,TRUE,40
+"owner_type","Private Individual(s)","Trust",16267,3617.69691629374,TRUE,40
+"owner_type","Forest Industry","Trust",14507,3226.28199204975,TRUE,40
+"owner_type","Private Individual(s)","non-CFP in 2026",13750,3057.92909565617,TRUE,40
+"owner_type","Private Individual(s)","Other Business",12620,2806.62292270406,TRUE,40
+"owner_type","Private Individual(s)","Forest Industry",6790,1510.06098614585,TRUE,40
+"owner_type","Other Business","non-CFP in 2026",6284,1397.5291954257,TRUE,40
+"owner_type","Other Business","Other",5130,1140.8855462339,TRUE,40
+"owner_type","Private Individual(s)","Private Group",4695,1044.14378938951,TRUE,40
+"owner_type","non-CFP in 2020","Other Business",4047,900.031930917856,TRUE,40
+"owner_type","Forest Industry","Other",3622,805.514122506666,TRUE,40
+"owner_type","Other","Other",3439,764.815866179023,FALSE,40
+"owner_type","Other Business","Private Individual(s)",2768,615.588926311002,TRUE,40
+"owner_type","non-CFP in 2020","Private Individual(s)",1933,429.889232138428,TRUE,40
+"owner_type","Club or Group","Other",1604,356.721328686,TRUE,40
+"owner_type","non-CFP in 2020","Forest Industry",825,183.47574573937,TRUE,40
+"owner_type","Other","non-CFP in 2026",755,167.908106706939,TRUE,40
+"owner_type","Other","Other Business",358,79.6173539087207,TRUE,40
+"owner_type","Other","Private Individual(s)",350,77.8381951621571,TRUE,40
+"owner_type","Forest Industry","Private Group",176,39.141492424399,TRUE,40
+"owner_type","non-CFP in 2020","Other",2,0.444789686640898,TRUE,40
+"owner_type","non-CFP in 2020","Trust",2,0.444789686640898,TRUE,40
+"owner_type","Other Business","Trust",1,0.222394843320449,TRUE,40
+"owner_type","Forest Industry","Forest Industry",885594,196951.53887553,FALSE,60
+"owner_type","Forest Industry","Other Business",159063,35374.7909630805,TRUE,60
+"owner_type","Private Individual(s)","Private Individual(s)",83794,18635.3535011937,FALSE,60
+"owner_type","Other Business","Other Business",80509,17904.786440886,FALSE,60
+"owner_type","Forest Industry","non-CFP in 2026",24462,5440.22265730482,TRUE,60
+"owner_type","Other Business","Forest Industry",21193,4713.21391449027,TRUE,60
+"owner_type","Forest Industry","Private Individual(s)",16154,3592.56629899853,TRUE,60
+"owner_type","Forest Industry","Trust",13732,3053.9259884764,TRUE,60
+"owner_type","Private Individual(s)","Trust",12313,2738.34770580469,TRUE,60
+"owner_type","Private Individual(s)","Other Business",10782,2397.86120068108,TRUE,60
+"owner_type","Private Individual(s)","non-CFP in 2026",9857,2192.14597060966,TRUE,60
+"owner_type","Private Individual(s)","Forest Industry",6441,1432.44518582701,TRUE,60
+"owner_type","Other Business","non-CFP in 2026",6110,1358.83249268794,TRUE,60
+"owner_type","Other Business","Other",4918,1093.73783944997,TRUE,60
+"owner_type","Private Individual(s)","Private Group",4316,959.856143771057,TRUE,60
+"owner_type","non-CFP in 2020","Other Business",3494,777.047582561648,TRUE,60
+"owner_type","Forest Industry","Other",2990,664.960581528142,TRUE,60
+"owner_type","Other","Other",2537,564.215717503979,FALSE,60
+"owner_type","Other Business","Private Individual(s)",2128,473.256226585915,TRUE,60
+"owner_type","Club or Group","Other",1075,239.074456569482,TRUE,60
+"owner_type","non-CFP in 2020","Forest Industry",821,182.586166366088,TRUE,60
+"owner_type","non-CFP in 2020","Private Individual(s)",556,123.65153288617,TRUE,60
+"owner_type","Other","Other Business",358,79.6173539087207,TRUE,60
+"owner_type","Other","non-CFP in 2026",346,76.9486157888753,TRUE,60
+"owner_type","non-CFP in 2020","Other",1,0.222394843320449,TRUE,60
+"owner_type","Other Business","Trust",1,0.222394843320449,TRUE,60
+"owner_type","non-CFP in 2020","Trust",1,0.222394843320449,TRUE,60
+"owner_type","Forest Industry","Forest Industry",872449,194028.158660082,FALSE,80
+"owner_type","Forest Industry","Other Business",157898,35115.7009706122,TRUE,80
+"owner_type","Other Business","Other Business",77459,17226.4821687586,FALSE,80
+"owner_type","Private Individual(s)","Private Individual(s)",74762,16626.6832763234,FALSE,80
+"owner_type","Forest Industry","non-CFP in 2026",26673,5931.93765588633,TRUE,80
+"owner_type","Other Business","Forest Industry",21193,4713.21391449027,TRUE,80
+"owner_type","Forest Industry","Private Individual(s)",16153,3592.34390415521,TRUE,80
+"owner_type","Forest Industry","Trust",13732,3053.9259884764,TRUE,80
+"owner_type","Private Individual(s)","Trust",11544,2567.32607129126,TRUE,80
+"owner_type","Private Individual(s)","Other Business",10421,2317.5766622424,TRUE,80
+"owner_type","Private Individual(s)","non-CFP in 2026",8413,1871.00781685494,TRUE,80
+"owner_type","Private Individual(s)","Forest Industry",6116,1360.16686174786,TRUE,80
+"owner_type","Other Business","non-CFP in 2026",5976,1329.031583683,TRUE,80
+"owner_type","Other Business","Other",4918,1093.73783944997,TRUE,80
+"owner_type","Private Individual(s)","Private Group",4316,959.856143771057,TRUE,80
+"owner_type","non-CFP in 2020","Other Business",3494,777.047582561648,TRUE,80
+"owner_type","Other","Other",2176,483.931179065297,FALSE,80
+"owner_type","Forest Industry","Other",2134,474.590595645838,TRUE,80
+"owner_type","Other Business","Private Individual(s)",1214,269.987339791025,TRUE,80
+"owner_type","Club or Group","Other",1075,239.074456569482,TRUE,80
+"owner_type","non-CFP in 2020","Forest Industry",478,106.304735107175,TRUE,80
+"owner_type","Other","Other Business",358,79.6173539087207,TRUE,80
+"owner_type","Other","non-CFP in 2026",346,76.9486157888753,TRUE,80
+"owner_type","non-CFP in 2020","Private Individual(s)",224,49.8164449037805,TRUE,80
+"owner_type","non-CFP in 2020","Other",1,0.222394843320449,TRUE,80
+"owner_type","Other Business","Trust",1,0.222394843320449,TRUE,80
+"owner_type","non-CFP in 2020","Trust",1,0.222394843320449,TRUE,80
+"owner_type","Forest Industry","Forest Industry",810210,180186.526006661,FALSE,100
+"owner_type","Forest Industry","Other Business",142647,31723.9572151321,TRUE,100
+"owner_type","Other Business","Other Business",68524,15239.3842436904,FALSE,100
+"owner_type","Private Individual(s)","Private Individual(s)",51684,11494.2550821741,FALSE,100
+"owner_type","Forest Industry","non-CFP in 2026",24321,5408.86498439664,TRUE,100
+"owner_type","Other Business","Forest Industry",19029,4231.95147354482,TRUE,100
+"owner_type","Forest Industry","Private Individual(s)",14758,3282.10309772318,TRUE,100
+"owner_type","Forest Industry","Trust",13732,3053.9259884764,TRUE,100
+"owner_type","Private Individual(s)","Other Business",8647,1923.04821019192,TRUE,100
+"owner_type","Private Individual(s)","Trust",7831,1741.57401804243,TRUE,100
+"owner_type","Private Individual(s)","Forest Industry",5758,1280.54950783914,TRUE,100
+"owner_type","Other Business","non-CFP in 2026",5628,1251.63817820749,TRUE,100
+"owner_type","Private Individual(s)","non-CFP in 2026",5113,1137.10483389745,TRUE,100
+"owner_type","Other Business","Other",4918,1093.73783944997,TRUE,100
+"owner_type","non-CFP in 2020","Other Business",3133,696.763044122966,TRUE,100
+"owner_type","Private Individual(s)","Private Group",2490,553.763159867917,TRUE,100
+"owner_type","Other Business","Private Individual(s)",1214,269.987339791025,TRUE,100
+"owner_type","Other","Other",734,163.237814997209,FALSE,100
+"owner_type","Forest Industry","Other",723,160.791471720684,TRUE,100
+"owner_type","non-CFP in 2020","Forest Industry",449,99.8552846508815,TRUE,100
+"owner_type","non-CFP in 2020","Private Individual(s)",43,9.5629782627793,TRUE,100
+"owner_type","Other Business","Trust",1,0.222394843320449,TRUE,100
+"owner_type","Other","non-CFP in 2026",1,0.222394843320449,TRUE,100
+"owner_type","Forest Industry","Forest Industry",772996,171910.324307334,FALSE,160
+"owner_type","Forest Industry","Other Business",130100,28933.5691159904,TRUE,160
+"owner_type","Other Business","Other Business",64828,14417.4129027781,FALSE,160
+"owner_type","Private Individual(s)","Private Individual(s)",39291,8738.11578890375,FALSE,160
+"owner_type","Forest Industry","non-CFP in 2026",28848,6415.64644010831,TRUE,160
+"owner_type","Other Business","Forest Industry",19028,4231.7290787015,TRUE,160
+"owner_type","Forest Industry","Private Individual(s)",12091,2688.97605058755,TRUE,160
+"owner_type","Forest Industry","Trust",12057,2681.41462591465,TRUE,160
+"owner_type","Private Individual(s)","Other Business",8196,1822.7481358544,TRUE,160
+"owner_type","Private Individual(s)","Trust",7291,1621.48080264939,TRUE,160
+"owner_type","Private Individual(s)","Forest Industry",5117,1137.99441327074,TRUE,160
+"owner_type","Other Business","non-CFP in 2026",4483,996.996082605572,TRUE,160
+"owner_type","Other Business","Other",4398,978.092520923334,TRUE,160
+"owner_type","non-CFP in 2020","Other Business",3046,677.414692754087,TRUE,160
+"owner_type","Private Individual(s)","non-CFP in 2026",2540,564.88290203394,TRUE,160
+"owner_type","Private Individual(s)","Private Group",736,163.68260468385,TRUE,160
+"owner_type","Other","Other",734,163.237814997209,FALSE,160
+"owner_type","Forest Industry","Other",723,160.791471720684,TRUE,160
+"owner_type","non-CFP in 2020","Forest Industry",448,99.6328898075611,TRUE,160
+"owner_type","non-CFP in 2020","Private Individual(s)",11,2.44634327652494,TRUE,160
+"owner_type","Other Business","Trust",1,0.222394843320449,TRUE,160
+"owner_type","Other","non-CFP in 2026",1,0.222394843320449,TRUE,160
+"owner_type","Forest Industry","Forest Industry",586426,130418.118389037,FALSE,320
+"owner_type","Forest Industry","Other Business",71198,15834.0680547293,TRUE,320
+"owner_type","Other Business","Other Business",41829,9302.55390125105,FALSE,320
+"owner_type","Forest Industry","non-CFP in 2026",18955,4215.49425513911,TRUE,320
+"owner_type","Other Business","Forest Industry",11710,2604.24361528246,TRUE,320
+"owner_type","Forest Industry","Trust",8552,1901.92070007648,TRUE,320
+"owner_type","Private Individual(s)","Private Individual(s)",5126,1139.99596686062,FALSE,320
+"owner_type","Private Individual(s)","Forest Industry",5117,1137.99441327074,TRUE,320
+"owner_type","Forest Industry","Private Individual(s)",5030,1118.64606190186,TRUE,320
+"owner_type","Private Individual(s)","Other Business",4974,1106.19195067591,TRUE,320
+"owner_type","Private Individual(s)","Trust",3737,831.089529488517,TRUE,320
+"owner_type","Other Business","Other",1912,425.218940428698,TRUE,320
+"owner_type","Private Individual(s)","non-CFP in 2026",843,187.478852919138,TRUE,320
+"owner_type","non-CFP in 2020","Forest Industry",434,96.5193620010748,TRUE,320
+"owner_type","non-CFP in 2020","Other Business",12,2.66873811984539,TRUE,320
+"owner_type","Other Business","non-CFP in 2026",11,2.44634327652494,TRUE,320
+"owner_type","non-CFP in 2020","Private Individual(s)",1,0.222394843320449,TRUE,320

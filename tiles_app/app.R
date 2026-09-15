@@ -31,6 +31,124 @@ fdist_acres <- if (file.exists(fdist_acres_path)) {
   data.frame(agent = character(), label = character(), acres = numeric())
 }
 
+cfp_owner_path <- file.path(processed, "cfp_owner_sankey.csv")
+cfp_name_path <- file.path(processed, "cfp_name_sankey.csv")
+cfp_owner_sum_path <- file.path(processed, "cfp_owner_sankey_summary.csv")
+cfp_name_sum_path <- file.path(processed, "cfp_name_sankey_summary.csv")
+cfp_min_acres_path <- file.path(processed, "cfp_min_parcel_acres.csv")
+has_cfp <- file.exists(cfp_owner_path) && file.exists(cfp_name_path)
+cfp_owner_flows <- if (has_cfp) read.csv(cfp_owner_path, stringsAsFactors = FALSE) else NULL
+cfp_name_flows <- if (has_cfp) read.csv(cfp_name_path, stringsAsFactors = FALSE) else NULL
+cfp_owner_summary <- if (file.exists(cfp_owner_sum_path)) {
+  read.csv(cfp_owner_sum_path, stringsAsFactors = FALSE)
+} else {
+  NULL
+}
+cfp_name_summary <- if (file.exists(cfp_name_sum_path)) {
+  read.csv(cfp_name_sum_path, stringsAsFactors = FALSE)
+} else {
+  NULL
+}
+cfp_min_parcel_choices <- if (file.exists(cfp_min_acres_path)) {
+  read.csv(cfp_min_acres_path)$min_parcel_acres
+} else if (!is.null(cfp_owner_flows) && "min_parcel_acres" %in% names(cfp_owner_flows)) {
+  sort(unique(cfp_owner_flows$min_parcel_acres))
+} else {
+  20
+}
+cfp_default_min_acres <- if (file.exists(cfp_min_acres_path)) {
+  d <- read.csv(cfp_min_acres_path)
+  if ("default" %in% names(d) && any(d$default)) {
+    d$min_parcel_acres[which(d$default)[[1]]]
+  } else {
+    min(d$min_parcel_acres)
+  }
+} else {
+  min(cfp_min_parcel_choices)
+}
+
+cfp_summary_value <- function(summary_df, metric, min_acres = NULL) {
+  if (is.null(summary_df) || !nrow(summary_df)) return(NA_real_)
+  d <- summary_df
+  if (!is.null(min_acres) && "min_parcel_acres" %in% names(d)) {
+    d <- d[d$min_parcel_acres == min_acres, , drop = FALSE]
+  }
+  v <- d$acres[d$metric == metric]
+  if (!length(v)) NA_real_ else v[[1]]
+}
+
+cfp_filter_flows <- function(flows, min_acres) {
+  if (is.null(flows) || !nrow(flows)) return(flows)
+  if (!"min_parcel_acres" %in% names(flows)) return(flows)
+  flows[flows$min_parcel_acres == min_acres, , drop = FALSE]
+}
+
+# Plotly Sankey from from/to/acres flows. Prefixes years so left/right nodes stay distinct.
+# Height is forced to ~viewport via onRender — bslib fillable cards otherwise squash htmlwidgets.
+plotly_cfp_sankey <- function(flows, title = NULL, top_n = NULL) {
+  d <- flows[order(-flows$acres), , drop = FALSE]
+  if (!is.null(top_n) && is.finite(top_n) && top_n < nrow(d)) {
+    d <- d[seq_len(as.integer(top_n)), , drop = FALSE]
+  }
+  d <- d[, c("from", "to", "acres"), drop = FALSE]
+
+  left <- paste0("2020 · ", d$from)
+  right <- paste0("2026 · ", d$to)
+  nodes <- unique(c(left, right))
+  n_nodes <- length(nodes)
+  # Extra pad when many name nodes so labels don't stack on top of each other.
+  node_pad <- if (n_nodes > 20) 18 else 14
+
+  p <- plot_ly(
+    type = "sankey",
+    orientation = "h",
+    height = 900,
+    node = list(
+      label = nodes,
+      pad = node_pad,
+      thickness = 16,
+      line = list(color = "#64748b", width = 0.4)
+    ),
+    link = list(
+      source = match(left, nodes) - 1L,
+      target = match(right, nodes) - 1L,
+      value = round(d$acres, 1),
+      hovertemplate = "%{source.label} → %{target.label}<br>%{value:,.0f} acres<extra></extra>"
+    )
+  ) |>
+    layout(
+      title = if (is.null(title)) list(text = "") else list(text = title, font = list(size = 14)),
+      font = list(size = 12, family = "Nirmala UI, Nirmala, Segoe UI, sans-serif"),
+      margin = list(t = if (is.null(title)) 16 else 40, b = 16, l = 8, r = 8),
+      autosize = TRUE
+    ) |>
+    config(displayModeBar = FALSE)
+
+  htmlwidgets::onRender(
+    p,
+    "
+    function(el, x) {
+      function sizeToViewport() {
+        // Leave room for navbar + card header/caption so one Sankey fits without page scroll.
+        var h = Math.max(Math.floor(window.innerHeight * 0.72), 520);
+        el.style.height = h + 'px';
+        el.style.minHeight = h + 'px';
+        if (el.parentElement) {
+          el.parentElement.style.height = h + 'px';
+          el.parentElement.style.minHeight = h + 'px';
+        }
+        Plotly.relayout(el, {height: h, autosize: true});
+      }
+      sizeToViewport();
+      if (!el._cfpSankeyResize) {
+        el._cfpSankeyResize = sizeToViewport;
+        window.addEventListener('resize', sizeToViewport);
+      }
+    }
+    "
+  )
+}
+
 loss_annual <- loss_stats |>
   group_by(year) |>
   summarise(acres = sum(acres), .groups = "drop")
@@ -284,13 +402,25 @@ summary_stat_box <- function(title_id, value_id, theme_class, source = NULL) {
   )
 }
 
-theme <- bs_theme(version = 5, bootswatch = "minty", primary = "#2d6a4f")
+theme <- bs_theme(
+  version = 5,
+  bootswatch = "minty",
+  primary = "#2d6a4f",
+  base_font = font_collection("Nirmala UI", "Nirmala", "Segoe UI", "Helvetica Neue", "sans-serif"),
+  heading_font = font_collection("Nirmala UI", "Nirmala", "Segoe UI", "Helvetica Neue", "sans-serif"),
+  code_font = font_collection("Consolas", "Courier New", "monospace")
+)
 
 fdist_total_acres <- if (nrow(fdist_acres) > 0) sum(fdist_acres$acres, na.rm = TRUE) else 0
 
-app_ui <- page_sidebar(
-  title = "Keweenaw & Houghton Counties — Tree canopy change explorer",
-  theme = theme,
+fmt_acres <- function(x) {
+  if (is.null(x) || length(x) == 0 || is.na(x[[1]])) return("—")
+  paste(format(round(x[[1]]), big.mark = ",", scientific = FALSE), "acres")
+}
+
+map_explorer_ui <- page_sidebar(
+  title = NULL,
+  theme = NULL,
   fillable = TRUE,
   sidebar = sidebar(
     width = 380,
@@ -508,6 +638,147 @@ app_ui <- page_sidebar(
   )
 )
 
+cfp_explorer_ui <- if (isTRUE(has_cfp)) {
+  page_fillable(
+    tags$style(HTML("
+      .cfp-sankey-card .card-body { overflow: visible; }
+      .cfp-sankey-host { width: 100%; min-height: 72vh; height: 72vh; }
+      .cfp-sankey-host .html-widget,
+      .cfp-sankey-host .plotly,
+      .cfp-sankey-host .js-plotly-plot {
+        width: 100% !important;
+        min-height: 72vh !important;
+        height: 72vh !important;
+      }
+      .cfp-summary-row .bslib-value-box { min-height: 7rem; }
+    ")),
+    card(
+      fill = FALSE,
+      card_header("Parcel size filter (applies to both Sankeys and summary boxes)"),
+      card_body(
+        fillable = FALSE,
+        sliderInput(
+          "cfp_min_parcel_acres",
+          "Minimum parcel size (attribute acres) — parcels smaller than this are excluded",
+          min = min(cfp_min_parcel_choices),
+          max = max(cfp_min_parcel_choices),
+          value = as.numeric(cfp_default_min_acres)[[1]],
+          step = if (length(cfp_min_parcel_choices) > 1) {
+            min(diff(sort(unique(cfp_min_parcel_choices))))
+          } else {
+            20
+          },
+          post = " ac",
+          width = "420px"
+        ),
+        tags$p(
+          class = "small text-muted mb-0",
+          "Default is 20 acres. Only parcels at or above this size (2020 acres / 2026 Acres fields)."
+        )
+      )
+    ),
+    layout_columns(
+      fill = FALSE,
+      class = "cfp-summary-row",
+      col_widths = c(3, 3, 3, 3),
+      value_box(
+        title = "CFP acres 2020",
+        value = textOutput("cfp_box_acres_2020", inline = TRUE),
+        theme = "primary",
+        fill = FALSE
+      ),
+      value_box(
+        title = "CFP acres 2026",
+        value = textOutput("cfp_box_acres_2026", inline = TRUE),
+        theme = "primary",
+        fill = FALSE
+      ),
+      value_box(
+        title = "Owner type changed",
+        value = textOutput("cfp_box_changed", inline = TRUE),
+        theme = "warning",
+        fill = FALSE
+      ),
+      value_box(
+        title = "Left CFP (non-CFP in 2026)",
+        value = textOutput("cfp_box_exited", inline = TRUE),
+        theme = "danger",
+        fill = FALSE
+      )
+    ),
+    card(
+      class = "cfp-sankey-card",
+      fill = FALSE,
+      full_screen = TRUE,
+      card_header("Ownership type — 2020 → 2026 (GIS acres on TCC 30 m grid)"),
+      card_body(
+        fillable = FALSE,
+        tags$p(
+          class = "small text-muted mb-2",
+          "Commercial Forest Program parcels meeting the minimum size above."
+        ),
+        div(
+          class = "cfp-sankey-host",
+          plotlyOutput("cfp_owner_sankey", height = "72vh", width = "100%")
+        )
+      )
+    ),
+    card(
+      class = "cfp-sankey-card",
+      fill = FALSE,
+      full_screen = TRUE,
+      card_header("Legal / search name — 2020 → 2026"),
+      card_body(
+        fillable = FALSE,
+        tags$p(
+          class = "small text-muted mb-2",
+          "2020 search names on the left, 2026 legal names on the right, matched by location. ",
+          "Spelling and punctuation often differ between years, so both formatting changes and ",
+          "real ownership transfers appear as flows (for example Threshold → Verdant)."
+        ),
+        sliderInput(
+          "cfp_name_top_n",
+          "Largest N name-to-name transitions (by GIS acres)",
+          min = 10, max = 80, value = 25, step = 5, width = "420px"
+        ),
+        tags$p(
+          class = "small text-muted mb-2",
+          "Shows only the N biggest transitions after the parcel-size filter. Smaller links are hidden."
+        ),
+        div(
+          class = "cfp-sankey-host",
+          plotlyOutput("cfp_name_sankey", height = "72vh", width = "100%")
+        )
+      )
+    )
+  )
+} else {
+  page_fillable(
+    card(
+      card_header("CFP ownership change"),
+      card_body(
+        tags$p(
+          "Processed CFP Sankey tables not found. From the project root run:"
+        ),
+        tags$pre("Rscript scripts/04_cfp_ownership_change.R")
+      )
+    )
+  )
+}
+
+app_ui <- page_navbar(
+  title = "Keweenaw & Houghton Counties — Tree canopy & CFP change",
+  theme = theme,
+  fillable = TRUE,
+  header = tags$style(HTML("
+    html, body, .navbar, .nav-link, .card, .value-box, .form-label, .bslib-sidebar-layout {
+      font-family: \"Nirmala UI\", \"Nirmala\", \"Segoe UI\", \"Helvetica Neue\", sans-serif !important;
+    }
+  ")),
+  nav_panel("Canopy explorer", map_explorer_ui),
+  nav_panel("CFP 2020–2026", cfp_explorer_ui)
+)
+
 # Intercept /kee_tiles/* with Range support (PMTiles needs 206 responses).
 ui <- function(request) {
   path <- request$PATH_INFO
@@ -628,6 +899,47 @@ server <- function(input, output, session) {
         showlegend = FALSE
       ) |>
       config(displayModeBar = FALSE)
+  })
+
+  cfp_min_acres_reactive <- reactive({
+    req(isTRUE(has_cfp))
+    min_ac <- as.numeric(input$cfp_min_parcel_acres)[[1]]
+    cfp_min_parcel_choices[[which.min(abs(cfp_min_parcel_choices - min_ac))]]
+  })
+
+  output$cfp_owner_sankey <- renderPlotly({
+    req(isTRUE(has_cfp), !is.null(cfp_owner_flows), nrow(cfp_owner_flows) > 0)
+    d <- cfp_filter_flows(cfp_owner_flows, cfp_min_acres_reactive())
+    req(nrow(d) > 0)
+    plotly_cfp_sankey(d)
+  })
+
+  output$cfp_name_sankey <- renderPlotly({
+    req(isTRUE(has_cfp), !is.null(cfp_name_flows), nrow(cfp_name_flows) > 0)
+    d <- cfp_filter_flows(cfp_name_flows, cfp_min_acres_reactive())
+    req(nrow(d) > 0)
+    plotly_cfp_sankey(d, top_n = input$cfp_name_top_n)
+  })
+
+  output$cfp_box_acres_2020 <- renderText({
+    fmt_acres(cfp_summary_value(
+      cfp_owner_summary, "cfp_acres_2020", cfp_min_acres_reactive()
+    ))
+  })
+  output$cfp_box_acres_2026 <- renderText({
+    fmt_acres(cfp_summary_value(
+      cfp_owner_summary, "cfp_acres_2026", cfp_min_acres_reactive()
+    ))
+  })
+  output$cfp_box_changed <- renderText({
+    fmt_acres(cfp_summary_value(
+      cfp_owner_summary, "changed_owner_acres", cfp_min_acres_reactive()
+    ))
+  })
+  output$cfp_box_exited <- renderText({
+    fmt_acres(cfp_summary_value(
+      cfp_owner_summary, "exited_acres", cfp_min_acres_reactive()
+    ))
   })
 
   output$map <- renderMaplibre({
