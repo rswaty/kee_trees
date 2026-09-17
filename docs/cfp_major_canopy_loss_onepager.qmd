@@ -1,0 +1,278 @@
+---
+title: "CFP parcels with major canopy loss"
+subtitle: "Houghton & Keweenaw Counties, Michigan"
+author: "Randy Swaty"
+date: today
+format:
+  html:
+    embed-resources: true
+    page-layout: full
+    fontsize: 0.9em
+    theme: flatly
+    toc: false
+    fig-width: 10
+    fig-height: 5
+    fig-dpi: 140
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=0.7in
+    fontsize: 10pt
+    toc: false
+    fig-width: 6.2
+    fig-height: 2.8
+    fig-pos: "H"
+    keep-tex: false
+    include-in-header:
+      - text: |
+          \usepackage{float}
+          \usepackage[section]{placeins}
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(scales)
+library(knitr)
+
+options(scipen = 999)
+
+# Whole numbers with commas; never scientific notation.
+fmt_n <- function(x) {
+  format(round(as.numeric(x)), big.mark = ",", scientific = FALSE, trim = TRUE)
+}
+
+root <- if (dir.exists("data/processed")) "." else ".."
+rank <- read.csv(
+  file.path(root, "data/processed/cfp_parcel_tcc_change_by_owner_type.csv"),
+  stringsAsFactors = FALSE
+)
+
+p20 <- st_read(file.path(root, "data/cfp_data/cfp_hk_2020.shp"), quiet = TRUE) |>
+  st_drop_geometry() |>
+  transmute(
+    parid = as.character(parid),
+    name_2020 = trimws(as.character(search_nam))
+  )
+p26 <- st_read(file.path(root, "data/cfp_data/cfp_hk_2026.shp"), quiet = TRUE) |>
+  st_drop_geometry() |>
+  transmute(
+    parid = as.character(parid),
+    name_2026 = trimws(as.character(FullLegalN))
+  ) |>
+  distinct(parid, .keep_all = TRUE)
+
+norm <- function(s) {
+  s <- tolower(as.character(s))
+  s <- gsub("[^a-z0-9 ]", " ", s)
+  s <- gsub("\\b(llc|inc|ltd|co|company|corp|corporation)\\b", "", s)
+  gsub("\\s+", " ", trimws(s))
+}
+
+loss <- rank |>
+  filter(delta_pp < -20) |>
+  mutate(parid = as.character(parid)) |>
+  left_join(p20, by = "parid") |>
+  left_join(p26, by = "parid") |>
+  mutate(
+    type_changed = owner_type_2020 != owner_type_2026 &
+      owner_type_2026 != "non-CFP in 2026",
+    name_same_loose = norm(name_2020) == norm(name_2026) & nzchar(norm(name_2020)),
+    name_from = case_when(
+      grepl("TRG THRESHOLD", name_2020, ignore.case = TRUE) ~ "TRG Threshold*",
+      grepl("KEWEENAW LAND", name_2020, ignore.case = TRUE) ~ "Keweenaw Land Assoc*",
+      grepl("MWF", name_2020, ignore.case = TRUE) ~ "MWF*",
+      TRUE ~ "Other"
+    ),
+    name_to = case_when(
+      grepl("Verdant", name_2026, ignore.case = TRUE) ~ "Verdant Timber*",
+      grepl("Sage Timber", name_2026, ignore.case = TRUE) ~ "Sage Timber*",
+      grepl("MWF", name_2026, ignore.case = TRUE) ~ "MWF*",
+      TRUE ~ "Other"
+    ),
+    size_bin = cut(
+      acres_2020,
+      breaks = c(0, 40, 80, 160, 320, Inf),
+      labels = c("20–40", "40–80", "80–160", "160–320", ">320"),
+      right = TRUE
+    )
+  )
+
+n_all <- nrow(rank)
+n_loss <- nrow(loss)
+ac_loss <- sum(loss$acres_2020)
+n_fi_stable <- sum(loss$owner_type_2020 == "Forest Industry" &
+  loss$owner_type_2026 == "Forest Industry")
+n_type_chg <- sum(loss$type_changed)
+n_name_chg <- sum(!loss$name_same_loose)
+ac_name_chg <- sum(loss$acres_2020[!loss$name_same_loose])
+pct_loss <- round(100 * n_loss / n_all)
+med_abs <- median(loss$abs_delta_pp)
+max_abs <- max(loss$abs_delta_pp)
+ac_trg_verdant <- sum(
+  loss$acres_2020[loss$name_from == "TRG Threshold*" & loss$name_to == "Verdant Timber*"]
+)
+ac_kla_sage <- sum(
+  loss$acres_2020[loss$name_from == "Keweenaw Land Assoc*" & loss$name_to == "Sage Timber*"]
+)
+
+theme_one <- theme_minimal(base_size = 10) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 11),
+    plot.subtitle = element_text(color = "grey35", size = 8.5),
+    axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    plot.margin = margin(4, 4, 4, 4)
+  )
+
+label_whole <- label_comma(accuracy = 1, big.mark = ",")
+```
+
+### Summary
+
+Using Commercial Forest Parcel (CFP) data for 2020 and 2026 from the Michigan Department of Natural Resources alongside the USFS FIA Total Canopy Cover (TCC) dataset, I looked for parcels that had a canopy cover change > 20% between 2020 and 2026.  All of the information below is for parcels that had the largest change in canopy cover.
+
+Of `{r} fmt_n(n_all)` CFP parcels ≥20 acres, **`{r} fmt_n(n_loss)` parcels (~`{r} fmt_n(ac_loss)` acres)** lost more than **20 percent** of mean tree canopy from 2020 to 2025. Almost all stayed **Forest Industry** by owner type — but most **changed legal name**, led by TRG Threshold → Verdant Timber.
+
+### Key numbers
+
+| | |
+|:---|---:|
+| Parcels with ΔTCC < −20 percent | **`{r} fmt_n(n_loss)`** (`{r} fmt_n(pct_loss)`% of ranked parcels) |
+| Acres (2020 attribute) | **`{r} fmt_n(ac_loss)`** |
+| Still Forest Industry → Forest Industry | **`{r} fmt_n(n_fi_stable)`** parcels |
+| Owner **type** changed | **`{r} fmt_n(n_type_chg)`** |
+| Owner **name** changed (loose match) | **`{r} fmt_n(n_name_chg)`** (~`{r} fmt_n(ac_name_chg)` ac) |
+| Left CFP by 2026 | **0** of these `{r} fmt_n(n_loss)` |
+| Median / max |Δ| among the `{r} fmt_n(n_loss)` | `{r} fmt_n(med_abs)` / `{r} fmt_n(max_abs)` percent |
+
+
+### General Parcel Size Distribution
+
+<br>
+
+```{r}
+#| label: fig-size
+#| fig-cap: "Size of the 72 major-loss parcels."
+size_df <- loss |>
+  group_by(size_bin) |>
+  summarise(n = n(), acres = sum(acres_2020), .groups = "drop")
+
+ggplot(size_df, aes(size_bin, acres)) +
+  geom_col(fill = "#2f5d3a", width = 0.72) +
+  geom_text(aes(label = paste0(fmt_n(n), " parcels")), vjust = -0.35, size = 2.8) +
+  scale_y_continuous(labels = label_whole, expand = expansion(mult = c(0, 0.18))) +
+  labs(
+    title = "Acreage by parcel size",
+    subtitle = "Ten parcels >320 ac hold nearly half the major-loss acreage",
+    x = "Parcel acres (2020)",
+    y = "Total acres"
+  ) +
+  theme_one
+```
+
+
+### Parcel type and owner transitions for parcels with greatest canopy cover change
+
+
+```{r}
+#| label: fig-type
+#| fig-cap: "Ownership type continuity among major-loss parcels."
+
+
+type_df <- loss |>
+  count(owner_type_2020, owner_type_2026, name = "n") |>
+  mutate(flow = reorder(paste(owner_type_2020, "→", owner_type_2026), n))
+
+ggplot(type_df, aes(n, flow)) +
+  geom_col(fill = "#4a7c59", width = 0.7) +
+  geom_text(aes(label = fmt_n(n)), hjust = -0.15, size = 2.8) +
+  scale_x_continuous(labels = label_whole, expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title = "Owner type 2020 → 2026",
+    x = "Parcels",
+    y = NULL
+  ) +
+  theme_one
+
+
+```
+
+
+<br>
+
+
+```{r}
+#| label: fig-delta-owner
+#| fig-cap: "Ownership name continuity among major-loss parcels."
+
+
+name_df <- loss |>
+  group_by(name_from, name_to) |>
+  summarise(n = n(), acres = sum(acres_2020), .groups = "drop") |>
+  mutate(flow = reorder(paste(name_from, "→", name_to), acres))
+
+ggplot(name_df, aes(acres, flow)) +
+  geom_col(fill = "#8b5a2b", width = 0.7) +
+  geom_text(
+    aes(label = paste0(fmt_n(n), " · ", fmt_n(acres))),
+    hjust = -0.05,
+    size = 2.6
+  ) +
+  scale_x_continuous(labels = label_whole, expand = expansion(mult = c(0, 0.28))) +
+  labs(
+    title = "Owner name 2020 → 2026",
+    x = "Acres",
+    y = NULL
+  ) +
+  theme_one
+```
+
+### Canopy cover change
+
+```{r}
+#| label: fig-delta-type
+#| fig-cap: "Distribution of canopy change (percent) for major-loss parcels."
+#| fig-pos: "H"
+ggplot(loss, aes(delta_pp)) +
+  geom_histogram(binwidth = 5, fill = "#1f4e3a", color = "white", linewidth = 0.3) +
+  geom_vline(xintercept = -20, linetype = 2, color = "grey40") +
+  scale_x_continuous(breaks = seq(-75, -20, by = 10), labels = label_whole) +
+  scale_y_continuous(labels = label_whole) +
+  labs(
+    title = "How large were the losses?",
+    subtitle = "Mean parcel TCC (percent); dashed line = −20 percent threshold",
+    x = "Change in canopy (2025 − 2020), percent",
+    y = "Parcels"
+  ) +
+  theme_one
+```
+
+```{=latex}
+\FloatBarrier
+```
+
+### Takeaway
+
+The ~`{r} fmt_n(ac_loss)` acres of **major canopy loss** are concentrated on **forest-industry CFP land that kept the forest industry type label**. Continuity of owner *type* masks substantial **legal-name turnover**, especially **TRG Threshold Timber → Verdant Timber** (~55 parcels / ~`{r} fmt_n(ac_trg_verdant)` ac) and **Keweenaw Land Association → Sage Timber** (8 parcels / ~`{r} fmt_n(ac_kla_sage)` ac). None of these `{r} fmt_n(n_loss)` parcels left the CFP between 2020 and 2026.
+
+```{=latex}
+\FloatBarrier
+```
+
+### Methods (short)
+
+- **Unit:** 2020 CFP parcels with attribute acres ≥ 20 (`parid`).
+- **Canopy:** zonal mean USFS/NLCD TCC on the 30 m grid, **2020 vs 2025** (latest annual TCC; ownership snapshot is 2026).
+- **Major loss:** mean ΔTCC < −20 percent (`{r} fmt_n(n_loss)` of `{r} fmt_n(n_all)` ranked parcels).
+- **Ownership:** 2020 `owner_type` / `search_nam`; 2026 `OwnerTypeT` / `FullLegalN`, joined on `parid`.
+- **Name match:** loose string compare (case, punctuation, LLC/Inc stripped). Source table: `data/processed/cfp_parcel_tcc_change_by_owner_type.csv` (`scripts/09_cfp_parcel_tcc_change.R`).
