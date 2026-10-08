@@ -16,6 +16,14 @@
 *.sbn
 *.sbx
 
-# Local PMTiles / MapLibre widget dumps (geometry hosted on Cloudflare R2)
-data/tiles/
-hello.txt
+# ...except LANDFIRE, whose attribute tables (.vat.dbf) hold the class names
+!inputs/landfire/**/*.vat.dbf
+!inputs/landfire/**/*.vat.cpg
+!inputs/landfire/**/*.aux.xml
+
+# Local PMTiles copies (geometry hosted on Cloudflare R2; app copies live in www/tiles)
+output_spatial/tiles/
+archive/tile_html_tests/
+
+# Slide screenshot scratch
+.slide_check/

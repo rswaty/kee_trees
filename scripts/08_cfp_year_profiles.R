@@ -15,26 +15,28 @@ if (has_ggplot) {
   suppressPackageStartupMessages(library(ggplot2))
 }
 
-root <- if (dir.exists("data/processed") && dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("output_csvs") && dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-out_dir <- file.path(root, "data/processed")
-fig_dir <- file.path(out_dir, "figures")
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
+csv_dir <- file.path(root, "output_csvs")
+
+gis_dir <- file.path(root, "output_spatial")
+fig_dir <- file.path(root, "output_visuals")
+tcc_dir <- file.path(root, "inputs/tcc")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
-r20 <- rast(file.path(out_dir, "cfp_owner_2020.tif"))
-r26 <- rast(file.path(out_dir, "cfp_owner_2026.tif"))
-lut <- read.csv(file.path(out_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
+r20 <- rast(file.path(gis_dir, "cfp_owner_2020.tif"))
+r26 <- rast(file.path(gis_dir, "cfp_owner_2026.tif"))
+lut <- read.csv(file.path(csv_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
 code_to_label <- setNames(lut$label, lut$code)
 fi_code <- lut$code[lut$label == "Forest Industry"]
 ob_code <- lut$code[lut$label == "Other Business"]
 stopifnot(length(fi_code) == 1L, length(ob_code) == 1L)
 
-hansen <- extend(crop(rast(file.path(out_dir, "hansen_lossyear.tif")), r20), r20)
+hansen <- extend(crop(rast(file.path(gis_dir, "hansen_lossyear.tif")), r20), r20)
 px_acres <- prod(res(r20)) / 4046.8564224
 
 v20 <- values(r20, mat = FALSE)
@@ -134,9 +136,9 @@ cohort_summary <- data.frame(
   stringsAsFactors = FALSE
 )
 
-write.csv(cohort_summary, file.path(out_dir, "cfp_year_profile_cohort_acres.csv"), row.names = FALSE)
-write.csv(hansen_by_year_full, file.path(out_dir, "cfp_hansen_loss_by_year_cohort.csv"), row.names = FALSE)
-write.csv(tcc_by_year, file.path(out_dir, "cfp_mean_tcc_by_year_cohort.csv"), row.names = FALSE)
+write.csv(cohort_summary, file.path(csv_dir, "cfp_year_profile_cohort_acres.csv"), row.names = FALSE)
+write.csv(hansen_by_year_full, file.path(csv_dir, "cfp_hansen_loss_by_year_cohort.csv"), row.names = FALSE)
+write.csv(tcc_by_year, file.path(csv_dir, "cfp_mean_tcc_by_year_cohort.csv"), row.names = FALSE)
 
 cat("=== Cohort sizes ===\n")
 print(cohort_summary |> mutate(acres = round(acres, 1)), row.names = FALSE)
@@ -234,5 +236,5 @@ if (has_ggplot) {
   message("ggplot2 not installed; CSVs written, PNGs skipped.")
 }
 
-cat("\nWrote CSVs under data/processed/cfp_*_by_year_cohort.csv\n")
-if (has_ggplot) cat("Wrote PNGs under data/processed/figures/\n")
+cat("\nWrote CSVs under output_csvs/cfp_*_by_year_cohort.csv\n")
+if (has_ggplot) cat("Wrote PNGs under output_visuals/\n")

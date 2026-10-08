@@ -1,7 +1,9 @@
 ---
 title: "CFP parcels with major canopy loss"
 subtitle: "Houghton & Keweenaw Counties, Michigan"
-author: "Randy Swaty"
+author:
+  - "Randy Swaty"
+  - "Julia Petersen"
 date: today
 format:
   html:
@@ -48,19 +50,19 @@ fmt_n <- function(x) {
   format(round(as.numeric(x)), big.mark = ",", scientific = FALSE, trim = TRUE)
 }
 
-root <- if (dir.exists("data/processed")) "." else ".."
+root <- if (dir.exists("output_csvs")) "." else ".."
 rank <- read.csv(
-  file.path(root, "data/processed/cfp_parcel_tcc_change_by_owner_type.csv"),
+  file.path(root, "output_csvs/cfp_parcel_tcc_change_by_owner_type.csv"),
   stringsAsFactors = FALSE
 )
 
-p20 <- st_read(file.path(root, "data/cfp_data/cfp_hk_2020.shp"), quiet = TRUE) |>
+p20 <- st_read(file.path(root, "inputs/cfp/cfp_hk_2020.shp"), quiet = TRUE) |>
   st_drop_geometry() |>
   transmute(
     parid = as.character(parid),
     name_2020 = trimws(as.character(search_nam))
   )
-p26 <- st_read(file.path(root, "data/cfp_data/cfp_hk_2026.shp"), quiet = TRUE) |>
+p26 <- st_read(file.path(root, "inputs/cfp/cfp_hk_2026.shp"), quiet = TRUE) |>
   st_drop_geometry() |>
   transmute(
     parid = as.character(parid),
@@ -287,5 +289,5 @@ The ~`{r} fmt_n(ac_loss)` acres of **major canopy loss** are concentrated on CFP
 - **Canopy:** zonal mean USFS/NLCD TCC on the 30 m grid, **2020 vs 2025** (latest annual TCC; ownership snapshot is 2026).
 - **Major loss:** mean ΔTCC < −20 percent (`{r} fmt_n(n_loss)` of `{r} fmt_n(n_all)` ranked parcels); see footnote in Summary.
 - **Ownership:** 2020 `owner_type` / `search_nam`; 2026 `OwnerTypeT` / `FullLegalN`, joined on `parid`.
-- **Name match:** loose string compare (case, punctuation, LLC/Inc stripped). Source table: `data/processed/cfp_parcel_tcc_change_by_owner_type.csv` (`scripts/09_cfp_parcel_tcc_change.R`).
+- **Name match:** loose string compare (case, punctuation, LLC/Inc stripped). Source table: `output_csvs/cfp_parcel_tcc_change_by_owner_type.csv` (`scripts/09_cfp_parcel_tcc_change.R`).
 - **Related:** institutional sellers vs keepers disturbance rates — `scripts/10_institutional_sellers_vs_keepers.R`.

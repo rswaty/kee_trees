@@ -1,6 +1,6 @@
 # LANDFIRE disturbance cause/severity and annual TCC trajectories by sale zone.
 # Zones come from scripts/11_sale_footprint_pixels.R (cfp_sale_zones.tif).
-# LANDFIRE FDist codes (data/lf_hist_dist.tif): hundreds = type, tens = severity,
+# LANDFIRE FDist codes (inputs/landfire/lf_hist_dist.tif): hundreds = type, tens = severity,
 # ones = years-since bin (1, 2-5, 6-10 years). Approximate calendar years in
 # figure labels assume a 2024 LANDFIRE reference year.
 # TCC disturbance year = first year canopy falls >= TCC_DROP_PP below the max of
@@ -21,18 +21,19 @@ if (has_ggplot) {
   suppressPackageStartupMessages(library(ggplot2))
 }
 
-root <- if (dir.exists("data/processed") && dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("output_csvs") && dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-fig_dir <- file.path(out_dir, "figures")
+tcc_dir <- file.path(root, "inputs/tcc")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+fig_dir <- file.path(root, "output_visuals")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
-zone_path <- file.path(out_dir, "cfp_sale_zones.tif")
+zone_path <- file.path(gis_dir, "cfp_sale_zones.tif")
 if (!file.exists(zone_path)) {
   stop("Missing ", zone_path, " — run scripts/11_sale_footprint_pixels.R first.")
 }
@@ -58,11 +59,11 @@ LF_PERIOD_AXIS <- c(
 )
 
 zr <- rast(zone_path)
-labels <- read.csv(file.path(out_dir, "cfp_sale_zone_labels.csv"), stringsAsFactors = FALSE)
+labels <- read.csv(file.path(csv_dir, "cfp_sale_zone_labels.csv"), stringsAsFactors = FALSE)
 px_acres <- prod(res(zr)) / 4046.8564224
 
 message("Reprojecting LANDFIRE FDist onto TCC grid...")
-lf <- project(rast(file.path(root, "data/lf_hist_dist.tif")), zr, method = "near")
+lf <- project(rast(file.path(root, "inputs/landfire/lf_hist_dist.tif")), zr, method = "near")
 
 z <- values(zr, mat = FALSE)
 idx <- which(!is.na(z) & z %in% labels$zone_code)
@@ -75,7 +76,7 @@ lf_type <- unname(LF_TYPE[as.character(lfv %/% 100)])
 lf_sev <- unname(LF_SEVERITY[as.character((lfv %/% 10) %% 10)])
 lf_period <- unname(LF_PERIOD[as.character(lfv %% 10)])
 
-hy <- values(rast(file.path(out_dir, "hansen_lossyear.tif")), mat = FALSE)[idx]
+hy <- values(rast(file.path(gis_dir, "hansen_lossyear.tif")), mat = FALSE)[idx]
 hansen_year <- ifelse(!is.na(hy) & hy > 0, 2000L + as.integer(hy), NA_integer_)
 
 message("Reading annual TCC for zone pixels...")
@@ -197,7 +198,7 @@ outs <- list(
   cfp_sale_signal_agreement = agreement
 )
 for (nm in names(outs)) {
-  p <- file.path(out_dir, paste0(nm, ".csv"))
+  p <- file.path(csv_dir, paste0(nm, ".csv"))
   write.csv(outs[[nm]], p, row.names = FALSE)
   message("Wrote ", p)
 }

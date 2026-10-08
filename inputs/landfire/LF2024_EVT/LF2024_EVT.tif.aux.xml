@@ -1,0 +1,35 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="Creator">USGS EROS Landfire Product Service</MDI>
+    <MDI key="DataType">Thematic</MDI>
+  </Metadata>
+  <Metadata domain="Esri">
+    <MDI key="PyramidResamplingType">NEAREST</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <Description>LF2024_EVT_CONUS</Description>
+    <UnitOfMeasure>Class</UnitOfMeasure>
+    <Histograms>
+      <HistItem>
+        <HistMin>7238</HistMin>
+        <HistMax>9817</HistMax>
+        <BucketCount>256</BucketCount>
+        <IncludeOutOfRange>1</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>780908|0|0|0|0|8047885|6157872|3|0|0|0|0|641100|0|0|0|8113|0|0|0|0|0|11354|0|927892|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|77756|39859|7005|13467|0|0|0|14146|254732|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|560776|0|0|737|545126|1006|353600|39028|0|0|0|0|0|0|0|2293|0|0|0|0|0|0|0|0|476|0|147351|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|45|969|20105|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|195996</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="BandName">LF2024_EVT_CONUS</MDI>
+      <MDI key="RepresentationType">THEMATIC</MDI>
+      <MDI key="STATISTICS_COVARIANCES">325634.3500465183</MDI>
+      <MDI key="STATISTICS_MAXIMUM">9817</MDI>
+      <MDI key="STATISTICS_MEAN">7506.8381578388</MDI>
+      <MDI key="STATISTICS_MEDIAN">7298.682353</MDI>
+      <MDI key="STATISTICS_MINIMUM">7238</MDI>
+      <MDI key="STATISTICS_SKIPFACTORX">1</MDI>
+      <MDI key="STATISTICS_SKIPFACTORY">1</MDI>
+      <MDI key="STATISTICS_STDDEV">570.64380312636</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

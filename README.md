@@ -1,96 +1,74 @@
 # Keweenaw & Houghton canopy change
 
-Pixel-level explorer for **Houghton and Keweenaw** counties, Michigan:
+Tree canopy change, ownership change and disturbance on Michigan Commercial Forest Program (CFP)
+land and all land in **Houghton and Keweenaw** counties. Randy Swaty and Julia Petersen.
 
-- **USFS / NLCD tree canopy cover (TCC)** — annual percent canopy, 2010–2025
-- **Hansen Global Forest Change `lossyear`** — year of stand-replacing disturbance, 2001–2024
+## Folders
 
-Hansen layers are reprojected onto the TCC 30 m Albers grid.
+| Folder | What's in it |
+|:---|:---|
+| `inputs/` | Source data, never written by scripts: boundaries, CFP parcels, USFS canopy cover, Hansen, LANDFIRE, BpS model tables |
+| `scripts/` | Analysis scripts, numbered in run order (see below) |
+| `scripts/charts/` | One script per presentation chart, for PowerPoint |
+| `output_csvs/` | Every table the analysis writes |
+| `output_spatial/` | Every map layer the analysis writes (GeoTIFF, GeoPackage); see `output_spatial/README.md` for a QGIS guide |
+| `output_visuals/` | Figures written by the analysis scripts |
+| `output_visuals/powerpoint/` | Charts for PowerPoint: PNGs, one-slide editable decks, and `all_charts.pptx` |
+| `docs/` | Quarto reports and the revealjs slide deck |
+| `reference/` | Review comments, notes, example spreadsheet |
+| `archive/` | Superseded material (old Leaflet dashboard, R-only map objects, map test pages); safe to delete |
+| `app.R`, `tiles_app/`, `www/`, `deploy.R`, `rsconnect/` | The Shiny map app (must stay at the top level) |
 
-**Important:** the map patches and acre totals come from Hansen `lossyear`, which flags pixels where Landsat detected a **stand-replacing** disturbance (forest → non-forest). Only pixels with tree cover ≥ 30% in **2010** (NLCD TCC) are included. Disturbance includes harvest, blowdown, insects, fire, and other clearing — **it is not a harvest inventory.**
-
-The mean canopy % chart uses the separate USFS/NLCD Tree Canopy Cover product. It shows the overall trend but does **not** drive the map or acre totals.
-
-## Run the app
-
-From the project root (after processed CSVs exist; map tiles load from R2):
-
-```r
-shiny::runApp(".")          # preferred — same entrypoint as shinyapps.io
-# or: shiny::runApp("tiles_app")
-```
-
-Deploy (overwrites the existing `kee_tree_cover` app / URL):
-
-```r
-source("deploy.R")
-```
-
-The older Leaflet in-memory explorer is still at `dashboard/` for local comparison only:
+## Charts for PowerPoint
 
 ```r
-shiny::runApp("dashboard")
+# from the project root (or open kee_trees.Rproj)
+source("scripts/charts/make_all_charts.R")        # all charts + all_charts.pptx
+source("scripts/charts/03_canopy_by_year.R")      # or just one chart
 ```
 
-Move the year slider (or press play). Charts update immediately. Hansen orange ramps by year; TCC blue ramps by canopy-drop magnitude.
+Fonts, sizes, group labels, colours and an optional PowerPoint template are set at the top of
+`scripts/charts/00_setup.R`. Each chart is written to `output_visuals/powerpoint/` as a 300 dpi PNG
+and a one-slide `.pptx` in which the chart is made of native PowerPoint shapes (right-click >
+Group > Ungroup to edit text and colours). Maps are inserted as pictures. Tables are also written as CSV.
 
-## Refresh processed layers
+## Analysis scripts
+
+Run from the project root, e.g. `Rscript scripts/13_footprint_tcc_bins.R`.
+
+| Script | Does |
+|:---|:---|
+| `01_harmonize.R` | Puts Hansen on the canopy grid; county loss and canopy tables |
+| `02`–`05` | Canopy-decline, LANDFIRE FDist and CFP ownership layers and tiles for the Shiny app |
+| `06`–`09` | CFP canopy and disturbance by owner change; parcel canopy change 2020 → 2025 |
+| `10_institutional_sellers_vs_keepers.R` | Sellers vs keepers among institutional owners |
+| `11_sale_footprint_pixels.R` | Owner-group zones (incl. Heartlands and Songbird) and Hansen loss by year |
+| `12_sale_footprint_landfire_tcc.R` | Canopy cover by year per group (and older LANDFIRE FDist) |
+| `13_footprint_tcc_bins.R` | Acres per 10% canopy bin, Heartlands and Songbird |
+| `14_footprint_landfire_bins.R` | Years-since-disturbance bins (older LANDFIRE FDist) |
+| `15_get_landfire_annual_dist.py` | Downloads LANDFIRE Annual Disturbance 2010–2025, BpS and EVT |
+| `16_landfire_annual_dist.R` | LANDFIRE annual disturbance by group and type |
+| `17_footprint_drop_year_maps.R` | Year-the-canopy-dropped rasters (canopy and Hansen) and their agreement |
+| `18_bps_evt_disturbance_regimes.R` | BpS, EVT, historical vs current disturbance, all land |
+| `19_export_gis_layers.R` | Sale-story GeoPackage, canopy change raster and QGIS styles |
+
+The Quarto documents in `docs/` read from `output_csvs/`, `output_spatial/` and `output_visuals/`.
+Render with `quarto render docs/cfp_sale_story_slides.qmd`.
+
+## Shiny app
+
+Pixel-level explorer: USFS/NLCD tree canopy cover (2010–2025) and Hansen `lossyear` (2001–2024),
+plus CFP ownership. Hansen flags **stand-replacing** disturbance only, on pixels with ≥ 30% canopy in
+2010; it is not a harvest inventory.
 
 ```r
-# from the project root
-source("scripts/01_harmonize.R")
-# or: Rscript scripts/01_harmonize.R
+shiny::runApp(".")      # local
+source("deploy.R")      # deploy to shinyapps.io (overwrites kee_tree_cover)
 ```
 
-This writes aligned rasters and county summaries to `data/processed/`.
+The app reads the CSVs listed in `deploy.R` from `output_csvs/` and PMTiles from `www/tiles/`
+(also served from GitHub and Cloudflare R2). Rebuild tiles with scripts `02`–`05`
+(`UPLOAD_R2=1 Rscript scripts/02_rebuild_tcc_decline_tiles.R` to upload).
 
-## Data
-
-| Path | What |
-|------|------|
-| `data/TCC_Houghton_Keweenaw/HK_TCC_YYYY.tif` | Annual NLCD TCC clips |
-| `data/Hansen_Houghton_Keweenaw/` | Original Hansen clips (WGS84) |
-| `data/cfp_data/cfp_hk_2020.shp` / `cfp_hk_2026.shp` | Commercial Forest Program parcels (Houghton/Keweenaw) |
-| `data/processed/hansen_lossyear.tif` | Hansen lossyear on the TCC grid |
-| `data/processed/hansen_treecover2000.tif` | Hansen 2000 canopy on the TCC grid |
-| `data/processed/tcc_change_2010_2025.tif` | TCC 2025 − 2010 |
-| `data/processed/cfp_owner_sankey.csv` | CFP owner-type 2020→2026 GIS-acre flows (TCC 30 m) |
-| `data/processed/cfp_name_sankey.csv` | CFP search/legal-name 2020→2026 GIS-acre flows |
-| `data/processed/cfp_owner_*.tif` / `cfp_name_*.tif` | Class rasters on the TCC grid for stacking |
-| `www/tiles/cfp_owner_{2020,2026,change}.pmtiles` | CFP ownership / change vector tiles for the map |
-| `data/processed/loss_by_year.rds` | Loss polygons by year for the map (preferred load path) |
-| `data/processed/loss_by_year.gpkg` | Same map polygons in GeoPackage form |
-| `data/processed/tcc_decline_2010_2025.rds` | TCC drop ≥ 15 pp (2010–2025), dissolved by `drop_pp` magnitude |
-| `data/processed/tcc_decline_pp_2010_2025.tif` | Same decline as integer drop (pp) raster |
-| `data/processed/tcc_decline_by_drop_pp.csv` | Acres by drop magnitude class |
-| `data/tiles/*.pmtiles` | Vector tiles for `tiles_app` (hosted on Cloudflare R2) |
-| `data/houghton_keweenaw_counties.*` | County polygons |
-
-Rebuild CFP Sankey tables (and class rasters on the TCC grid). Excludes parcels
-below each minimum attribute-acre threshold (default **20 ac**); writes one CSV
-row-set per threshold for the Shiny parcel-size slider:
-
-```r
-Rscript scripts/04_cfp_ownership_change.R
-```
-
-Then open the **CFP 2020–2026** tab (Sankeys) and **CFP map** tab in the Shiny app.
-
-Rebuild CFP ownership map tiles (after script 04):
-
-```r
-Rscript scripts/05_cfp_owner_tiles.R
-```
-
-Rebuild TCC decline tiles (and optionally upload):
-
-```r
-# UPLOAD_R2=1 Rscript scripts/02_rebuild_tcc_decline_tiles.R
-Rscript scripts/02_rebuild_tcc_decline_tiles.R
-```
-
-### Next: LANDFIRE Historical Disturbance (HDist)
-
-Hansen + TCC still miss some visible clearing (false negatives), with few false positives so far. **LANDFIRE HDist / Annual Dist** would add typed disturbance (harvest, fire, insect, etc.) and year for another independent layer. HDist is often request-only via the LANDFIRE HelpDesk; Annual Dist CONUS downloads are public. Practical path: clip Annual Dist (or an AOI extract) to Houghton/Keweenaw, crosswalk codes, tile like Hansen, toggle in `tiles_app`.
-
-Keep GeoTIFF `.tif` files. ArcGIS sidecars (`.ovr`, `.tfw`, `.vat.dbf`, lock files) are ignored.
+GeoTIFFs keep their CRS; ArcGIS sidecars are git-ignored except LANDFIRE attribute tables
+(`.vat.dbf`), which hold the class names.

@@ -15,16 +15,17 @@ suppressPackageStartupMessages({
 
 terraOptions(progress = 1)
 
-root <- if (dir.exists("data/cfp_data") && dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("inputs/cfp") && dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run this script from the kee_trees project root.")
 }
 
-cfp_dir <- file.path(root, "data/cfp_data")
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+cfp_dir <- file.path(root, "inputs/cfp")
+tcc_dir <- file.path(root, "inputs/tcc")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 
 gdal_opts <- c("COMPRESS=DEFLATE", "ZLEVEL=9", "TILED=YES")
 EXIT_LABEL <- "non-CFP in 2026"
@@ -216,36 +217,36 @@ owner_lut <- data.frame(code = seq_along(own_labels), label = own_labels, string
 name_lut <- data.frame(code = seq_along(name_labels), label = name_labels, stringsAsFactors = FALSE)
 
 message("Writing CSVs...")
-write.csv(owner_flows, file.path(out_dir, "cfp_owner_sankey.csv"), row.names = FALSE)
-write.csv(name_flows, file.path(out_dir, "cfp_name_sankey.csv"), row.names = FALSE)
-write.csv(owner_summary, file.path(out_dir, "cfp_owner_sankey_summary.csv"), row.names = FALSE)
-write.csv(name_summary, file.path(out_dir, "cfp_name_sankey_summary.csv"), row.names = FALSE)
-write.csv(owner_lut, file.path(out_dir, "cfp_owner_labels.csv"), row.names = FALSE)
-write.csv(name_lut, file.path(out_dir, "cfp_name_labels.csv"), row.names = FALSE)
+write.csv(owner_flows, file.path(csv_dir, "cfp_owner_sankey.csv"), row.names = FALSE)
+write.csv(name_flows, file.path(csv_dir, "cfp_name_sankey.csv"), row.names = FALSE)
+write.csv(owner_summary, file.path(csv_dir, "cfp_owner_sankey_summary.csv"), row.names = FALSE)
+write.csv(name_summary, file.path(csv_dir, "cfp_name_sankey_summary.csv"), row.names = FALSE)
+write.csv(owner_lut, file.path(csv_dir, "cfp_owner_labels.csv"), row.names = FALSE)
+write.csv(name_lut, file.path(csv_dir, "cfp_name_labels.csv"), row.names = FALSE)
 write.csv(
   data.frame(
     min_parcel_acres = MIN_PARCEL_ACRES,
     default = MIN_PARCEL_ACRES == DEFAULT_MIN_ACRES
   ),
-  file.path(out_dir, "cfp_min_parcel_acres.csv"),
+  file.path(csv_dir, "cfp_min_parcel_acres.csv"),
   row.names = FALSE
 )
 
 message("Writing class rasters at default min parcel acres = ", DEFAULT_MIN_ACRES, "...")
 writeRaster(
-  r_own20_default, file.path(out_dir, "cfp_owner_2020.tif"),
+  r_own20_default, file.path(gis_dir, "cfp_owner_2020.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT2S", gdal = gdal_opts)
 )
 writeRaster(
-  r_own26_default, file.path(out_dir, "cfp_owner_2026.tif"),
+  r_own26_default, file.path(gis_dir, "cfp_owner_2026.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT2S", gdal = gdal_opts)
 )
 writeRaster(
-  r_nm20_default, file.path(out_dir, "cfp_name_2020.tif"),
+  r_nm20_default, file.path(gis_dir, "cfp_name_2020.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT2S", gdal = gdal_opts)
 )
 writeRaster(
-  r_nm26_default, file.path(out_dir, "cfp_name_2026.tif"),
+  r_nm26_default, file.path(gis_dir, "cfp_name_2026.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT2S", gdal = gdal_opts)
 )
 

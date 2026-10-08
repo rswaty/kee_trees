@@ -1,9 +1,9 @@
 # Process LANDFIRE FDist-coded hist raster → agent polygons + PMTiles.
 # From project root: Rscript scripts/03_landfire_fdist_tiles.R
 #
-# Input:  data/lf_hist_dist.tif  (FDist codes 111–733 despite "hist" name)
-# Output: data/processed/landfire_fdist_*.{rds,gpkg,csv,tif}
-#         www/tiles/landfire_fdist.pmtiles (+ copy under data/tiles/)
+# Input:  inputs/landfire/lf_hist_dist.tif  (FDist codes 111–733 despite "hist" name)
+# Output: output_csvs/landfire_fdist_*.{rds,gpkg,csv,tif}
+#         www/tiles/landfire_fdist.pmtiles (+ copy under output_spatial/tiles/)
 #
 # Map features are dissolved by disturbance agent + years-since bin
 # (severity is ignored / collapsed).
@@ -17,20 +17,21 @@ suppressPackageStartupMessages({
   library(freestiler)
 })
 
-root <- if (dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("inputs/tcc")) {
   normalizePath(".")
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-src_tif <- file.path(root, "data/lf_hist_dist.tif")
+src_tif <- file.path(root, "inputs/landfire/lf_hist_dist.tif")
 if (!file.exists(src_tif)) stop("Missing ", src_tif)
 
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-tile_dir <- file.path(root, "data/tiles")
+tcc_dir <- file.path(root, "inputs/tcc")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+tile_dir <- file.path(root, "output_spatial/tiles")
 www_tile_dir <- file.path(root, "www/tiles")
-dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 dir.create(tile_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(www_tile_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -71,7 +72,7 @@ id_lookup <- c(harvest_remove = 1L, mech_unknown = 2L, insects = 3L, fire = 4L)
 
 message("Loading TCC template + counties...")
 tcc_template <- rast(file.path(tcc_dir, "HK_TCC_2010.tif"))
-counties <- st_read(file.path(root, "data/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
+counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
   dplyr::select(COUNTY, FIPS, AREA_SQMI) |>
   st_transform(crs(tcc_template))
 counties_v <- vect(counties)
@@ -102,7 +103,7 @@ rcl <- cbind(keep, vapply(keep, class_id_from_code, integer(1)))
 class_ras <- classify(fdist, rcl = rcl, others = NA)
 names(class_ras) <- "class_id"
 writeRaster(
-  class_ras, file.path(out_dir, "landfire_fdist_agent.tif"),
+  class_ras, file.path(gis_dir, "landfire_fdist_agent.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts)
 )
 
@@ -127,8 +128,8 @@ fr_agent <- fr_class |>
     .groups = "drop"
   ) |>
   arrange(desc(acres))
-write.csv(fr_agent, file.path(out_dir, "landfire_fdist_by_agent.csv"), row.names = FALSE)
-write.csv(fr_class, file.path(out_dir, "landfire_fdist_by_agent_years.csv"), row.names = FALSE)
+write.csv(fr_agent, file.path(csv_dir, "landfire_fdist_by_agent.csv"), row.names = FALSE)
+write.csv(fr_class, file.path(csv_dir, "landfire_fdist_by_agent_years.csv"), row.names = FALSE)
 message("Acres by agent:")
 print(as.data.frame(fr_agent[, c("agent", "label", "acres", "n_pixels")]), row.names = FALSE)
 message("Acres by agent + years since:")
@@ -145,8 +146,7 @@ sf_poly <- sf_poly |>
   )
 sf_poly <- sf_poly[, c("agent", "label", "years_since", "acres", "agent_id", "class_id")]
 sf_poly <- st_make_valid(st_transform(sf_poly, 4326))
-st_write(sf_poly, file.path(out_dir, "landfire_fdist_by_agent.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-saveRDS(sf_poly, file.path(out_dir, "landfire_fdist_by_agent.rds"), compress = "xz")
+st_write(sf_poly, file.path(gis_dir, "landfire_fdist_by_agent.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 message("Features: ", nrow(sf_poly))
 
 pm_path <- file.path(www_tile_dir, "landfire_fdist.pmtiles")

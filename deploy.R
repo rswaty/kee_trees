@@ -6,7 +6,7 @@
 # walkerke.r-universe.dev — shinyapps.io cannot parse that repository and
 # fails with: "Unknown repository for package source".
 
-if (!dir.exists("data/processed")) {
+if (!dir.exists("output_csvs")) {
   stop("Run from the kee_trees project root.")
 }
 
@@ -29,14 +29,14 @@ if (!all(file.exists(tile_files))) {
 app_files <- c(
   "app.R",
   "tiles_app/app.R",
-  "data/processed/loss_by_county_year.csv",
-  "data/processed/tcc_by_county_year.csv",
-  "data/processed/landfire_fdist_by_agent.csv",
-  "data/processed/cfp_owner_sankey.csv",
-  "data/processed/cfp_name_sankey.csv",
-  "data/processed/cfp_owner_sankey_summary.csv",
-  "data/processed/cfp_name_sankey_summary.csv",
-  "data/processed/cfp_min_parcel_acres.csv",
+  "output_csvs/loss_by_county_year.csv",
+  "output_csvs/tcc_by_county_year.csv",
+  "output_csvs/landfire_fdist_by_agent.csv",
+  "output_csvs/cfp_owner_sankey.csv",
+  "output_csvs/cfp_name_sankey.csv",
+  "output_csvs/cfp_owner_sankey_summary.csv",
+  "output_csvs/cfp_name_sankey_summary.csv",
+  "output_csvs/cfp_min_parcel_acres.csv",
   tile_files
 )
 

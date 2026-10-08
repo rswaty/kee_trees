@@ -9,18 +9,20 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-root <- if (dir.exists("data/processed") && dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("output_csvs") && dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-out_dir <- file.path(root, "data/processed")
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
+csv_dir <- file.path(root, "output_csvs")
 
-r20 <- rast(file.path(out_dir, "cfp_owner_2020.tif"))
-r26 <- rast(file.path(out_dir, "cfp_owner_2026.tif"))
-lut <- read.csv(file.path(out_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
+gis_dir <- file.path(root, "output_spatial")
+tcc_dir <- file.path(root, "inputs/tcc")
+
+r20 <- rast(file.path(gis_dir, "cfp_owner_2020.tif"))
+r26 <- rast(file.path(gis_dir, "cfp_owner_2026.tif"))
+lut <- read.csv(file.path(csv_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
 code_to_label <- setNames(lut$label, lut$code)
 
 tcc20 <- subst(rast(file.path(tcc_dir, "HK_TCC_2020.tif")), c(254, 255), NA)
@@ -88,8 +90,8 @@ by_flow <- trans_df |>
   mutate(delta_pp = mean_tcc_2025 - mean_tcc_2020) |>
   arrange(desc(acres))
 
-write.csv(overall, file.path(out_dir, "cfp_tcc_by_owner_change_cohort.csv"), row.names = FALSE)
-write.csv(by_flow, file.path(out_dir, "cfp_tcc_by_owner_type_flow.csv"), row.names = FALSE)
+write.csv(overall, file.path(csv_dir, "cfp_tcc_by_owner_change_cohort.csv"), row.names = FALSE)
+write.csv(by_flow, file.path(csv_dir, "cfp_tcc_by_owner_type_flow.csv"), row.names = FALSE)
 
 round_df <- function(d, cols) {
   for (col in cols) d[[col]] <- round(d[[col]], 2)
@@ -109,5 +111,5 @@ print(utils::head(round_df(
   c("acres", "mean_tcc_2020", "mean_tcc_2025", "delta_pp")
 ), 15), row.names = FALSE)
 
-cat("\nWrote data/processed/cfp_tcc_by_owner_change_cohort.csv\n")
-cat("Wrote data/processed/cfp_tcc_by_owner_type_flow.csv\n")
+cat("\nWrote output_csvs/cfp_tcc_by_owner_change_cohort.csv\n")
+cat("Wrote output_csvs/cfp_tcc_by_owner_type_flow.csv\n")

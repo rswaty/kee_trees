@@ -9,21 +9,23 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-root <- if (dir.exists("data/processed") && dir.exists("data/cfp_data")) {
+root <- if (dir.exists("output_csvs") && dir.exists("inputs/cfp")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-out_dir <- file.path(root, "data/processed")
+csv_dir <- file.path(root, "output_csvs")
 
-r20 <- rast(file.path(out_dir, "cfp_owner_2020.tif"))
-r26 <- rast(file.path(out_dir, "cfp_owner_2026.tif"))
-lut <- read.csv(file.path(out_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
+gis_dir <- file.path(root, "output_spatial")
+
+r20 <- rast(file.path(gis_dir, "cfp_owner_2020.tif"))
+r26 <- rast(file.path(gis_dir, "cfp_owner_2026.tif"))
+lut <- read.csv(file.path(csv_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
 code_to_label <- setNames(lut$label, lut$code)
 
-hansen <- rast(file.path(out_dir, "hansen_lossyear.tif"))
-lf <- rast(file.path(out_dir, "landfire_fdist_agent.tif"))
+hansen <- rast(file.path(gis_dir, "hansen_lossyear.tif"))
+lf <- rast(file.path(gis_dir, "landfire_fdist_agent.tif"))
 # Align to CFP grid (should already match TCC Albers).
 hansen <- extend(crop(hansen, r20), r20)
 lf <- extend(crop(lf, r20), r20)
@@ -121,8 +123,8 @@ by_flow <- flow |>
   ) |>
   arrange(desc(acres))
 
-write.csv(cohorts, file.path(out_dir, "cfp_disturbance_by_owner_change_cohort.csv"), row.names = FALSE)
-write.csv(by_flow, file.path(out_dir, "cfp_disturbance_by_owner_type_flow.csv"), row.names = FALSE)
+write.csv(cohorts, file.path(csv_dir, "cfp_disturbance_by_owner_change_cohort.csv"), row.names = FALSE)
+write.csv(by_flow, file.path(csv_dir, "cfp_disturbance_by_owner_type_flow.csv"), row.names = FALSE)
 
 rnd <- function(d, cols, digits = 2) {
   for (col in cols) if (col %in% names(d)) d[[col]] <- round(d[[col]], digits)
@@ -150,5 +152,5 @@ print(utils::head(rnd(by_flow, c(
   "lf_any_pct", "lf_harvest_pct"
 )), 12), row.names = FALSE)
 
-cat("\nWrote data/processed/cfp_disturbance_by_owner_change_cohort.csv\n")
-cat("Wrote data/processed/cfp_disturbance_by_owner_type_flow.csv\n")
+cat("\nWrote output_csvs/cfp_disturbance_by_owner_change_cohort.csv\n")
+cat("Wrote output_csvs/cfp_disturbance_by_owner_type_flow.csv\n")

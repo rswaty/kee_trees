@@ -12,16 +12,17 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-root <- if (dir.exists("data/cfp_data") && dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("inputs/cfp") && dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-cfp_dir <- file.path(root, "data/cfp_data")
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+cfp_dir <- file.path(root, "inputs/cfp")
+tcc_dir <- file.path(root, "inputs/tcc")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 
 MIN_ACRES <- 20
 EXIT_LABEL <- "non-CFP in 2026"
@@ -103,7 +104,7 @@ out <- p20 |>
     still_in_cfp_2026
   )
 
-out_path <- file.path(out_dir, "cfp_parcel_tcc_change_by_owner_type.csv")
+out_path <- file.path(csv_dir, "cfp_parcel_tcc_change_by_owner_type.csv")
 write.csv(out, out_path, row.names = FALSE)
 message("Wrote ", out_path, " (", nrow(out), " parcels)")
 

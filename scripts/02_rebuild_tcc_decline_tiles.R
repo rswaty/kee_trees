@@ -11,23 +11,24 @@ suppressPackageStartupMessages({
   library(freestiler)
 })
 
-root <- if (dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("inputs/tcc")) {
   normalizePath(".")
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-tile_dir <- file.path(root, "data/tiles")
-dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+tcc_dir <- file.path(root, "inputs/tcc")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+tile_dir <- file.path(root, "output_spatial/tiles")
+for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 dir.create(tile_dir, showWarnings = FALSE, recursive = TRUE)
 
 gdal_opts <- c("COMPRESS=DEFLATE", "ZLEVEL=9", "TILED=YES")
 
 message("Loading counties + TCC 2010/2025...")
 tcc_template <- rast(file.path(tcc_dir, "HK_TCC_2010.tif"))
-counties <- st_read(file.path(root, "data/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
+counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
   dplyr::select(COUNTY, FIPS, AREA_SQMI) |>
   st_transform(crs(tcc_template))
 counties_v <- vect(counties)
@@ -45,7 +46,7 @@ names(decline_mag) <- "drop_pp"
 
 message("Writing decline magnitude raster + CSV...")
 writeRaster(
-  decline_mag, file.path(out_dir, "tcc_decline_pp_2010_2025.tif"),
+  decline_mag, file.path(gis_dir, "tcc_decline_pp_2010_2025.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts)
 )
 decline_acres <- global(!is.na(decline_mag), "sum", na.rm = TRUE)[1, 1] * px_acres
@@ -53,7 +54,7 @@ decline_freq <- terra::freq(decline_mag)
 decline_freq <- decline_freq[!is.na(decline_freq$value), c("value", "count")]
 names(decline_freq) <- c("drop_pp", "n_pixels")
 decline_freq$acres <- decline_freq$n_pixels * px_acres
-write.csv(decline_freq, file.path(out_dir, "tcc_decline_by_drop_pp.csv"), row.names = FALSE)
+write.csv(decline_freq, file.path(csv_dir, "tcc_decline_by_drop_pp.csv"), row.names = FALSE)
 
 message("Polygonizing by drop_pp (dissolve same magnitude)...")
 decline_poly <- as.polygons(decline_mag, dissolve = TRUE, na.rm = TRUE)
@@ -64,8 +65,7 @@ decline_sf <- decline_sf |>
 decline_sf$label <- paste0("TCC drop ", decline_sf$drop_pp, " pp (2010\u20132025)")
 decline_sf <- decline_sf[, c("drop_pp", "acres", "label")]
 decline_sf <- st_make_valid(st_transform(decline_sf, 4326))
-st_write(decline_sf, file.path(out_dir, "tcc_decline_2010_2025.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-saveRDS(decline_sf, file.path(out_dir, "tcc_decline_2010_2025.rds"), compress = "xz")
+st_write(decline_sf, file.path(gis_dir, "tcc_decline_2010_2025.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 message(
   "TCC decline: ~", format(round(decline_acres), big.mark = ","),
   " acres, ", nrow(decline_sf), " drop classes"

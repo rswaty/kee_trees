@@ -1,0 +1,566 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata>
+	<idinfo>
+		<citation>
+			<citeinfo>
+				<origin>Wildland Fire Science, Earth Resources Observation and Science Center, U.S. Geological Survey</origin>
+				<pubdate>20161018</pubdate>
+				<pubtime>020000</pubtime>
+				<title>LANDFIRE Annual Disturbance CONUS 2013</title>
+				<edition>LF 2014</edition>
+				<geoform>raster digital data</geoform>
+				<pubinfo>
+					<pubplace>Sioux Falls, SD</pubplace>
+					<publish>Wildland Fire Science, Earth Resources Observation and Science Center, U.S. Geological Survey</publish>
+				</pubinfo>
+				<othercit>See landfire.gov for more information.</othercit>
+				<onlink>https://landfire.gov/viewer/</onlink>
+				<onlink>https://landfire.gov</onlink>
+			</citeinfo>
+		</citation>
+		<descript>
+			<abstract>LANDFIRE disturbance data are developed to provide temporal and spatial information related to landscape change for determining vegetation transitions over time and for making subsequent updates to LANDFIRE vegetation, fuel and other data. Disturbance data include attributes associated with disturbance year, type, and severity. These data are developed through use of Landsat satellite imagery, local agency derived disturbance polygons, and other ancillary data. Abstract: LANDFIRE disturbance data were developed through a multistep process employing a number of varied geospatial datasets to identify and label changes in vegetation cover. This process utilized: Landsat change detection methods; Landsat-derived indices (e.g., NDVI, dNBR); disturbance Event perimeters; fire severity and extent mapping from MTBS (Monitoring Trends in Burn Severity), BARC (Burned Area Reflectance Classification), and RAVG (Rapid Assessment of Vegetation Condition after Wildfire) fire mapping; PAD (Protected Area Database) ownership data; and burned area essential climate variable (BAECV) data.MTBS, BARC and RAVG data provide extent, cause, and severity of fire-related disturbance. Event perimeters collected from local, state, and federal agencies and other cooperators were integrated into the LANDFIRE Events Geodatabase. They were processed by disturbance type priority and rasterized to provide disturbance-specific causality. PAD data provided management-level information and BAECVoffered a possible causality to disturbances detected using processed Landsat imagery. Disturbances not identified by Events or fire mapping efforts were mapped by processing Landsat best- pixel image composite tiles (98 tiles covering the contiguous United States, and 4 tiles covering Hawaii. Image tiles were also created for selected areas to address MTBS gap filling in Alaska). Change was primarily identified using the Multi-Index Integrated Change Algorithm (MIICA) methods (Jin, et. al. 2013). This process identified changed pixels.Landsat-derived dNBRprovided an estimate of severity for all changed pixels including LANDFIRE Events. dNBR datawere also used to mitigate the SLC-off and cloud gap issues within the MTBS datasets. These data and additional Landsat scenes were used in combination to create regression-based models. In areas where modeling could not be used a 12x12 focal majority process was used to fill MTBS data gaps. The final disturbance products are grid files, defined by year (i.e., 2013, 2014). Disturbance raster attributes include; year, type (causality, if known), severity (low, medium, and high), data source(s), and additional attributes associated with causality and severity confidence.</abstract>
+			<purpose>LANDFIRE data products are designed to facilitate national- and regional-level strategic planning and reporting of management activities. Data products are created at a 30-meter grid spatial resolution raster data set; however, the applicability of data products varies by location and specific use. Principal purposes of the data products include providing, 1) national-level, landscape-scale geospatial products to support fire and fuels management planning, and, 2) consistent fuels data to support fire planning, analysis, and budgeting to evaluate fire management alternatives. Users are advised to evaluate the data carefully for their applications.</purpose>
+		</descript>
+		<status>
+			<update>Annually</update>
+		</status>
+		<spdom>
+			<bounding>
+        <westbc>-127.9878</westbc>
+        <eastbc>-65.2544</eastbc>
+        <northbc>51.6497</northbc>
+        <southbc>22.7654</southbc>
+			</bounding>
+		</spdom>
+		<keywords>
+			<theme>
+				<themekt>None</themekt>
+				<themekey>USGS</themekey>
+				<themekey>LANDFIRE</themekey>
+				<themekey>USFS</themekey>
+				<themekey>Disturbance</themekey>
+				<themekey>GIS</themekey>
+				<themekey>Raster digital data</themekey>
+				<themekey>U.S. Geological Survey</themekey>
+			</theme>
+			<theme>
+				<themekt>ISO 19115 Category</themekt>
+				<themekey>imageryBaseMapsEarthCover</themekey>
+				<themekey>010</themekey>
+			</theme>
+			<place>
+				<placekt>U.S. Department of Commerce, 1995, Countries, dependencies, areas of special sovereignty, and their principal administrative divisions, Federal Information Processing Standard 10-4,): Washington, D.C., National Institute of Standards and Technology</placekt>
+				<placekey>U.S.</placekey>
+				<placekey>United States</placekey>
+				<placekey>US</placekey>
+			</place>
+		</keywords>
+		<accconst>None</accconst>
+		<useconst>Although LANDFIRE products are delivered as 30-meter pixels, they should not be used at the individual pixel level or on small groups of pixels. LANDFIRE products were designed to support 1) national (all states) strategic planning, 2) regional (single large states or groups of smaller states), and 3) strategic/tactical planning for large sub-regional landscapes and Fire Management Units (FMUs) (such as significant portions of states or multiple federal administrative entities). The applicability of LANDFIRE products to support fire and land management planning on smaller areas will vary by product, location, and specific use. Further investigation by local and regional experts should be conducted to inform decisions regarding local applicability. However, it is the responsibility of the local user, using LANDFIRE metadata and local knowledge, to determine if and/or how LANDFIRE can be used for particular areas of interest. LANDFIRE products are not intended to replace local products, but rather serve as a back-up by providing wall-to-wall cross-boundary products. It is the responsibility of the user to be familiar with the value, assumptions, and limitations of LANDFIRE products. Managers and planners must evaluate LANDFIRE data according to the scale and requirements specific to their needs.</useconst>
+		<ptcontac>
+			<cntinfo>
+				<cntorgp>
+					<cntorg>Wildland Fire Science, Earth Resources Observation and Science Center, U.S. Geological Survey</cntorg>
+				</cntorgp>
+				<cntpos>Customer Service Representative</cntpos>
+				<cntaddr>
+					<addrtype>physical</addrtype>
+					<address>47914 252nd Street</address>
+					<city>Sioux Falls</city>
+					<state>SD</state>
+					<postal>57198-0001</postal>
+					<country>US</country>
+				</cntaddr>
+				<cntvoice>605-594-6151</cntvoice>
+				<cntfax>605-594-6589</cntfax>
+				<cntemail>helpdesk@landfire.gov</cntemail>
+			</cntinfo>
+		</ptcontac>
+		<datacred>Data have been collected and analyzed by teams at both USGS EROS, Sioux Falls, SD and at the USFS, Rocky Mountain Research Station, Missoula, MT. Depending on the data set described primary responsibility may reside with USGS EROS or with USFS. Contact information will be listed in the Contact Section and in the Metadata Reference section with regards to the primary responsibility.</datacred>
+		<secinfo>
+			<secsys>None in place</secsys>
+			<secclass>Unclassified</secclass>
+			<sechandl>If there is ever doubt, contact the appropriate resource staff who has stewardship responsibility and the GIS Coordinator.</sechandl>
+		</secinfo>
+		<native>Microsoft Windows 2000 Version 5.0 (Build 2195) Service Pack 4; ESRI ArcCatalog 9.1.0.722</native>
+		<crossref>
+			<citeinfo>
+				<pubdate>20080101</pubdate>
+				<title>Use of a Dark Object Concept and Support Vector Machines to Automate Forest Cover Change Analysis</title>
+				<serinfo>
+					<sername>Remote Sensing of Environment</sername>
+					<issue>112</issue>
+				</serinfo>
+				<othercit>p. 970-985</othercit>
+			</citeinfo>
+		</crossref>
+		<crossref>
+			<citeinfo>
+				<title>A comprehensive change detection method for updating the National Land Cover Database to Circa 2011 (in review)</title>
+				<serinfo>
+					<sername>Remote Sensing of Environment </sername>
+					<issue>in review</issue>
+				</serinfo>
+			</citeinfo>
+		</crossref>
+		<crossref>
+			<citeinfo>
+				<pubdate>20091001</pubdate>
+				<title>SMARTFIRE algorithm description.</title>
+				<othercit>Paper prepared for the U.S. Environmental Protection Agency, Research Triangle Park, NC, by Sonoma Technology, Inc., Petaluma, CA, and the U.S. Forest Service, AirFire Team, Pacific Northwest Research Laboratory, Seattle, WA STI-905517-3719.</othercit>
+			</citeinfo>
+		</crossref>
+	</idinfo>
+	<dataqual>
+		<lineage>
+			<procstep>
+				<procdesc>For a detailed definition and discussion on LANDFIRE, refer to https://landfire.gov</procdesc>
+				<procdate>20160229</procdate>
+				<proccont>
+					<cntinfo>
+						<cntorgp>
+							<cntorg>U.S. Geological Survey</cntorg>
+						</cntorgp>
+						<cntpos>Customer Service Representative</cntpos>
+						<cntaddr>
+							<addrtype>mailing and physical</addrtype>
+							<address>USGS EROS</address>
+							<address>47914 252nd Street</address>
+							<city>Sioux Falls</city>
+							<state>SD</state>
+							<postal>57198-0001</postal>
+							<country>US</country>
+						</cntaddr>
+						<cntvoice>605-594-6151</cntvoice>
+						<cnttdd>605-594-6933</cnttdd>
+						<cntfax>605-594-6589</cntfax>
+						<cntemail>custserv@usgs.gov</cntemail>
+						<hours>0800 - 1600, CT M-F (-6h CST/-5h CDT GMT)</hours>
+					</cntinfo>
+				</proccont>
+			</procstep>
+		</lineage>
+	</dataqual>
+	<spdoinfo>
+		<direct>Raster</direct>
+		<rastinfo>
+			<rasttype>Grid Cell</rasttype>
+			<rowcount>101538</rowcount>
+			<colcount>156335</colcount>
+			<vrtcount>1</vrtcount>
+		</rastinfo>
+	</spdoinfo>
+	<eainfo>
+		<detailed>
+			<enttyp>
+				<enttypl>dYEAR</enttypl>
+				<enttypd>Disturbance YEAR</enttypd>
+				<enttypds>LANDFIRE</enttypds>
+			</enttyp>
+			<attr>
+				<attrlabl>ObjectID</attrlabl>
+				<attrdef>Internal feature number.</attrdef>
+				<attrdefs>ESRI</attrdefs>
+				<attrdomv>
+					<udom>Sequential unique whole numbers that are automatically generated.</udom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Value</attrlabl>
+				<attrdef>2-4 digit code representing the general category of the disturbance (combination of disturbance type and confidence information based on data sources), disturbance type, and severity. For example, 472 is identified by Refresh Event, VCT, and NBR data (4) associated with a wildfire (7) with a medium severity (2).</attrdef>
+				<attrdefs>Landfire</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>1133</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Count</attrlabl>
+				<attrdef>Number of pixels</attrdef>
+				<attrdefs>Landfire</attrdefs>
+				<attrdomv>
+					<udom>Number of pixels</udom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Year</attrlabl>
+				<attrdef>Approximate (due to LANDFIRE Event year or image date timing issues) year in which the disturbance occurred.	</attrdef>
+				<attrdefs>Landfire</attrdefs>
+				<attrdomv>
+					<edom>
+						<edomv>1999 - 2014</edomv>
+						<edomvd>Year of disturbance</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+				</attrdomv>
+				<attrdomv>
+					<rdom>
+						<rdommin>1999</rdommin>
+						<rdommax>2014</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Dist_Type</attrlabl>
+				<attrdef>Disturbance type (if identified by LANDFIRE Event perimeter data) or a best estimate of disturbance type based on LANDFIRE Event 500m buffers, PAD land management status, and/or burned area essential climate variable (BAECV) data.</attrdef>
+				<attrdefs>Landfire</attrdefs>
+				<attrdomv>
+					<edom>
+						<edomv>Biological</edomv>
+						<edomvd>The use of living organisms, such as predators, parasites, and pathogens, to control weeds, pest insects, or diseases.</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Development</edomv>
+						<edomvd>Conversion of natural lands into housing, commercial, or industrial building sites. Involves permanent land clearing.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Clearcut</edomv>
+						<edomvd>The cutting of essentially all trees, producing a fully exposed microclimate for the development of a new age class.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Harvest</edomv>
+						<edomvd>A general term for the cutting, felling, and gathering of forest timber. The term harvest was assigned to events where there was not enough information available to call them one of the 2 distinct types, clearcut or thinning.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Thinning</edomv>
+						<edomvd>A tree removal practice that reduces tree density and competition between trees in a stand. Thinning concentrates growth on fewer, high-quality trees, provides periodic income, and generally enhances tree vigor.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Mastication</edomv>
+						<edomvd>Means by which vegetation is mechanically "mowed" or "chipped" into small pieces and changed from a vertical to horizontal arrangement.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Other Mechanical</edomv>
+						<edomvd>Catch all term for a variety of forest and rangeland mechanical activities related to fuels reduction and site preparation including; piling of fuels, chaining, lop and scatter, thinning of fuels, Dixie harrow, etc.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Wildfire</edomv>
+						<edomvd>An unplanned, unwanted wildland fire including unauthorized human-caused fires, escaped wildland fire use events, escaped prescribed fire projects, and all other wildland fires where the objective is to suppress or put out the fire.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Wildland Fire Use</edomv>
+						<edomvd>The application of the appropriate management response to naturally-ignited wildland fires to accomplish specific resource management objectives in pre-defined designated areas outlined in Fire Management Plans.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Prescribed Fire</edomv>
+						<edomvd>Any fire ignited by management actions to meet specific objectives. A written, approved prescribed fire plan must exist, and NEPA requirements (where applicable) must be met, prior to ignition.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Wildland Fire</edomv>
+						<edomvd>A catch all term used to describe any non-structure fire that occurs in the wildland. Three distinct types of wildland fire have been defined: wildfire, wildland fire use, and prescribed fire. The term wildland fire was assigned to events where there was not enough information available to call them one of the 3 distinct types.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Weather</edomv>
+						<edomvd>Weather related event that results in loss of vegetation such as blowdown, hurricane, or tornado.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Insecticide</edomv>
+						<edomvd>Application of a chemical substance used to kill insects.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Chemical</edomv>
+						<edomvd>Application of a chemical substance. The term chemical was assigned to events where there was not enough information available to call them one of the 2 distinct types, herbicide or insecticide.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Insects</edomv>
+						<edomvd>Infestations of unwanted insects that can affect vegetative health such as bark beetle.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Disease</edomv>
+						<edomvd>Infestations of disease that can affect vegetative health such as root rot.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Insects/Disease</edomv>
+						<edomvd>Infestations of insects and/or disease that can affect vegetative health. This term was assigned to events where there was not enough information available to call them one way or the other.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Herbicide</edomv>
+						<edomvd>Application of a chemical substance used to kill or inhibit the growth of plants.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Wildfire</edomv>
+						<edomvd>BLM defined fire. An unplanned, unwanted wildland fire including unauthorized human-caused fires, escaped wildland fire use events, escaped prescribed fire projects, and all other wildland fires where the objective is to suppress or put out the fire.</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Unknown</edomv>
+						<edomvd>Sources indicate that a disturbance occurred but causality is uncertain.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Severity</attrlabl>
+				<attrdef>Severity for MTBS(&lt;http://mtbs.gov/methods.html&gt;), BARC(&lt;http://www.fs.fed.us/eng/rsac/baer/barc.html&gt;), and RAVG(&lt;http://www.fs.fed.us/postfirevegcondition/whatis.shtml&gt;) fires are determined by each project's criteria. Other fire severity is determined by using mosaicked dNBR (difference Normalized Burn Ratio) data classified into high, medium, and low severity levels based on a statistical comparison with the MTBS, BARC, and RAVG fire severity. In the 2010 effort severity will be determined by statistical (standard deviation) breaks associated with individual path/row dNBR data.</attrdef>
+				<attrdefs>Landfire</attrdefs>
+				<attrdomv>
+					<edom>
+						<edomv>High</edomv>
+						<edomvd>General classification level associated with high fire effect on land- cover. Thresholds used are dependent on the project and can vary from fire to fire.</edomvd>
+						<edomvds>LANDFIRE </edomvds>
+					</edom>
+					<edom>
+						<edomv>Medium</edomv>
+						<edomvd>General classification level associated with medium fire effect on landcover. Thresholds used are dependent on the project and can vary from fire to fire.</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Increased Green</edomv>
+						<edomvd>Post fire image indicated an increase in landcover greenness compared to fire image.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Unburned/Low</edomv>
+						<edomvd>General classification level associated with low or unburned landcover. Thresholds used are dependent on the project and can vary from fire to fire.</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Low</edomv>
+						<edomvd>General classification level associated with low fire effect on land- cover. Thresholds used are dependent on the project and can vary from fire to fire.</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>NoData/Non processing mask</edomv>
+						<edomvd>Areas not mapped by MTBS due to clouds, Landsat 7 SLC-Off issues (i.e. scan line dropouts), or other image issues.</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Confidence (Type and Severity)</attrlabl>
+				<attrdef>Confidence is evaluated based on the input data sources. For example, a mapped wildfire disturbance identified in the Refresh Events database, VCT output, and NBR data would have a higher confidence than a disturbance identified by VCT only since the causality and perimeter are unknown.</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<edom>
+						<edomv>Low</edomv>
+						<edomvd>General confidence in the mapped disturbance is low due to lack of information relative to assignment of causality and/or severity.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Low to Medium</edomv>
+						<edomvd>General confidence in the mapped disturbance ranges between low and medium due to lack of information relative to assignment of causality and/or severity.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Medium</edomv>
+						<edomvd>General confidence in the mapped disturbance is medium due to the availability of some information relative to assignment of causality and/or severity, but more information is warranted in order to have increased confidence.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>Medium to High</edomv>
+						<edomvd>General confidence in the mapped disturbance ranges between medium and high due to the availability of some information relative to assignment of causality and/or severity, but more information is warranted in order to have increased confidence.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+					<edom>
+						<edomv>High</edomv>
+						<edomvd>General confidence in the mapped disturbance is high due to the availability of specific information relative to assignment of causality and/or severity.	</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Source1 - 4</attrlabl>
+				<attrdef>A combination of one to four of the following: 1) Fire data source (MTBS, BARC, or RAVG), 2) LANDFIRE Event polygons, 3) MIICA or VCT raster output, 4) PAD GAP Status polygons, 5) dNBR (differenced NBR), 6) Decision Tree Modeled, 7) Focal Majority</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<udom>Descriptor of the combination of sources</udom>
+				</attrdomv>
+				<attrdomv>
+					<edom>
+						<edomv>See attribute overview list</edomv>
+						<edomvd>LANDFIRE</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>Description</attrlabl>
+				<attrdef>A synopsis of the data, and the reasoning behind their use, used to determine the classification.</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<udom>Verbiage describing classification reasoning.</udom>
+				</attrdomv>
+				<attrdomv>
+					<edom>
+						<edomv>See attribute overview list</edomv>
+						<edomvd>LANDFIRE</edomvd>
+						<edomvds>LANDFIRE</edomvds>
+					</edom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>R</attrlabl>
+				<attrdef>red color value</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>255</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>G</attrlabl>
+				<attrdef>green color value</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>255</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>B</attrlabl>
+				<attrdef>blue color value</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>255</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>RED</attrlabl>
+				<attrdef>red color value/255</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>1</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>GREEN</attrlabl>
+				<attrdef>green color value /255</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>1</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+			<attr>
+				<attrlabl>BLUE</attrlabl>
+				<attrdef>blue color value/255</attrdef>
+				<attrdefs>LANDFIRE</attrdefs>
+				<attrdomv>
+					<rdom>
+						<rdommin>0</rdommin>
+						<rdommax>1</rdommax>
+					</rdom>
+				</attrdomv>
+			</attr>
+		</detailed>
+	</eainfo>
+	<distinfo>
+		<distrib>
+			<cntinfo>
+				<cntorgp>
+					<cntorg>U.S. Geological Survey</cntorg>
+				</cntorgp>
+				<cntpos>Customer Services Representative</cntpos>
+				<cntaddr>
+					<addrtype>mailing and physical</addrtype>
+					<address>47914 252nd Street</address>
+					<address>USGS EROS</address>
+					<city>Sioux Falls</city>
+					<state>SD</state>
+					<postal>57198-0001</postal>
+					<country>US</country>
+				</cntaddr>
+				<cntvoice>605-594-6151</cntvoice>
+				<cnttdd>605-594-6933</cnttdd>
+				<cntfax>605-594-6589</cntfax>
+				<cntemail>custserv@usgs.gov</cntemail>
+				<hours>0800 - 1600, CT M-F (-6h CST/-5h CDT GMT)</hours>
+				<cntinst>The USGS point of contact is for questions relating only to the data display and download from this web site. For questions regarding data content and quality, refer to the original metadata document.</cntinst>
+			</cntinfo>
+		</distrib>
+		<distliab>This product is reproduced from geospatial information prepared by the U.S. Department of Agriculture, Forest Service and USGS EROS. By removing the contents of this package or taking receipt of these files via electronic file transfer methods, you understand that the data stored on this media is in draft condition. Represented features may not be in an accurate geographic location. The Forest Service and USGS EROS make no expressed or implied warranty, including warranty of merchantability and fitness, with respect to the character, function, or capabilities of the data or their appropriateness for any user's purposes. The Forest Service and USGS EROS reserve the right to correct, update, modify, or replace this geospatial information without notification.</distliab>
+		<stdorder>
+			<digform>
+				<digtinfo>
+					<formname>ARCG</formname>
+					<formvern>ArcGIS 9.3</formvern>
+					<formspec>Raster</formspec>
+					<transize>49.835</transize>
+				</digtinfo>
+				<digtopt>
+					<onlinopt>
+						<computer>
+							<networka>
+								<networkr>https://landfire.gov/viewer/</networkr>
+							</networka>
+						</computer>
+					</onlinopt>
+				</digtopt>
+			</digform>
+			<fees>None</fees>
+			<turnarnd>Variable</turnarnd>
+		</stdorder>
+		<availabl>
+			<timeinfo>
+				<rngdates>
+					<begdate>20100101</begdate>
+					<enddate>unknown</enddate>
+				</rngdates>
+			</timeinfo>
+		</availabl>
+	</distinfo>
+	<metainfo>
+		<metd>20070201</metd>
+		<metc>
+			<cntinfo>
+				<cntorgp>
+					<cntorg>U.S. Geological Survey</cntorg>
+				</cntorgp>
+				<cntpos>Customer Service Representative</cntpos>
+				<cntaddr>
+					<addrtype>physical</addrtype>
+					<address>USGS EROS</address>
+					<address>47914 252nd Street</address>
+					<city>Sioux Falls</city>
+					<state>SD</state>
+					<postal>57198-0001</postal>
+					<country>US</country>
+				</cntaddr>
+				<cntvoice>605-594-6151</cntvoice>
+				<cntemail>helpdesk@landfire.gov</cntemail>
+				<hours>0800 - 1600 CT, M - F (-6h CST/-5h CDT GMT)</hours>
+			</cntinfo>
+		</metc>
+		<metstdn>FGDC Content Standard for Digital Geospatial Metadata</metstdn>
+		<metstdv>FGDC-STD-001-1998</metstdv>
+		<mettc>local time</mettc>
+		<metsi>
+			<metscs>None</metscs>
+			<metsc>Unclassified</metsc>
+			<metshd>None</metshd>
+		</metsi>
+	</metainfo>
+</metadata>

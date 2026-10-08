@@ -1,0 +1,58 @@
+"BPS_MODEL","BPS_NAME","acres","type_group","class_change","annual_frac","annual_acres"
+"13022_41_50_51","Laurentian-Acadian Northern Hardwoods Forest-Hemlock",469966.784458362,"Fire",FALSE,5e-05,23.4983392229181
+"13022_41_50_51","Laurentian-Acadian Northern Hardwoods Forest-Hemlock",469966.784458362,"Fire",TRUE,0.000442,207.725318730596
+"13022_41_50_51","Laurentian-Acadian Northern Hardwoods Forest-Hemlock",469966.784458362,"Wind, weather or stress",TRUE,0.00094,441.768777390861
+"13023_51","Laurentian-Acadian Northern Hardwoods Forest-Northern Sugar Maple-Basswood",27851.8405980797,"Fire",FALSE,4e-05,1.11407362392319
+"13023_51","Laurentian-Acadian Northern Hardwoods Forest-Northern Sugar Maple-Basswood",27851.8405980797,"Fire",TRUE,0.00096,26.7377669741565
+"13023_51","Laurentian-Acadian Northern Hardwoods Forest-Northern Sugar Maple-Basswood",27851.8405980797,"Wind, weather or stress",TRUE,0.00178,49.5762762645819
+"13441_51","Boreal Jack Pine-Black Spruce Forest-Pine Barrens",8086.0541082882,"Fire",FALSE,0.17262,1395.81466017271
+"13441_51","Boreal Jack Pine-Black Spruce Forest-Pine Barrens",8086.0541082882,"Fire",TRUE,0.01777,143.689181504281
+"13442_51","Boreal Jack Pine-Black Spruce Forest-Spruce-Fir",4051.36686076862,"Fire",FALSE,0.002077,8.41468896981641
+"13442_51","Boreal Jack Pine-Black Spruce Forest-Spruce-Fir",4051.36686076862,"Fire",TRUE,0.00692,28.0354586765188
+"13442_51","Boreal Jack Pine-Black Spruce Forest-Spruce-Fir",4051.36686076862,"Wind, weather or stress",FALSE,0.00034,1.37746473266133
+"13442_51","Boreal Jack Pine-Black Spruce Forest-Spruce-Fir",4051.36686076862,"Wind, weather or stress",TRUE,0.00035,1.41797840126902
+"13620_51_63_64_65_66","Laurentian-Acadian Northern Pine(-Oak) Forest",11045.2398935101,"Fire",FALSE,0.01668,184.234601423748
+"13620_51_63_64_65_66","Laurentian-Acadian Northern Pine(-Oak) Forest",11045.2398935101,"Fire",TRUE,0.00426,47.052721946353
+"13620_51_63_64_65_66","Laurentian-Acadian Northern Pine(-Oak) Forest",11045.2398935101,"Wind, weather or stress",FALSE,0.00026,2.87176237231262
+"13620_51_63_64_65_66","Laurentian-Acadian Northern Pine(-Oak) Forest",11045.2398935101,"Wind, weather or stress",TRUE,0.00322,35.5656724571025
+"13651_51","Boreal White Spruce-Fir-Hardwood Forest-Inland",77914.476593416,"Fire",TRUE,0.00392,305.424748246191
+"13651_51","Boreal White Spruce-Fir-Hardwood Forest-Inland",77914.476593416,"Insects or disease",FALSE,0.01088,847.709505336366
+"13651_51","Boreal White Spruce-Fir-Hardwood Forest-Inland",77914.476593416,"Wind, weather or stress",FALSE,0.064,4986.52650197862
+"13651_51","Boreal White Spruce-Fir-Hardwood Forest-Inland",77914.476593416,"Wind, weather or stress",TRUE,0.00071,55.3192783813254
+"13652_51","Boreal White Spruce-Fir-Hardwood Forest-Coastal",51950.3234254402,"Fire",TRUE,0.00192,99.7446209768453
+"13652_51","Boreal White Spruce-Fir-Hardwood Forest-Coastal",51950.3234254402,"Insects or disease",FALSE,0.01343,697.692843603662
+"13652_51","Boreal White Spruce-Fir-Hardwood Forest-Coastal",51950.3234254402,"Wind, weather or stress",TRUE,0.00083,43.1187684431154
+"13660_51_63_64_65_66","Laurentian-Acadian Pine-Hemlock-Hardwood Forest",48043.7356076732,"Fire",FALSE,0.004535,217.878340980798
+"13660_51_63_64_65_66","Laurentian-Acadian Pine-Hemlock-Hardwood Forest",48043.7356076732,"Fire",TRUE,0.00194,93.2048470788861
+"13660_51_63_64_65_66","Laurentian-Acadian Pine-Hemlock-Hardwood Forest",48043.7356076732,"Wind, weather or stress",TRUE,0.00097,46.602423539443
+"14071_41_50_51","Laurentian Pine-Oak Barrens",225.285976283615,"Fire",FALSE,0.22059,49.6958335084026
+"14071_41_50_51","Laurentian Pine-Oak Barrens",225.285976283615,"Fire",TRUE,0.00905,2.03883808536671
+"14072_41_50_51","Laurentian Pine-Oak Barrens-Jack Pine",10.6749524793815,"Fire",FALSE,0.0936,0.999175552070112
+"14072_41_50_51","Laurentian Pine-Oak Barrens-Jack Pine",10.6749524793815,"Fire",TRUE,0.02463,0.262924079567167
+"14072_41_50_51","Laurentian Pine-Oak Barrens-Jack Pine",10.6749524793815,"Insects or disease",TRUE,0.00098,0.0104614534297939
+"14072_41_50_51","Laurentian Pine-Oak Barrens-Jack Pine",10.6749524793815,"Other",TRUE,0.00098,0.0104614534297939
+"14440_41_50_51","Eastern Boreal Floodplain",197.041831181918,"Fire",FALSE,0.005,0.985209155909588
+"14440_41_50_51","Eastern Boreal Floodplain",197.041831181918,"Other",FALSE,0.10325,20.344569069533
+"14440_41_50_51","Eastern Boreal Floodplain",197.041831181918,"Other",TRUE,0.01865,3.67483015154276
+"14660_50_51","Great Lakes Wooded Dune and Swale",313.576729081833,"Fire",FALSE,0.00189,0.592660017964664
+"14660_50_51","Great Lakes Wooded Dune and Swale",313.576729081833,"Fire",TRUE,0.00027,0.0846657168520949
+"14660_50_51","Great Lakes Wooded Dune and Swale",313.576729081833,"Other",TRUE,0.00092,0.288490590755286
+"14660_50_51","Great Lakes Wooded Dune and Swale",313.576729081833,"Wind, weather or stress",TRUE,0.00487,1.52711867062853
+"14750_41_50_51_63_64_65_66","Laurentian-Acadian Floodplain Systems",7235.39383258748,"Fire",FALSE,0.01698,122.856987277335
+"14750_41_50_51_63_64_65_66","Laurentian-Acadian Floodplain Systems",7235.39383258748,"Other",FALSE,0.1995,1443.4610696012
+"14750_41_50_51_63_64_65_66","Laurentian-Acadian Floodplain Systems",7235.39383258748,"Other",TRUE,0.01425,103.104362114372
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Fire",FALSE,0.00814,304.953079918786
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Fire",TRUE,0.0014,52.4489326641647
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Insects or disease",FALSE,0.00161,60.3162725637894
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Other",FALSE,0.00528,197.807403190564
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Other",TRUE,0.0037,138.615036326721
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Wind, weather or stress",FALSE,0.00259,97.0305254287047
+"14770_40_41_50_51","Boreal Acidic Peatland Systems",37463.5233315462,"Wind, weather or stress",TRUE,0.00023,8.61661036625563
+"14810_41_50_51_63","Laurentian-Acadian Alkaline Conifer-Hardwood Swamp",114526.005280202,"Fire",FALSE,0.00014,16.0336407392282
+"14810_41_50_51_63","Laurentian-Acadian Alkaline Conifer-Hardwood Swamp",114526.005280202,"Fire",TRUE,0.00086,98.4923645409733
+"14810_41_50_51_63","Laurentian-Acadian Alkaline Conifer-Hardwood Swamp",114526.005280202,"Wind, weather or stress",FALSE,0.00042,48.1009222176847
+"14810_41_50_51_63","Laurentian-Acadian Alkaline Conifer-Hardwood Swamp",114526.005280202,"Wind, weather or stress",TRUE,0.003705,424.318849563147
+"14920_41_50_51_52_63","Great Lakes Coastal Marsh Systems",1623.92714592592,"Other",TRUE,0.0221,35.8887899249628
+"14940_41_50_51","Laurentian-Acadian Shrub-Herbaceous Wetland Systems",34.0264110280287,"Fire",FALSE,0.056,1.90547901756961
+"14940_41_50_51","Laurentian-Acadian Shrub-Herbaceous Wetland Systems",34.0264110280287,"Other",TRUE,0.0113,0.384498444616724
+"14940_41_50_51","Laurentian-Acadian Shrub-Herbaceous Wetland Systems",34.0264110280287,"Wind, weather or stress",FALSE,0.316,10.7523458848571

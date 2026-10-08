@@ -1,7 +1,9 @@
 ---
 title: "Who cut, who sold?"
-subtitle: "Tree canopy change on Commercial Forest land, Houghton & Keweenaw Counties, 2020–2025"
-author: "Randy Swaty"
+subtitle: "What happened to the tree canopy on TRG's Commercial Forest land, Houghton & Keweenaw Counties"
+author:
+  - "Randy Swaty"
+  - "Julia Petersen"
 date: today
 format:
   revealjs:
@@ -32,17 +34,17 @@ suppressPackageStartupMessages({
   library(scales)
 })
 
-root <- if (dir.exists("data/processed")) "." else ".."
-proc <- function(f) file.path(root, "data/processed", f)
+root <- if (dir.exists("output_csvs")) "." else ".."
+proc <- function(f) file.path(root, if (grepl("\\.csv$", f)) "output_csvs" else "output_spatial", f)
 rd <- function(f) read.csv(proc(f), stringsAsFactors = FALSE)
 
 fmt_n <- function(x) format(round(as.numeric(x)), big.mark = ",", trim = TRUE)
 fmt_1 <- function(x) sprintf("%.1f", as.numeric(x))
 
 G <- list(
-  SB = "TRG → American Songbird (2026)",
+  TV = "TRG → Verdant",
   KH = "TRG → The Nature Conservancy (Heartlands)",
-  TV = "TRG → Verdant (same company, renamed)",
+  SB = "TRG → Verdant → American Songbird (2026)",
   TO = "TRG → other owners / left CFP",
   MW = "Molpus → Molpus (mostly kept)",
   LY = "Lyme → Lyme",
@@ -50,9 +52,9 @@ G <- list(
   NS = "Other private → new owner / left CFP"
 )
 zone_lab <- c(
-  "Songbird (TRG to Songbird, 2026)" = G$SB,
-  "Heartlands (TRG to TNC)" = G$KH,
   "TRG/Verdant retained" = G$TV,
+  "Heartlands (TRG to TNC)" = G$KH,
+  "Songbird (TRG to Songbird, 2026)" = G$SB,
   "TRG other sale / left CFP" = G$TO,
   "MWF" = G$MW,
   "Lyme" = G$LY,
@@ -60,10 +62,10 @@ zone_lab <- c(
   "Non-institutional sold / left" = G$NS
 )
 zone_col <- setNames(
-  c("#d95f02", "#1b9e77", "#7570b3", "#56b4e9", "#e7298a", "#f0c419", "#d2b48c", "#5c3a1e"),
+  c("#7570b3", "#1b9e77", "#d95f02", "#56b4e9", "#e7298a", "#f0c419", "#d2b48c", "#5c3a1e"),
   unlist(G)
 )
-focus <- c(G$SB, G$KH, G$TV, G$MW, G$NK)
+focus <- c(G$TV, G$KH, G$SB, G$NK)
 
 terraOptions(progress = 0)
 
@@ -79,44 +81,72 @@ theme_slide <- theme_minimal(base_size = 16) +
   )
 
 rank <- rd("cfp_parcel_tcc_change_by_owner_type.csv")
-rates <- rd("cfp_institutional_sellers_keepers_rates.csv")
 buckets <- rd("cfp_institutional_exit_buckets.csv")
 by_class <- rd("cfp_sellers_by_owner_class.csv")
 parcels <- rd("cfp_institutional_sellers_keepers_parcels.csv")
 tcc_year <- rd("cfp_sale_tcc_mean_by_year.csv") |> mutate(group = zone_lab[zone])
 hansen_year <- rd("cfp_sale_footprint_hansen_by_year.csv") |> mutate(group = zone_lab[zone])
-lf_period <- rd("cfp_sale_landfire_by_period.csv") |>
-  filter(severity == "All severities") |>
-  mutate(group = zone_lab[zone])
-attrib <- rd("cfp_sale_disturbance_attribution.csv")
+lf_year <- rd("cfp_sale_landfire_annual_by_zone.csv") |> mutate(group = zone_lab[zone])
+lf_type <- rd("cfp_sale_landfire_annual_by_type.csv")
+drop_by_year <- rd("footprint_drop_year_by_source.csv")
+drop_agree <- rd("footprint_drop_year_agreement.csv")
+hk_totals <- rd("hk_disturbance_totals.csv")
+hk_types <- rd("hk_disturbance_historical_vs_current.csv")
+hk_bps <- rd("hk_bps_acres.csv")
+hk_evt <- rd("hk_evt_acres.csv")
+fig <- function(f) file.path(root, "output_visuals", f)
+hkt <- function(p, col) hk_totals[[col]][hk_totals$period == p]
+HIST_CHG <- "Historical: structure-changing only"
+HIST_ALL <- "Historical: all disturbances"
+CUR_ALL <- "Current (LANDFIRE average, 2010–2025)"
+CUR_10s <- "Current (LANDFIRE average, 2010–2019)"
+CUR_20s <- "Current (LANDFIRE average, 2020–2025)"
+cur_types <- hk_types |> filter(period == CUR_ALL)
+cur_share <- function(g) 100 * sum(cur_types$annual_acres[cur_types$type_group == g]) / sum(cur_types$annual_acres)
+hk_land <- hkt(CUR_ALL, "annual_acres") / hkt(CUR_ALL, "pct_of_land") * 100
 
 n_all <- nrow(rank)
 n_loss <- sum(rank$delta_pp < -20)
 ac_loss <- sum(rank$acres_2020[rank$delta_pp < -20])
 
-pooled <- rates |> filter(sale_definition == "true_transfer", scope == "pooled")
-pool_pct <- function(c) pooled$pct_parcels_major[pooled$cohort == c]
-
 bk <- function(firm, bucket, col) {
-  buckets[[col]][buckets$institutional_firm == firm & buckets$exit_bucket %in% bucket]
+  sum(buckets[[col]][buckets$institutional_firm == firm & buckets$exit_bucket %in% bucket])
 }
-cls <- function(oc, c, col) by_class[[col]][by_class$owner_class == oc & by_class$cohort == c]
+cls <- function(oc, col) sum(by_class[[col]][by_class$owner_class == oc])
+
+TV <- "TRG/Verdant retained"
+KH <- "Heartlands (TRG to TNC)"
+SB <- "Songbird (TRG to Songbird, 2026)"
+TO <- "TRG other sale / left CFP"
+NK <- "Non-institutional kept"
 
 tcc_at <- function(z, y) tcc_year$mean_tcc[tcc_year$zone == z & tcc_year$year == y]
 han_at <- function(z, y) hansen_year$pct_of_zone[hansen_year$zone == z & hansen_year$year == y]
-lf_at <- function(z, p) lf_period$pct_of_zone_per_year[lf_period$zone == z & lf_period$lf_period == p]
+lf_at <- function(z, y) lf_year$pct_of_zone[lf_year$zone == z & lf_year$year == y]
 
-SB <- "Songbird (TRG to Songbird, 2026)"
-KH <- "Heartlands (TRG to TNC)"
-TV <- "TRG/Verdant retained"
-NK <- "Non-institutional kept"
+trg_dest <- data.frame(
+  zone = c(TV, KH, SB, TO),
+  bucket = I(list("rebrand_same_family", "tnc_heartlands", "songbird", c("other_sale", "left_cfp")))
+) |>
+  rowwise() |>
+  mutate(
+    group = zone_lab[[zone]],
+    parcels = bk("TRG", bucket, "n_parcels"),
+    acres = bk("TRG", bucket, "acres"),
+    acres_major = bk("TRG", bucket, "acres_major_disturbance"),
+    pct_major = 100 * acres_major / acres,
+    tcc20 = tcc_at(zone, 2020),
+    tcc25 = tcc_at(zone, 2025)
+  ) |>
+  ungroup()
+td <- function(z, col) trg_dest[[col]][trg_dest$zone == z]
+trg_share_loss <- 100 * sum(trg_dest$acres_major) / ac_loss
 
-hansen_attrib <- attrib |> filter(signal == "Hansen loss 2020-2024")
-pct_harvest_label <- 100 * sum(hansen_attrib$n[hansen_attrib$lf_type == "Harvest / mechanical removal"]) /
-  sum(hansen_attrib$n)
-unattr_range <- hansen_attrib |>
-  filter(lf_type == "Unattributed change") |>
-  summarise(lo = min(pct_of_signal), hi = max(pct_of_signal))
+inst_pct <- 100 * cls("Institutional", "acres_major_disturbance") / cls("Institutional", "acres")
+non_pct <- 100 * cls("Non-institutional", "acres_major_disturbance") / cls("Non-institutional", "acres")
+ratio_all <- inst_pct / non_pct
+
+ag <- function(fp, col) drop_agree[[col]][drop_agree$footprint == fp]
 
 molpus <- parcels |>
   filter(institutional_firm == "MWF") |>
@@ -125,22 +155,16 @@ molpus <- parcels |>
   summarise(n = n(), acres = sum(acres_2020), major = sum(major_disturbance),
             delta = mean(delta_pp), .groups = "drop")
 mp <- function(u, col) molpus[[col]][molpus$unit == u]
-
-ratio_kept <- cls("Institutional", "keeper", "pct_parcels_major") /
-  cls("Non-institutional", "keeper", "pct_parcels_major")
-ratio_sold <- cls("Institutional", "seller", "pct_parcels_major") /
-  cls("Non-institutional", "seller", "pct_parcels_major")
-ratio_range <- paste0(floor(min(ratio_kept, ratio_sold)), " to ", ceiling(max(ratio_kept, ratio_sold)))
 ```
 
 ## The short answer
 
-- Lumped together, big timber companies that **sold** land and those that **kept** it cut at about the same rate.
-- But the land that was sold tells **two opposite stories**:
-  - Land sold to **The Nature Conservancy** (Heartlands): clearing stopped and the forest has been **growing back**.
-  - Land sold to **American Songbird** in 2026: canopy **dropped sharply in 2024–2025**, the two years just before the sale.
-- What mattered was **who the land went to and what happened before the sale**, not just whether it was sold.
-- Land owned by big timber companies was heavily cut **`r ratio_range` times as often** as land owned by other private owners.
+- In 2020, **TRG** owned most of the big-company forest land here. By 2026 it had sold nearly all of it, mainly to **Verdant** (a different company) and to **The Nature Conservancy** (the Keweenaw Heartlands). In 2026, Verdant sold part of its land to **American Songbird**.
+- **TRG → Verdant:** canopy slipped from `r fmt_1(td(TV, "tcc20"))`% to `r fmt_1(td(TV, "tcc25"))`%; `r fmt_1(td(TV, "pct_major"))`% of the acres were heavily cut.
+- **TRG → Heartlands:** clearing peaked in 2020–21, then **stopped**. Canopy recovered to `r fmt_1(td(KH, "tcc25"))`%, and **no** acres were heavily cut.
+- **TRG → Verdant → Songbird:** the **heaviest cutting**. `r fmt_1(td(SB, "pct_major"))`% of the acres were heavily cut, mostly in 2024–25, just before the sale.
+- Two independent satellite records, USFS canopy cover and Hansen forest loss, put these drops in the **same places and years**.
+- Overall, big-company land was heavily cut about **`r round(ratio_all)` times as often** as other private land, measured in acres.
 
 ## The setting {.overview-slide}
 
@@ -148,7 +172,7 @@ ratio_range <- paste0(floor(min(ratio_kept, ratio_sold)), " to ", ceiling(max(ra
 ::: {.column width="36%"}
 - Michigan's **Commercial Forest Program (CFP)**: owners get a property-tax break for keeping land in forest and open to public hunting and fishing.
 - The state lists every enrolled parcel and its owner. We used the **2020** and **2026** lists.
-- Much of this land is owned by **institutional owners**: investment companies that own forests for pension funds and other investors (here: TRG/Verdant, Molpus, Lyme).
+- Much of this land is owned by **institutional owners**: investment companies that own forests for pension funds and other investors (here: TRG, Verdant, Molpus, Lyme).
 :::
 ::: {.column width="64%"}
 ```{r}
@@ -163,7 +187,7 @@ zdf <- as.data.frame(zagg, xy = TRUE, na.rm = TRUE) |>
     zone_lab[labels$zone[match(zone_code, labels$zone_code)]],
     levels = names(zone_col)
   ))
-counties <- st_read(file.path(root, "data/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
+counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
   st_transform(crs(zones))
 
 ggplot() +
@@ -176,7 +200,7 @@ ggplot() +
     xlim = range(zdf$x) + c(-3000, 3000),
     ylim = range(zdf$y) + c(-3000, 3000)
   ) +
-  labs(title = "CFP land by owner group", fill = NULL, x = NULL, y = NULL) +
+  labs(title = "CFP land by owner, 2020 → 2026", fill = NULL, x = NULL, y = NULL) +
   theme_void(base_size = 13) +
   theme(
     legend.position = "right",
@@ -190,63 +214,79 @@ ggplot() +
 
 ## The questions
 
-1. Which enrolled forest parcels **lost a lot of tree canopy** between 2020 and 2025?
-2. **Main question:** among the big institutional owners, did those that **sold** land cut more heavily than those that **kept** it?
-3. Do big companies treat their land differently from **other private owners**?
-4. Where do two big recent sales fit: the **Keweenaw Heartlands** (to The Nature Conservancy) and the **American Songbird** purchase (2026)?
+1. Where did **TRG's** 2020 forest land go by 2026?
+2. How did tree canopy change on land that went **TRG → Verdant**, compared with land that went **TRG → The Nature Conservancy** (Heartlands)?
+3. Where does the 2026 **American Songbird** purchase from Verdant fit?
+4. **Where and when** did the canopy drop inside the Heartlands and Songbird boundaries, and do two satellite records agree?
+5. Do big companies treat their land differently from **other private owners**?
 
 ## What we measured
 
 | Information | What it tells us |
 |:---|:---|
 | State CFP owner lists, 2020 and 2026 | Who owned each parcel at each date |
-| USFS Tree Canopy Cover, every year 2010–2025 | Share of the ground covered by treetops, for every 30 × 30 m square |
-| Hansen Global Forest Change, 2015–2024 | The year an area's trees were **cleared** (heavy clearing only) |
-| LANDFIRE disturbance | Where and roughly when the forest was disturbed, and its cause, where the cause is known |
+| USFS Tree Canopy Cover, every year 2010–2025 | Share of the ground covered by treetops, for every 30 × 30 m cell |
+| Hansen Global Forest Change, through 2024 | The year an area's trees were **cleared** (heavy clearing only) |
+| LANDFIRE Annual Disturbance, 2010–2025 | Where and when the forest was disturbed each year, and its cause where known |
 | Maps of the Songbird and Heartlands sale boundaries | Which land changed hands in those two sales, including the 2026 Songbird sale that the state list doesn't show yet |
 
 A drop from 75% to 65% canopy is a **10-point** drop.
 
 ## How we defined things
 
+- **TRG and Verdant are different companies.** Land listed under TRG in 2020 and Verdant in 2026 counts as **sold**.
 - **Heavy cutting:** a parcel's average canopy fell by **more than 20 points**, 2020 → 2025. This is our yardstick, not an official standard.
+- **Year the canopy dropped** (maps): the first year a 30 m cell's canopy fell **15 points or more** below its highest value in the previous 3 years.
 - **Important catch:** the 2026 state list still shows the Songbird land as Verdant's, because the sale happened after the list was made. The sale boundary maps fixed this.
 - **Two ways of measuring:**
-  - **By parcel:** each parcel's average canopy change, used to count heavily cut parcels and acres.
-  - **By satellite pixel:** the canopy data come as a grid of 30 × 30 m cells (about ¼ acre each). For the by-year charts we averaged every cell in each group's land, so big blocks of land count in proportion to their size.
+  - **By parcel:** each parcel's average canopy change, used to count heavily cut acres.
+  - **By satellite cell:** the canopy data come as a grid of 30 × 30 m cells (about ¼ acre each). The by-year charts average every cell in each group's land.
 
-## Heavy cutting is concentrated
-
-- Of `r fmt_n(n_all)` enrolled parcels (20 acres or larger), **`r fmt_n(n_loss)` parcels** (about **`r fmt_n(ac_loss)` acres**) lost more than 20 points of canopy between 2020 and 2025.
-- Most of them were **TRG/Verdant** land.
-- TRG/Verdant owns most of the institutional land here (`r fmt_n(sum(parcels$institutional_firm == "TRG"))` of `r fmt_n(nrow(parcels))` parcels), so it drives most of the results.
-
-## Sold vs. kept: it depends on the buyer
+## Where TRG's land went
 
 ```{r}
-#| label: chart-buckets
-firm_row <- function(group, fill, firm, bucket) {
-  data.frame(group = group, fill = fill,
-             acres = sum(bk(firm, bucket, "acres")),
-             major = sum(bk(firm, bucket, "acres_major_disturbance")))
+#| label: table-trg
+trg_dest |>
+  transmute(
+    `2020 → 2026` = group,
+    Parcels = fmt_n(parcels),
+    Acres = fmt_n(acres),
+    `Canopy 2020` = paste0(fmt_1(tcc20), "%"),
+    `Canopy 2025` = paste0(fmt_1(tcc25), "%"),
+    `Acres heavily cut` = paste0(fmt_n(acres_major), " (", fmt_1(pct_major), "%)")
+  ) |>
+  knitr::kable(align = "lrrrrr")
+```
+
+- Of the `r fmt_n(ac_loss)` acres heavily cut across all enrolled land, **`r round(trg_share_loss)`%** were on land TRG owned in 2020.
+- Most of TRG's land went to **Verdant**, so the TRG → Verdant group is the largest by far.
+
+## Share of acres heavily cut
+
+```{r}
+#| label: chart-bars
+firm_row <- function(group, firm, bucket) {
+  data.frame(group = group, acres = bk(firm, bucket, "acres"),
+             major = bk(firm, bucket, "acres_major_disturbance"))
 }
 class_row <- function(group, cohort) {
-  data.frame(group = group, fill = zone_col[[group]],
-             acres = cls("Non-institutional", cohort, "acres"),
-             major = cls("Non-institutional", cohort, "acres_major_disturbance"))
+  data.frame(group = group,
+             acres = by_class$acres[by_class$owner_class == "Non-institutional" & by_class$cohort == cohort],
+             major = by_class$acres_major_disturbance[by_class$owner_class == "Non-institutional" & by_class$cohort == cohort])
 }
 bars <- bind_rows(
-  firm_row(G$SB, zone_col[[G$SB]], "TRG", "songbird"),
-  firm_row("Molpus → Molpus (kept)", zone_col[[G$MW]], "MWF", "kept_same_name"),
-  firm_row(G$TV, zone_col[[G$TV]], "TRG", "rebrand_same_family"),
-  firm_row(G$TO, zone_col[[G$TO]], "TRG", c("other_sale", "left_cfp")),
-  firm_row(G$LY, zone_col[[G$LY]], "Lyme", "kept_same_name"),
-  firm_row(G$KH, zone_col[[G$KH]], "TRG", "tnc_heartlands"),
+  firm_row(G$SB, "TRG", "songbird"),
+  firm_row("Molpus → Molpus (kept)", "MWF", "kept_same_name"),
+  firm_row(G$TV, "TRG", "rebrand_same_family"),
+  firm_row(G$TO, "TRG", c("other_sale", "left_cfp")),
+  firm_row(G$LY, "Lyme", "kept_same_name"),
+  firm_row(G$KH, "TRG", "tnc_heartlands"),
   class_row(G$NS, "seller"),
   class_row(G$NK, "keeper")
 ) |>
   mutate(
     pct = 100 * major / acres,
+    fill = c(zone_col, "Molpus → Molpus (kept)" = zone_col[[G$MW]])[group],
     group = reorder(factor(group), pct)
   )
 
@@ -260,14 +300,10 @@ ggplot(bars, aes(pct, group, fill = fill)) +
     subtitle = "Acres in parcels whose average canopy fell more than 20 points",
     x = NULL, y = NULL
   ) +
-  theme_slide +
-  theme(plot.title.position = "plot")
-
-pooled_acres <- function(c) pooled$pct_acres_major[pooled$cohort == c]
-bar_pct <- function(g) bars$pct[bars$group == g]
+  theme_slide
 ```
 
-All institutional owners combined, **`r fmt_1(pooled_acres("seller"))`%** of the acres they sold were heavily cut, vs. **`r fmt_1(pooled_acres("keeper"))`%** of the acres they kept. So selling, by itself, didn't go with more cutting. The big difference is between buyers: **`r fmt_1(bar_pct(G$SB))`%** of the Songbird acres vs. **`r fmt_1(bar_pct(G$KH))`%** of the Heartlands acres.
+Among TRG's former land, the buyer made the difference: **`r fmt_1(td(SB, "pct_major"))`%** of the Songbird acres were heavily cut, compared with `r fmt_1(td(TV, "pct_major"))`% of the rest of Verdant's acres and **`r fmt_1(td(KH, "pct_major"))`%** of the Heartlands acres.
 
 ## Canopy cover by year
 
@@ -296,7 +332,7 @@ tcc_year |>
   theme(legend.position = "right")
 ```
 
-Songbird land climbed to `r fmt_1(tcc_at(SB, 2023))`% in 2023, then fell to **`r fmt_1(tcc_at(SB, 2025))`%** by 2025. Heartlands rose from `r fmt_1(tcc_at(KH, 2021))`% (2021) to **`r fmt_1(tcc_at(KH, 2025))`%**.
+**TRG → Verdant** drifted down from `r fmt_1(tcc_at(TV, 2018))`% (2018) to `r fmt_1(tcc_at(TV, 2025))`%. **Heartlands** rose from `r fmt_1(tcc_at(KH, 2021))`% (2021) to **`r fmt_1(tcc_at(KH, 2025))`%**. **Songbird** fell from `r fmt_1(tcc_at(SB, 2023))`% (2023) to **`r fmt_1(tcc_at(SB, 2025))`%**.
 
 ## Forest clearing by year
 
@@ -321,53 +357,48 @@ hansen_year |>
   theme(legend.position = "right")
 ```
 
-Heartlands clearing peaked in 2020–2021 (`r fmt_1(han_at(KH, 2020))`%, `r fmt_1(han_at(KH, 2021))`%) and was **near zero by 2023–2024**. Songbird clearing rose in 2022 and again in **2024 (`r fmt_1(han_at(SB, 2024))`%)**, the highest of any group that year.
+**TRG → Verdant** clearing peaked in 2023 (`r fmt_1(han_at(TV, 2023))`%). **Heartlands** peaked in 2020–21 and was **near zero by 2023–24**. **Songbird** rose in 2022 and again in **2024 (`r fmt_1(han_at(SB, 2024))`%)**.
 
-## LANDFIRE disturbance
+## LANDFIRE disturbance by year
 
 ```{r}
 #| label: chart-landfire
 #| fig-width: 11
 #| fig-height: 4.8
-period_axis <- c(
-  "6-10 yrs ago" = "6–10 years ago\n(~2015–19)",
-  "2-5 yrs ago" = "2–5 years ago\n(~2020–23)",
-  "1 yr ago" = "1 year ago\n(~2024)"
-)
-lf_period |>
+lf_year |>
   filter(group %in% focus) |>
-  mutate(
-    group = factor(group, levels = focus),
-    lf_period = factor(lf_period, levels = names(period_axis))
-  ) |>
-  ggplot(aes(lf_period, pct_of_zone_per_year, color = group, group = group)) +
+  mutate(group = factor(group, levels = focus)) |>
+  ggplot(aes(year, pct_of_zone, color = group)) +
   geom_line(linewidth = 1.2) +
-  geom_point(size = 2.4) +
+  geom_point(size = 2) +
   scale_color_manual(values = zone_col) +
-  scale_x_discrete(labels = period_axis) +
+  scale_x_continuous(breaks = seq(2010, 2025, 2)) +
   labs(
-    title = "Share of each group's land disturbed per year",
-    subtitle = "LANDFIRE gives time since disturbance, so years are approximate",
-    x = NULL, y = "% of area per year", color = NULL
+    title = "Share of each group's land disturbed each year",
+    subtitle = "LANDFIRE Annual Disturbance, all types",
+    x = NULL, y = "% of area disturbed", color = NULL
   ) +
   theme_slide +
   theme(legend.position = "right")
+
+lf_trg <- lf_type |> filter(zone %in% c(TV, KH, SB, TO))
+pct_unknown <- 100 * sum(lf_trg$acres[lf_trg$type_group == "Unknown"]) / sum(lf_trg$acres)
+pct_harvest <- 100 * sum(lf_trg$acres[lf_trg$type_group %in% c("Clearcut", "Harvest", "Thinning")]) / sum(lf_trg$acres)
 ```
 
-Most recent year: Songbird **`r fmt_1(lf_at(SB, "1 yr ago"))`%**, Heartlands **`r fmt_1(lf_at(KH, "1 yr ago"))`%**. LANDFIRE can't name the cause on this private land: it labels `r if (pct_harvest_label < 0.05) "none" else paste0(fmt_1(pct_harvest_label), "%")` of the cleared areas as harvest, and `r round(unattr_range$lo)`–`r round(unattr_range$hi)`% as "unattributed."
+**Songbird** reached **`r fmt_1(lf_at(SB, 2025))`%** in 2025, the highest of any group that year. **Heartlands** has been near zero since 2023. On TRG's former land, LANDFIRE labels `r if (pct_harvest < 0.05) "none" else paste0(fmt_1(pct_harvest), "%")` of the disturbance as harvest and `r round(pct_unknown)`% as "unknown" (the rest is insects or disease), so it can't tell us the cause.
 
 ```{r}
 #| label: footprint-prep
 crs_ref <- crs(zones)
 fp <- list(
-  Songbird = st_read(file.path(root, "data/American Songbird (17,315 acres)/American Songbird (17,315 acres).shp"), quiet = TRUE) |>
+  Songbird = st_read(file.path(root, "inputs/boundaries/american_songbird.shp"), quiet = TRUE) |>
     st_transform(crs_ref),
-  Heartlands = st_read(file.path(root, "data/Keweenaw Heartlands/Keweenaw Heartlands.shp"), quiet = TRUE) |>
+  Heartlands = st_read(file.path(root, "inputs/boundaries/keweenaw_heartlands.shp"), quiet = TRUE) |>
     st_transform(crs_ref)
 )
-hansen <- rast(proc("hansen_lossyear.tif"))
 read_tcc <- function(y) {
-  subst(rast(file.path(root, sprintf("data/TCC_Houghton_Keweenaw/HK_TCC_%d.tif", y))), c(254, 255), NA)
+  subst(rast(file.path(root, sprintf("inputs/tcc/HK_TCC_%d.tif", y))), c(254, 255), NA)
 }
 tcc_change <- read_tcc(2025) - read_tcc(2020)
 
@@ -376,25 +407,25 @@ clip_df <- function(r, poly) {
   as.data.frame(mask(crop(r, v), v), xy = TRUE, na.rm = TRUE)
 }
 
-loss_levels <- c("2015–2019", "2020–2021", "2022–2023", "2024")
-loss_cols <- setNames(c("#fdd49e", "#fc8d59", "#d7301f", "#67001f"), loss_levels)
+drop_years <- list(Heartlands = 2012:2022, Songbird = 2015:2025)
 
-loss_map <- function(name) {
-  d <- clip_df(hansen, fp[[name]])
-  names(d)[3] <- "v"
-  d <- d |>
-    filter(v >= 15, v <= 24) |>
-    mutate(period = factor(case_when(
-      v <= 19 ~ "2015–2019", v <= 21 ~ "2020–2021", v <= 23 ~ "2022–2023", TRUE ~ "2024"
-    ), levels = loss_levels))
+drop_map <- function(name, layer, title) {
+  yrs <- drop_years[[name]]
+  d <- as.data.frame(rast(proc(sprintf("drop_year_%s.tif", tolower(name))))[[layer]], xy = TRUE, na.rm = TRUE)
+  names(d)[3] <- "year"
   ggplot() +
-    geom_sf(data = fp[[name]], fill = "grey95", color = "grey30", linewidth = 0.4) +
-    geom_raster(data = d, aes(x, y, fill = period)) +
-    scale_fill_manual(values = loss_cols, drop = FALSE) +
+    geom_sf(data = fp[[name]], fill = "grey92", color = "grey30", linewidth = 0.3) +
+    geom_raster(data = d, aes(x, y, fill = year)) +
+    scale_fill_viridis_c(
+      option = "turbo", begin = 0.05, end = 0.95,
+      limits = range(yrs), breaks = seq(min(yrs), max(yrs), 2),
+      name = "Year canopy dropped"
+    ) +
+    guides(fill = guide_colorbar(barwidth = unit(8, "cm"), title.position = "top")) +
     coord_sf(datum = NA) +
-    labs(title = name, fill = "Year cleared", x = NULL, y = NULL) +
-    theme_void(base_size = 15) +
-    theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
+    labs(title = title, x = NULL, y = NULL) +
+    theme_void(base_size = 14) +
+    theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 15))
 }
 
 change_map <- function(name) {
@@ -417,28 +448,77 @@ change_map <- function(name) {
 }
 ```
 
-## Map: where and when trees were cleared
+## Heartlands: when the canopy dropped, 2012–2022
 
 :::: {.columns}
 ::: {.column width="50%"}
 ```{r}
-#| label: map-loss-songbird
+#| label: map-drop-kh-tcc
 #| fig-width: 6
 #| fig-height: 5.4
-loss_map("Songbird")
+drop_map("Heartlands", "tcc_drop_year", "USFS canopy: fell 15+ points")
 ```
 :::
 ::: {.column width="50%"}
 ```{r}
-#| label: map-loss-heartlands
+#| label: map-drop-kh-hansen
 #| fig-width: 6
 #| fig-height: 5.4
-loss_map("Heartlands")
+drop_map("Heartlands", "hansen_loss_year", "Hansen: forest cleared")
 ```
 :::
 ::::
 
-Songbird clearing is **recent** (dark red); Heartlands clearing is **older** (orange and yellow), with almost nothing after 2021. Maps are not at the same scale.
+Under TRG, drops were spread across the decade, with a cluster in **2018–2021** (orange and red) in the southern block and the east side of the northern blocks, then very little in 2022. The canopy record (left) flags `r fmt_n(ag("Heartlands", "acres_tcc"))` acres; Hansen (right) flags `r fmt_n(ag("Heartlands", "acres_hansen"))` acres.
+
+## Songbird: when the canopy dropped, 2015–2025
+
+:::: {.columns}
+::: {.column width="50%"}
+```{r}
+#| label: map-drop-sb-tcc
+#| fig-width: 6
+#| fig-height: 5.4
+drop_map("Songbird", "tcc_drop_year", "USFS canopy: fell 15+ points")
+```
+:::
+::: {.column width="50%"}
+```{r}
+#| label: map-drop-sb-hansen
+#| fig-width: 6
+#| fig-height: 5.4
+drop_map("Songbird", "hansen_loss_year", "Hansen: forest cleared (through 2024)")
+```
+:::
+::::
+
+The big recent blocks (dark red, **2024–2025**) are the largest drops on the property, in the west-centre and the east. The canopy record flags `r fmt_n(ag("Songbird", "acres_tcc"))` acres; Hansen flags `r fmt_n(ag("Songbird", "acres_hansen"))` acres. Hansen's record ends in 2024, so it can't show 2025.
+
+## Do the two records agree?
+
+```{r}
+#| label: chart-drop-sources
+#| fig-width: 11
+#| fig-height: 4.6
+drop_by_year |>
+  mutate(
+    footprint = factor(paste0(footprint, " (", ifelse(footprint == "Heartlands", "2012–2022", "2015–2025"), ")"),
+                       levels = c("Heartlands (2012–2022)", "Songbird (2015–2025)")),
+    source = recode(source, "TCC drop >= 15 points" = "USFS canopy fell 15+ points", "Hansen loss" = "Hansen forest cleared")
+  ) |>
+  ggplot(aes(year, acres, fill = source)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.75) +
+  facet_wrap(~footprint, scales = "free_x") +
+  scale_fill_manual(values = c("USFS canopy fell 15+ points" = "#2b8cbe", "Hansen forest cleared" = "#e6550d")) +
+  scale_x_continuous(breaks = function(l) seq(ceiling(l[1]), floor(l[2]), 2)) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Acres where canopy dropped, by year and source", x = NULL, y = "Acres", fill = NULL) +
+  theme_slide +
+  theme(strip.text = element_text(face = "bold", size = 14))
+```
+
+- **Where Hansen sees clearing, the canopy record almost always agrees:** `r round(ag("Heartlands", "pct_hansen_also_tcc"))`% (Heartlands) and `r round(ag("Songbird", "pct_hansen_also_tcc"))`% (Songbird) of Hansen's acres, within a year of each other `r round(min(drop_agree$pct_both_same_year_pm1))`–`r round(max(drop_agree$pct_both_same_year_pm1))`% of the time.
+- The canopy record flags about **3 times as many acres**: likely lighter cuts that Hansen misses, plus some noise (for example, the canopy-record spikes in 2014 for Heartlands and 2015 for Songbird, when Hansen saw little clearing).
 
 ## Map: canopy change, 2020 → 2025
 
@@ -461,51 +541,84 @@ change_map("Heartlands")
 :::
 ::::
 
-Brown = canopy lost, green = canopy gained. Songbird shows large blocks of loss; Heartlands is mostly regrowth. Some brown blocks have no clearing on the previous map, which points to lighter cuts (which the clearing record misses) or to noise in the canopy estimates.
+Brown = canopy lost, green = canopy gained. Songbird shows large blocks of loss; Heartlands is mostly regrowth.
 
 ## Owner by owner
 
-- **TRG/Verdant:** most of the land; kept land shows moderate cutting.
+- **TRG:** sold nearly all of its `r fmt_n(sum(trg_dest$acres))` enrolled acres between 2020 and 2026 (see "Where TRG's land went").
+- **Verdant:** bought most of TRG's land, cut moderately, and sold part of it to American Songbird in 2026.
 - **Molpus** (listed as "MWF," for Molpus Woodlands Fund):
   - **Vulcan** parcels (kept): canopy fell an average of **`r fmt_1(abs(mp("Vulcan", "delta")))` points**; `r mp("Vulcan", "major")` of `r mp("Vulcan", "n")` parcels heavily cut.
   - **Ned Lake** parcels: mostly stable.
-- **Lyme:** little cutting (`r bk("Lyme", "kept_same_name", "n_major_disturbance")` of `r bk("Lyme", "kept_same_name", "n_parcels")` parcels).
+- **Lyme:** kept all its land, with little cutting (`r bk("Lyme", "kept_same_name", "n_major_disturbance")` of `r bk("Lyme", "kept_same_name", "n_parcels")` parcels).
 - **Manulife:** no enrolled land in these two counties.
-
-Molpus and Lyme own few parcels here, so their numbers can swing a lot.
 
 ## Big companies vs. other private owners
 
-| | Not sold | Sold |
-|:---|---:|---:|
-| Institutional owners | `r fmt_1(cls("Institutional", "keeper", "pct_parcels_major"))`% | `r fmt_1(cls("Institutional", "seller", "pct_parcels_major"))`% |
-| Other private owners | `r fmt_1(cls("Non-institutional", "keeper", "pct_parcels_major"))`% | `r fmt_1(cls("Non-institutional", "seller", "pct_parcels_major"))`% |
+| | Acres | Acres heavily cut | Share |
+|:---|---:|---:|---:|
+| Institutional owners | `r fmt_n(cls("Institutional", "acres"))` | `r fmt_n(cls("Institutional", "acres_major_disturbance"))` | **`r fmt_1(inst_pct)`%** |
+| Other private owners | `r fmt_n(cls("Non-institutional", "acres"))` | `r fmt_n(cls("Non-institutional", "acres_major_disturbance"))` | **`r fmt_1(non_pct)`%** |
 
-Share of parcels heavily cut, 2020–2025. Big-company land was heavily cut about **`r round(ratio_kept)` times as often** when nobody sold, and about **`r round(ratio_sold)` times as often** among land that was sold.
+All 2020 enrolled land, sold or not. Big-company land was heavily cut about **`r round(ratio_all)` times as often** as other private land.
+
+## The bigger picture: all land in both counties
+
+- So far we've looked at Commercial Forest land. This section covers **all `r fmt_n(hk_land)` acres** of land in Houghton and Keweenaw counties (mainland, open water excluded).
+- **Biophysical Settings (BpS):** the vegetation the land would naturally support, under its historical disturbance regime (LANDFIRE 2020).
+- **Existing Vegetation Type (EVT):** what's growing there now (LANDFIRE 2024).
+- **Historical disturbance:** how much land the BpS models expect to be disturbed each year by fire, wind, insects and other natural causes.
+- **Current disturbance:** what LANDFIRE's annual maps recorded, 2010–2025.
+
+## What the land would naturally support
+
+![](`r fig("hk_bps_top10.png")`){height="520px" fig-align="center"}
+
+Northern hardwoods with hemlock cover **`r fmt_1(hk_bps$pct[1])`%** of the land. Swamps, spruce-fir and pine-hemlock-hardwood make up most of the rest.
+
+## What's there now
+
+![](`r fig("hk_evt_top10.png")`){height="520px" fig-align="center"}
+
+Northern hardwoods still dominate (**`r fmt_1(hk_evt$pct[1])`%**). Spruce-fir is much less common than its BpS share, and aspen-birch (`r fmt_1(hk_evt$pct[hk_evt$EVT_NAME == "Laurentian-Acadian Sub-boreal Aspen-Birch Forest"])`%) is the young forest that grows back after cutting.
+
+## Disturbance per year: historical vs. now
+
+![](`r fig("hk_disturbance_historical_vs_current.png")`){height="470px" fig-align="center"}
+
+Historically, disturbances that changed forest structure hit about **`r fmt_n(hkt(HIST_CHG, "annual_acres"))` acres a year** (`r fmt_1(hkt(HIST_CHG, "pct_of_land"))`% of the land). Many more were light, like windthrow that leaves an old forest old; counting those gives `r fmt_n(hkt(HIST_ALL, "annual_acres"))` acres a year.
+
+## Disturbance by year vs. the historical expectation
+
+![](`r fig("hk_disturbance_by_year_vs_historical.png")`){height="460px" fig-align="center"}
+
+Since 2020, about **`r fmt_n(hkt(CUR_20s, "annual_acres"))` acres a year** (`r fmt_1(hkt(CUR_20s, "pct_of_land"))`%) were disturbed, about **`r round(hkt(CUR_20s, "annual_acres") / hkt(HIST_CHG, "annual_acres"))` times** the historical structure-changing rate, up from `r fmt_n(hkt(CUR_10s, "annual_acres"))` a year in 2010–19. LANDFIRE labels `r round(cur_share("Unknown cause"))`% "unknown cause" (likely mostly harvest), `r round(cur_share("Harvest or mechanical"))`% harvest and `r round(cur_share("Insects or disease"))`% insects or disease.
 
 ## What we can't say
 
 - **Intent.** The data show heavy cutting before the Songbird sale, not whether it was planned as part of the deal.
-- **What the new owners did.** Our data end before American Songbird took over, so we only see what happened under TRG/Verdant.
-- **Exact sale dates.** For Heartlands, the stop in clearing fits a change of hands around 2022–2023, but we didn't confirm the date.
-- **2025 is the newest, least settled year.** Every group dips slightly in 2025 (other private owners: `r fmt_1(tcc_at(NK, 2024))`% → `r fmt_1(tcc_at(NK, 2025))`%), but Songbird and Molpus dropped far more.
-- **Our 20-point yardstick is a choice.** A different cutoff would change the counts, probably not the pattern.
+- **Exact sale dates.** The state lists show owners only in 2020 and 2026, so we can't tell when TRG sold to Verdant, or whether the Heartlands land passed through another owner before The Nature Conservancy.
+- **Cause.** LANDFIRE's annual maps label almost all disturbance on this land "unknown"; harvest records for private timber land evidently aren't in them.
+- **2025 is the newest, least settled year.** Every group dips slightly in 2025 (other private owners: `r fmt_1(tcc_at(NK, 2024))`% → `r fmt_1(tcc_at(NK, 2025))`%), but Songbird dropped far more.
+- **Historical rates are model estimates.** They come from expert-built LANDFIRE BpS models, not measurements, and harvest has no historical counterpart.
+- **Our 20-point and 15-point yardsticks are choices.** Other cutoffs would change the counts, probably not the pattern.
 
 ## Takeaways
 
-**Plain version:** the big timber companies cut more than other owners. One of them cut a lot of trees on land it was about to sell to another company, but let the forest grow back on land it sold to The Nature Conservancy.
+**Plain version:** one big timber company, TRG, sold almost all of its land. The land that went to The Nature Conservancy has been growing back. The land that went to Verdant was cut moderately, and the part Verdant sold to American Songbird in 2026 was cut hard in the two years before that sale.
 
-**Technical version:** pooled seller-vs-keeper rates don't differ. The signal depends on the buyer. Songbird land shows a sharp canopy decline in 2024–25, before the 2026 sale. Heartlands/TNC land shows clearing stopping and steady regrowth. Hansen, Tree Canopy Cover and LANDFIRE agree on where and when, but LANDFIRE can't name a cause on private CFP land.
+**Technical version:** treating TRG → Verdant as a sale, the signal depends on the destination. Songbird land shows a sharp canopy decline in 2024–25, before the 2026 sale. Heartlands/TNC land shows clearing stopping after 2021 and steady regrowth. Hansen, Tree Canopy Cover and LANDFIRE agree on where and when, but LANDFIRE can't name a cause on private CFP land.
 
 ## Appendix: sources and scripts
 
-- **CFP parcels:** Michigan DNR, 2020 and 2026 (`data/cfp_data/`)
+- **CFP parcels:** Michigan DNR, 2020 and 2026 (`inputs/cfp/`)
 - **Tree Canopy Cover:** USFS, annual 2010–2025, 30 m
 - **Forest clearing:** Hansen Global Forest Change, loss year through 2024
-- **Disturbance:** LANDFIRE disturbance (FDist codes)
-- **Outlines:** American Songbird (from Emma) and Keweenaw Heartlands
+- **Disturbance:** LANDFIRE Final Annual Disturbance, 2010–2025 (`inputs/landfire/annual_disturbance/`)
+- **Sale boundaries:** American Songbird (from Emma) and Keweenaw Heartlands
 - **Scripts:**
-  - `09_cfp_parcel_tcc_change.R`: parcel canopy change
-  - `10_institutional_sellers_vs_keepers.R`: sold vs. kept groups
-  - `11_sale_footprint_pixels.R`: group areas and clearing by year
-  - `12_sale_footprint_landfire_tcc.R`: canopy by year and LANDFIRE
+  - `09_cfp_parcel_tcc_change.R`, `10_institutional_sellers_vs_keepers.R`: parcel canopy change and ownership groups
+  - `11_sale_footprint_pixels.R`, `12_sale_footprint_landfire_tcc.R`: group areas, clearing and canopy by year
+  - `15_get_landfire_annual_dist.py`, `16_landfire_annual_dist.R`: LANDFIRE annual disturbance
+  - `17_footprint_drop_year_maps.R`: year-the-canopy-dropped maps and source agreement
+  - `18_bps_evt_disturbance_regimes.R`: BpS, EVT, and historical vs. current disturbance (LANDFIRE 2020 BpS, 2024 EVT, BpS model tables)

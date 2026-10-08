@@ -1,7 +1,7 @@
 ## Shiny app entrypoint (root) — MapLibre + PMTiles tile explorer.
 ## Geometry loads from Cloudflare R2; only lightweight CSVs ship with the app.
 ## To refresh processed stats: Rscript scripts/01_harmonize.R
-## Old Leaflet in-memory app remains under dashboard/ for local comparison.
+## Old Leaflet in-memory app is archived under archive/dashboard/.
 
 if (!file.exists("tiles_app/app.R")) {
   stop("Cannot find tiles_app/app.R from app root.")

@@ -13,16 +13,17 @@ suppressPackageStartupMessages({
 
 terraOptions(progress = 1)
 
-root <- if (dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run this script from the kee_trees project root.")
 }
 
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-hansen_dir <- file.path(root, "data/Hansen_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+tcc_dir <- file.path(root, "inputs/tcc")
+hansen_dir <- file.path(root, "inputs/hansen")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 
 gdal_opts <- c("COMPRESS=DEFLATE", "ZLEVEL=9", "TILED=YES")
 
@@ -31,13 +32,13 @@ tcc_files <- sort(list.files(tcc_dir, pattern = "^HK_TCC_[0-9]{4}\\.tif$", full.
 stopifnot(length(tcc_files) > 0)
 tcc_template <- rast(tcc_files[[1]])
 
-counties <- st_read(file.path(root, "data/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
+counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
   dplyr::select(COUNTY, FIPS, AREA_SQMI)
 counties <- st_transform(counties, crs(tcc_template))
 counties_v <- vect(counties)
 counties_v$county_id <- seq_len(nrow(counties_v))
 
-st_write(counties, file.path(out_dir, "counties.gpkg"), delete_dsn = TRUE, quiet = TRUE)
+st_write(counties, file.path(gis_dir, "counties.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 
 message("Reprojecting Hansen lossyear and treecover2000 onto the TCC grid...")
 loss_src <- rast(file.path(hansen_dir, "HK_Loss_2024.tif"))
@@ -53,9 +54,9 @@ county_mask <- rasterize(counties_v, tcc_template, field = 1)
 loss <- mask(loss, county_mask)
 cover <- mask(cover, county_mask)
 
-writeRaster(loss, file.path(out_dir, "hansen_lossyear.tif"),
+writeRaster(loss, file.path(gis_dir, "hansen_lossyear.tif"),
             overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts))
-writeRaster(cover, file.path(out_dir, "hansen_treecover2000.tif"),
+writeRaster(cover, file.path(gis_dir, "hansen_treecover2000.tif"),
             overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts))
 
 message("Building TCC change (2025 - 2010)...")
@@ -67,7 +68,7 @@ tcc_2010 <- mask(tcc_2010, county_mask)
 tcc_2025 <- mask(tcc_2025, county_mask)
 tcc_change <- tcc_2025 - tcc_2010
 names(tcc_change) <- "tcc_change_2010_2025"
-writeRaster(tcc_change, file.path(out_dir, "tcc_change_2010_2025.tif"),
+writeRaster(tcc_change, file.path(gis_dir, "tcc_change_2010_2025.tif"),
             overwrite = TRUE, wopt = list(datatype = "INT2S", gdal = gdal_opts))
 
 px_acres <- prod(res(tcc_template)) / 4046.8564224
@@ -94,7 +95,7 @@ loss_stats <- ct |>
   select(year, county, n_pixels, acres) |>
   arrange(year, county)
 
-write.csv(loss_stats, file.path(out_dir, "loss_by_county_year.csv"), row.names = FALSE)
+write.csv(loss_stats, file.path(csv_dir, "loss_by_county_year.csv"), row.names = FALSE)
 
 message("Summarizing mean TCC by county and year...")
 tcc_stack <- rast(tcc_files)
@@ -112,7 +113,7 @@ tcc_stats <- tcc_extract |>
   mutate(year = as.integer(year)) |>
   arrange(year, county)
 
-write.csv(tcc_stats, file.path(out_dir, "tcc_by_county_year.csv"), row.names = FALSE)
+write.csv(tcc_stats, file.path(csv_dir, "tcc_by_county_year.csv"), row.names = FALSE)
 
 message("Patch sizes by loss year (8-neighbor, forest mask)...")
 px_m2 <- prod(res(tcc_template))
@@ -143,8 +144,8 @@ for (code in 10:24) {
     max_acres = max(acres)
   )
 }
-write.csv(bind_rows(patch_sum_list), file.path(out_dir, "loss_patch_stats.csv"), row.names = FALSE)
-write.csv(bind_rows(patch_size_list), file.path(out_dir, "loss_patch_sizes.csv"), row.names = FALSE)
+write.csv(bind_rows(patch_sum_list), file.path(csv_dir, "loss_patch_stats.csv"), row.names = FALSE)
+write.csv(bind_rows(patch_size_list), file.path(csv_dir, "loss_patch_sizes.csv"), row.names = FALSE)
 
 message("Polygonizing 2010–2024 loss by year for the dashboard map...")
 loss_map <- ifel(loss_forest >= 10 & loss_forest <= 24, loss_forest, NA)
@@ -153,8 +154,7 @@ loss_sf <- sf::st_as_sf(loss_poly)
 loss_sf$year <- as.integer(loss_sf[[1]]) + 2000
 loss_sf <- loss_sf[, "year"]
 loss_sf <- sf::st_make_valid(sf::st_transform(loss_sf, 4326))
-sf::st_write(loss_sf, file.path(out_dir, "loss_by_year.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-saveRDS(loss_sf, file.path(out_dir, "loss_by_year.rds"), compress = "xz")
+sf::st_write(loss_sf, file.path(gis_dir, "loss_by_year.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 message(
   "Map polygons (native 30 m): ", nrow(loss_sf), " year features, ~",
   format(as.integer(sum(lengths(sf::st_coordinates(sf::st_geometry(loss_sf))) / 2)), big.mark = ","),
@@ -169,7 +169,7 @@ tcc_drop <- tcc_2010 - tcc_2025
 decline_mag <- ifel(!is.na(tcc_2010) & (tcc_drop >= 15), round(tcc_drop), NA)
 names(decline_mag) <- "drop_pp"
 writeRaster(
-  decline_mag, file.path(out_dir, "tcc_decline_pp_2010_2025.tif"),
+  decline_mag, file.path(gis_dir, "tcc_decline_pp_2010_2025.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts)
 )
 decline_acres <- global(!is.na(decline_mag), "sum", na.rm = TRUE)[1, 1] * px_acres
@@ -177,7 +177,7 @@ decline_freq <- terra::freq(decline_mag)
 decline_freq <- decline_freq[!is.na(decline_freq$value), c("value", "count")]
 names(decline_freq) <- c("drop_pp", "n_pixels")
 decline_freq$acres <- decline_freq$n_pixels * px_acres
-write.csv(decline_freq, file.path(out_dir, "tcc_decline_by_drop_pp.csv"), row.names = FALSE)
+write.csv(decline_freq, file.path(csv_dir, "tcc_decline_by_drop_pp.csv"), row.names = FALSE)
 
 decline_poly <- as.polygons(decline_mag, dissolve = TRUE, na.rm = TRUE)
 decline_sf <- sf::st_as_sf(decline_poly)
@@ -187,8 +187,7 @@ decline_sf <- decline_sf |>
 decline_sf$label <- paste0("TCC drop ", decline_sf$drop_pp, " pp (2010\u20132025)")
 decline_sf <- decline_sf[, c("drop_pp", "acres", "label")]
 decline_sf <- sf::st_make_valid(sf::st_transform(decline_sf, 4326))
-sf::st_write(decline_sf, file.path(out_dir, "tcc_decline_2010_2025.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-saveRDS(decline_sf, file.path(out_dir, "tcc_decline_2010_2025.rds"), compress = "xz")
+sf::st_write(decline_sf, file.path(gis_dir, "tcc_decline_2010_2025.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 message(
   "TCC decline map layer: ~", format(round(decline_acres), big.mark = ","),
   " acres, ", nrow(decline_sf), " drop classes (native 30 m), ~",
@@ -198,5 +197,5 @@ message(
 
 aligned <- compareGeom(loss, cover, tcc_template, tcc_change, stopOnError = FALSE)
 message("Hansen/TCC/change share TCC grid: ", aligned)
-message("Wrote ", normalizePath(out_dir))
+message("Wrote ", normalizePath(csv_dir), " and ", normalizePath(gis_dir))
 message("Done.")

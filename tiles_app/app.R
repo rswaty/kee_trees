@@ -12,14 +12,14 @@ suppressPackageStartupMessages({
   library(plotly)
 })
 
-proj_root <- if (dir.exists("data/processed")) {
+proj_root <- if (dir.exists("output_csvs")) {
   normalizePath(".")
-} else if (dir.exists("../data/processed")) {
+} else if (dir.exists("../output_csvs")) {
   normalizePath("..")
 } else {
-  stop("Cannot find data/processed. Run from kee_trees project root.")
+  stop("Cannot find output_csvs. Run from kee_trees project root.")
 }
-processed <- file.path(proj_root, "data/processed")
+processed <- file.path(proj_root, "output_csvs")
 
 loss_stats <- read.csv(file.path(processed, "loss_by_county_year.csv")) |>
   filter(year >= 2010, year <= 2024)
@@ -164,7 +164,7 @@ tcc_mean_by_year <- tcc_stats |>
 
 county_colors <- c(Houghton = "#2d6a4f", Keweenaw = "#bc6c25")
 
-# Prefer same-origin tiles (www/tiles or data/tiles). shinyapps' static file
+# Prefer same-origin tiles (www/tiles or output_spatial/tiles). shinyapps' static file
 # server ignores HTTP Range, which breaks PMTiles — so we serve tiles ourselves
 # with byte-range support (see ui function below). R2 / jsDelivr are fallbacks.
 TILE_BASE_R2 <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
@@ -172,7 +172,7 @@ TILE_BASE_R2 <- "https://pub-f86fa74bacfc40fa980ffc4d276a0036.r2.dev"
 TILE_BASE_GITHUB <- "https://raw.githubusercontent.com/rswaty/kee_trees/main/www/tiles"
 tile_dir_candidates <- c(
   file.path(proj_root, "www", "tiles"),
-  file.path(proj_root, "data", "tiles")
+  file.path(proj_root, "output_spatial", "tiles")
 )
 local_tile_dir <- NULL
 for (d in tile_dir_candidates) {

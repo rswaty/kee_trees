@@ -1,0 +1,14 @@
+"period","type_group","annual_acres","pct_of_land"
+"Historical: all disturbances","Fire",3433.91915880193,0.398949184720261
+"Historical: all disturbances","Insects or disease",1605.72908295725,0.186551948051948
+"Historical: all disturbances","Other",1943.5795108677,0.225803062169408
+"Historical: all disturbances","Wind, weather or stress",6254.49127609257,0.726640343014856
+"Historical: structure-changing only","Fire",1104.94238922075,0.128371066689955
+"Historical: structure-changing only","Insects or disease",0.0104614534297939,1.21540086524966e-06
+"Historical: structure-changing only","Other",281.9664690064,0.0327585734335695
+"Historical: structure-changing only","Wind, weather or stress",1107.83175347773,0.128706750048058
+"Current (LANDFIRE average, 2010–2025)","Fire",2.64093876443033,0.000306821540706627
+"Current (LANDFIRE average, 2010–2025)","Harvest or mechanical",1737.11222149832,0.20181590552532
+"Current (LANDFIRE average, 2010–2025)","Insects or disease",926.399619529037,0.107628151929242
+"Current (LANDFIRE average, 2010–2025)","Other",36.4866539822611,0.0042389818123942
+"Current (LANDFIRE average, 2010–2025)","Unknown cause",8032.31795427089,0.933186412107708

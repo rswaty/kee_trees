@@ -1,7 +1,9 @@
 ---
 title: "Institutional sellers vs keepers"
 subtitle: "Canopy disturbance on CFP land, Houghton & Keweenaw Counties"
-author: "Randy Swaty"
+author:
+  - "Randy Swaty"
+  - "Julia Petersen"
 date: today
 format:
   html:
@@ -26,8 +28,8 @@ fmt_n <- function(x) {
 }
 fmt_1 <- function(x) sprintf("%.1f", as.numeric(x))
 
-root <- if (dir.exists("data/processed")) "." else ".."
-rd <- function(f) read.csv(file.path(root, "data/processed", f), stringsAsFactors = FALSE)
+root <- if (dir.exists("output_csvs")) "." else ".."
+rd <- function(f) read.csv(file.path(root, "output_csvs", f), stringsAsFactors = FALSE)
 
 rates <- rd("cfp_institutional_sellers_keepers_rates.csv")
 buckets <- rd("cfp_institutional_exit_buckets.csv")
@@ -121,7 +123,7 @@ zones |>
 
 Songbird land was **gaining** canopy before 2020 (+`{r} fmt_1(zn(SB, "delta_pp_2015_2020"))` pp) and then lost `{r} fmt_1(abs(zn(SB, "delta_pp_2020_2025")))` pp after, so the drop is not a continuation of an older trend.
 
-![Hansen forest loss by year for the sale footprints, retained TRG/Verdant land, and non-institutional land kept by its owner.](../data/processed/figures/cfp_sale_footprint_hansen_by_year.png)
+![Hansen forest loss by year for the sale footprints, retained TRG/Verdant land, and non-institutional land kept by its owner.](../output_visuals/cfp_sale_footprint_hansen_by_year.png)
 
 ### Secondary comparison: institutional vs non-institutional
 
@@ -168,5 +170,5 @@ Institutional land has about `r round(ratio_kept)`× the major-loss rate of non-
 ### Methods
 
 - **Scripts:** `scripts/09_cfp_parcel_tcc_change.R` (parcel TCC), `scripts/10_institutional_sellers_vs_keepers.R` (parcel classes and rates), `scripts/11_sale_footprint_pixels.R` (pixel zones and Hansen timing).
-- **Footprints:** `data/American Songbird (17,315 acres)/`, `data/Keweenaw Heartlands/`.
-- **Outputs:** `data/processed/cfp_institutional_*.csv`, `cfp_sellers_by_owner_class.csv`, `cfp_sale_footprint_*.csv`, `figures/cfp_sale_footprint_hansen_by_year.png`.
+- **Footprints:** `inputs/boundaries/american_songbird.shp`, `inputs/boundaries/keweenaw_heartlands.shp`.
+- **Outputs:** `output_csvs/cfp_institutional_*.csv`, `cfp_sellers_by_owner_class.csv`, `cfp_sale_footprint_*.csv`, `output_visuals/cfp_sale_footprint_hansen_by_year.png`.

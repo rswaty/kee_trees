@@ -1,6 +1,12 @@
 # NOTE: rsconnect .rscignore only excludes TOP-LEVEL files/folders in appDir.
-# It cannot ignore files inside subfolders (e.g. data/TCC_*). Use deploy.R instead.
+# It cannot ignore files inside subfolders (e.g. inputs/tcc). Use deploy.R instead.
 R
-errors_notes
 README.md
 rsconnect
+archive
+docs
+inputs
+output_spatial
+output_visuals
+reference
+scripts

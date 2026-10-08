@@ -19,23 +19,24 @@ if (has_ggplot) {
   suppressPackageStartupMessages(library(ggplot2))
 }
 
-root <- if (dir.exists("data/processed") && dir.exists("data/TCC_Houghton_Keweenaw")) {
+root <- if (dir.exists("output_csvs") && dir.exists("inputs/tcc")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-cfp_dir <- file.path(root, "data/cfp_data")
-tcc_dir <- file.path(root, "data/TCC_Houghton_Keweenaw")
-out_dir <- file.path(root, "data/processed")
-fig_dir <- file.path(out_dir, "figures")
+cfp_dir <- file.path(root, "inputs/cfp")
+tcc_dir <- file.path(root, "inputs/tcc")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
+fig_dir <- file.path(root, "output_visuals")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
 songbird_path <- file.path(
   root,
-  "data/American Songbird (17,315 acres)/American Songbird (17,315 acres).shp"
+  "inputs/boundaries/american_songbird.shp"
 )
-heartlands_path <- file.path(root, "data/Keweenaw Heartlands/Keweenaw Heartlands.shp")
+heartlands_path <- file.path(root, "inputs/boundaries/keweenaw_heartlands.shp")
 
 MIN_ACRES <- 20
 DROP_PP <- -20
@@ -68,7 +69,7 @@ message("Loading TCC, Hansen, CFP, footprints...")
 tcc15 <- read_tcc(2015)
 tcc20 <- read_tcc(2020)
 tcc25 <- read_tcc(2025)
-hansen <- rast(file.path(out_dir, "hansen_lossyear.tif"))
+hansen <- rast(file.path(gis_dir, "hansen_lossyear.tif"))
 stopifnot(compareGeom(tcc20, hansen))
 px_acres <- prod(res(tcc20)) / 4046.8564224
 
@@ -116,12 +117,12 @@ zr <- mask(zr, rasterize(kh, tcc20), inverse = TRUE, updatevalue = ZONES[["Heart
 zr <- mask(zr, rasterize(sb, tcc20), inverse = TRUE, updatevalue = ZONES[["Songbird (TRG to Songbird, 2026)"]])
 names(zr) <- "zone_code"
 writeRaster(
-  zr, file.path(out_dir, "cfp_sale_zones.tif"),
+  zr, file.path(gis_dir, "cfp_sale_zones.tif"),
   overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = c("COMPRESS=DEFLATE"))
 )
 write.csv(
   data.frame(zone_code = unname(ZONES), zone = names(ZONES)),
-  file.path(out_dir, "cfp_sale_zone_labels.csv"),
+  file.path(csv_dir, "cfp_sale_zone_labels.csv"),
   row.names = FALSE
 )
 
@@ -170,8 +171,8 @@ year_rows <- lapply(names(ZONES), function(nm) {
 year_profile <- bind_rows(year_rows) |>
   mutate(pct_of_zone = 100 * loss_acres / zone_acres)
 
-zone_path <- file.path(out_dir, "cfp_sale_footprint_zone_summary.csv")
-year_path <- file.path(out_dir, "cfp_sale_footprint_hansen_by_year.csv")
+zone_path <- file.path(csv_dir, "cfp_sale_footprint_zone_summary.csv")
+year_path <- file.path(csv_dir, "cfp_sale_footprint_hansen_by_year.csv")
 write.csv(zone_summary, zone_path, row.names = FALSE)
 write.csv(year_profile, year_path, row.names = FALSE)
 message("Wrote ", zone_path)

@@ -14,23 +14,24 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-root <- if (dir.exists("data/cfp_data") && dir.exists("data/processed")) {
+root <- if (dir.exists("inputs/cfp") && dir.exists("output_csvs")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-cfp_dir <- file.path(root, "data/cfp_data")
-out_dir <- file.path(root, "data/processed")
+cfp_dir <- file.path(root, "inputs/cfp")
+csv_dir <- file.path(root, "output_csvs")
+gis_dir <- file.path(root, "output_spatial")
 songbird_path <- file.path(
   root,
-  "data/American Songbird (17,315 acres)/American Songbird (17,315 acres).shp"
+  "inputs/boundaries/american_songbird.shp"
 )
 heartlands_path <- file.path(
   root,
-  "data/Keweenaw Heartlands/Keweenaw Heartlands.shp"
+  "inputs/boundaries/keweenaw_heartlands.shp"
 )
-rank_path <- file.path(out_dir, "cfp_parcel_tcc_change_by_owner_type.csv")
+rank_path <- file.path(csv_dir, "cfp_parcel_tcc_change_by_owner_type.csv")
 
 MIN_ACRES <- 20
 MAJOR_LOSS_PP <- -20
@@ -358,11 +359,11 @@ spotlight <- inst_only |>
     .groups = "drop"
   )
 
-parcel_path <- file.path(out_dir, "cfp_institutional_sellers_keepers_parcels.csv")
-rates_path <- file.path(out_dir, "cfp_institutional_sellers_keepers_rates.csv")
-bucket_path <- file.path(out_dir, "cfp_institutional_exit_buckets.csv")
-spot_path <- file.path(out_dir, "cfp_institutional_named_exits.csv")
-class_path <- file.path(out_dir, "cfp_sellers_by_owner_class.csv")
+parcel_path <- file.path(csv_dir, "cfp_institutional_sellers_keepers_parcels.csv")
+rates_path <- file.path(csv_dir, "cfp_institutional_sellers_keepers_rates.csv")
+bucket_path <- file.path(csv_dir, "cfp_institutional_exit_buckets.csv")
+spot_path <- file.path(csv_dir, "cfp_institutional_named_exits.csv")
+class_path <- file.path(csv_dir, "cfp_sellers_by_owner_class.csv")
 
 write.csv(parcel_out, parcel_path, row.names = FALSE)
 write.csv(summary_rates, rates_path, row.names = FALSE)

@@ -2,11 +2,11 @@
 # From project root: Rscript scripts/05_cfp_owner_tiles.R
 #
 # Requires rasters from scripts/04_cfp_ownership_change.R:
-#   data/processed/cfp_owner_2020.tif, cfp_owner_2026.tif, cfp_owner_labels.csv
+#   output_csvs/cfp_owner_2020.tif, cfp_owner_2026.tif, cfp_owner_labels.csv
 #
 # Output:
-#   data/processed/cfp_owner_{2020,2026,change}.{gpkg,rds}
-#   www/tiles/cfp_owner_{2020,2026,change}.pmtiles (+ copies under data/tiles/)
+#   output_csvs/cfp_owner_{2020,2026,change}.{gpkg,rds}
+#   www/tiles/cfp_owner_{2020,2026,change}.pmtiles (+ copies under output_spatial/tiles/)
 
 Sys.setenv(PROJ_NETWORK = "OFF")
 
@@ -17,22 +17,24 @@ suppressPackageStartupMessages({
   library(freestiler)
 })
 
-root <- if (dir.exists("data/processed") && dir.exists("data/cfp_data")) {
+root <- if (dir.exists("output_csvs") && dir.exists("inputs/cfp")) {
   normalizePath(".")
 } else {
   stop("Run from the kee_trees project root.")
 }
 
-out_dir <- file.path(root, "data/processed")
-tile_dir <- file.path(root, "data/tiles")
+csv_dir <- file.path(root, "output_csvs")
+
+gis_dir <- file.path(root, "output_spatial")
+tile_dir <- file.path(root, "output_spatial/tiles")
 www_tile_dir <- file.path(root, "www/tiles")
-dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = TRUE)
 dir.create(tile_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(www_tile_dir, showWarnings = FALSE, recursive = TRUE)
 
-r20_path <- file.path(out_dir, "cfp_owner_2020.tif")
-r26_path <- file.path(out_dir, "cfp_owner_2026.tif")
-lut_path <- file.path(out_dir, "cfp_owner_labels.csv")
+r20_path <- file.path(gis_dir, "cfp_owner_2020.tif")
+r26_path <- file.path(gis_dir, "cfp_owner_2026.tif")
+lut_path <- file.path(csv_dir, "cfp_owner_labels.csv")
 if (!all(file.exists(r20_path, r26_path, lut_path))) {
   stop(
     "Missing CFP owner rasters/labels. Run first:\n",
@@ -105,10 +107,8 @@ write_pmtiles <- function(sf_obj, stem, layer_name) {
 
 sf20 <- polygonize_owner_year(r20, 2020)
 sf26 <- polygonize_owner_year(r26, 2026)
-st_write(sf20, file.path(out_dir, "cfp_owner_2020.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-st_write(sf26, file.path(out_dir, "cfp_owner_2026.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-saveRDS(sf20, file.path(out_dir, "cfp_owner_2020.rds"), compress = "xz")
-saveRDS(sf26, file.path(out_dir, "cfp_owner_2026.rds"), compress = "xz")
+st_write(sf20, file.path(gis_dir, "cfp_owner_2020.gpkg"), delete_dsn = TRUE, quiet = TRUE)
+st_write(sf26, file.path(gis_dir, "cfp_owner_2026.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 message("2020 features: ", nrow(sf20), " | 2026 features: ", nrow(sf26))
 
 message("Building change pair raster...")
@@ -118,7 +118,7 @@ c26 <- ifel(is.na(r26), 0, r26)
 pair <- ifel((c20 == 0) & (c26 == 0), NA, c20 * 1000 + c26)
 names(pair) <- "pair_id"
 writeRaster(
-  pair, file.path(out_dir, "cfp_owner_change_pair.tif"),
+  pair, file.path(gis_dir, "cfp_owner_change_pair.tif"),
   overwrite = TRUE,
   wopt = list(datatype = "INT4S", gdal = c("COMPRESS=DEFLATE", "ZLEVEL=9", "TILED=YES"))
 )
@@ -153,15 +153,14 @@ sf_chg <- sf_chg[, c(
 )]
 sf_chg <- st_make_valid(st_transform(sf_chg, 4326))
 
-st_write(sf_chg, file.path(out_dir, "cfp_owner_change.gpkg"), delete_dsn = TRUE, quiet = TRUE)
-saveRDS(sf_chg, file.path(out_dir, "cfp_owner_change.rds"), compress = "xz")
+st_write(sf_chg, file.path(gis_dir, "cfp_owner_change.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 
 chg_summary <- sf_chg |>
   st_drop_geometry() |>
   group_by(change_class, change_label) |>
   summarise(acres = sum(acres, na.rm = TRUE), n_polys = n(), .groups = "drop") |>
   arrange(desc(acres))
-write.csv(chg_summary, file.path(out_dir, "cfp_owner_change_summary.csv"), row.names = FALSE)
+write.csv(chg_summary, file.path(csv_dir, "cfp_owner_change_summary.csv"), row.names = FALSE)
 message("Change acres:")
 print(as.data.frame(chg_summary), row.names = FALSE)
 message("Change features: ", nrow(sf_chg))
