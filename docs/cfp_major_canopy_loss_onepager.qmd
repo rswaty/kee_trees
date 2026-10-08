@@ -121,6 +121,13 @@ ac_trg_verdant <- sum(
 ac_kla_sage <- sum(
   loss$acres_2020[loss$name_from == "Keweenaw Land Assoc*" & loss$name_to == "Sage Timber*"]
 )
+med_parcel_ac <- median(loss$acres_2020)
+mean_parcel_ac <- mean(loss$acres_2020)
+# Heartlands / TNC among major-loss set (usually none; full TNC exit is in sellers/keepers doc)
+n_tnc_loss <- sum(grepl("Nature Conservancy", loss$name_2026, ignore.case = TRUE))
+ac_tnc_loss <- sum(
+  loss$acres_2020[grepl("Nature Conservancy", loss$name_2026, ignore.case = TRUE)]
+)
 
 theme_one <- theme_minimal(base_size = 10) +
   theme(
@@ -139,9 +146,9 @@ label_whole <- label_comma(accuracy = 1, big.mark = ",")
 
 ### Summary
 
-Using Commercial Forest Parcel (CFP) data for 2020 and 2026 from the Michigan Department of Natural Resources alongside the USFS FIA Total Canopy Cover (TCC) dataset, I looked for parcels that had a canopy cover change > 20% between 2020 and 2026.  All of the information below is for parcels that had the largest change in canopy cover.
+Using Commercial Forest Parcel (CFP) data for 2020 and 2026 from the Michigan Department of Natural Resources alongside the USFS FIA Total Canopy Cover (TCC) dataset across Houghton and Keweenaw counties, I screened for parcels with mean canopy cover change steeper than −20 percentage points between 2020 and 2025.^[The −20 pp cut is a **screening threshold** for “major” parcel-mean loss in this memo—not an industry biodiversity standard or a claim that every such change is harvest rather than other disturbance. Edge spill from neighboring heavy-loss parcels can push a parcel’s mean below −20 pp even when interior cover is steadier; parcels adjacent to very high-loss neighbors with smaller mean changes are outside this set.] All of the information below is for that major-loss subset.
 
-Of `{r} fmt_n(n_all)` CFP parcels ≥20 acres, **`{r} fmt_n(n_loss)` parcels (~`{r} fmt_n(ac_loss)` acres)** lost more than **20 percent** of mean tree canopy from 2020 to 2025. Almost all stayed **Forest Industry** by owner type — but most **changed legal name**, led by TRG Threshold → Verdant Timber.
+Of `{r} fmt_n(n_all)` CFP parcels ≥20 acres, **`{r} fmt_n(n_loss)` parcels (~`{r} fmt_n(ac_loss)` acres)** lost more than **20 percent** of mean tree canopy from 2020 to 2025. Almost all kept the state **Forest Industry** owner-type label^[Michigan DNR assigns CFP `owner_type` / `OwnerTypeT` categories (including Forest Industry); it is a program classification, not our institutional-owner roster. See `docs/cfp_institutional_sellers_keepers.qmd` for TRG / Lyme / MWF contrasts.] — but most **changed legal name**, with the most common change being TRG Threshold → Verdant Timber.
 
 ### Key numbers
 
@@ -149,6 +156,7 @@ Of `{r} fmt_n(n_all)` CFP parcels ≥20 acres, **`{r} fmt_n(n_loss)` parcels (~`
 |:---|---:|
 | Parcels with ΔTCC < −20 percent | **`{r} fmt_n(n_loss)`** (`{r} fmt_n(pct_loss)`% of ranked parcels) |
 | Acres (2020 attribute) | **`{r} fmt_n(ac_loss)`** |
+| Median / mean parcel size (2020 acres) | **`{r} fmt_n(med_parcel_ac)`** / `{r} fmt_n(mean_parcel_ac)` |
 | Still Forest Industry → Forest Industry | **`{r} fmt_n(n_fi_stable)`** parcels |
 | Owner **type** changed | **`{r} fmt_n(n_type_chg)`** |
 | Owner **name** changed (loose match) | **`{r} fmt_n(n_name_chg)`** (~`{r} fmt_n(ac_name_chg)` ac) |
@@ -263,7 +271,11 @@ ggplot(loss, aes(delta_pp)) +
 
 ### Takeaway
 
-The ~`{r} fmt_n(ac_loss)` acres of **major canopy loss** are concentrated on **forest-industry CFP land that kept the forest industry type label**. Continuity of owner *type* masks substantial **legal-name turnover**, especially **TRG Threshold Timber → Verdant Timber** (~55 parcels / ~`{r} fmt_n(ac_trg_verdant)` ac) and **Keweenaw Land Association → Sage Timber** (8 parcels / ~`{r} fmt_n(ac_kla_sage)` ac). None of these `{r} fmt_n(n_loss)` parcels left the CFP between 2020 and 2026.
+The ~`{r} fmt_n(ac_loss)` acres of **major canopy loss** are concentrated on CFP land that kept the **Forest Industry** type label. Continuity of owner *type* masks substantial **legal-name turnover**, especially **TRG Threshold Timber → Verdant Timber** (~55 parcels / ~`{r} fmt_n(ac_trg_verdant)` ac) and **Keweenaw Land Association → Sage Timber** (8 parcels / ~`{r} fmt_n(ac_kla_sage)` ac). None of these `{r} fmt_n(n_loss)` parcels left the CFP between 2020 and 2026.
+
+**Institutional owners vs Forest Industry.** TRG (and Verdant), Lyme, and MWF are the large **institutional** names in this geography; they usually appear under the state’s Forest Industry type. Stars in the name chart (`TRG Threshold*`, `MWF*`, etc.) mark **collapsed name groups** (several legal entities rolled up), not a quality flag. **MWF** is the CFP legal-name token for MWF Ned Lake / MWF V Vulcan entities (Molpus-family stand-in in the sellers/keepers analysis; no literal “Molpus” or “Manulife” strings in HK CFP 2020).
+
+**Heartlands / TNC.** TRG → Nature Conservancy transfers are largely **outside** this major-loss subset (`{r} fmt_n(n_tnc_loss)` of the `{r} fmt_n(n_loss)` major-loss parcels; ~`{r} fmt_n(ac_tnc_loss)` ac). By contrast, 18 of the TRG → Verdant major-loss parcels lie inside the **American Songbird** footprint, which Verdant sold in 2026 (after the CFP 2026 snapshot, so it still reads as Verdant here). See `docs/cfp_institutional_sellers_keepers.qmd` for the seller vs keeper comparison.
 
 ```{=latex}
 \FloatBarrier
@@ -271,8 +283,9 @@ The ~`{r} fmt_n(ac_loss)` acres of **major canopy loss** are concentrated on **f
 
 ### Methods (short)
 
-- **Unit:** 2020 CFP parcels with attribute acres ≥ 20 (`parid`).
+- **Unit:** 2020 CFP parcels (`parid`), ranked for all parcels with attribute acres ≥ 20.
 - **Canopy:** zonal mean USFS/NLCD TCC on the 30 m grid, **2020 vs 2025** (latest annual TCC; ownership snapshot is 2026).
-- **Major loss:** mean ΔTCC < −20 percent (`{r} fmt_n(n_loss)` of `{r} fmt_n(n_all)` ranked parcels).
+- **Major loss:** mean ΔTCC < −20 percent (`{r} fmt_n(n_loss)` of `{r} fmt_n(n_all)` ranked parcels); see footnote in Summary.
 - **Ownership:** 2020 `owner_type` / `search_nam`; 2026 `OwnerTypeT` / `FullLegalN`, joined on `parid`.
 - **Name match:** loose string compare (case, punctuation, LLC/Inc stripped). Source table: `data/processed/cfp_parcel_tcc_change_by_owner_type.csv` (`scripts/09_cfp_parcel_tcc_change.R`).
+- **Related:** institutional sellers vs keepers disturbance rates — `scripts/10_institutional_sellers_vs_keepers.R`.

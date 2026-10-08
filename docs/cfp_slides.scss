@@ -1,0 +1,30 @@
+/*-- scss:defaults --*/
+$presentation-font-size-root: 26px;
+$presentation-h2-font-size: 1.5em;
+$presentation-h1-font-size: 2em;
+
+/*-- scss:rules --*/
+.reveal .slides section .cell-output-display img {
+  max-height: 470px;
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+.reveal .slides section .columns .cell-output-display img {
+  max-height: 500px;
+}
+
+.reveal .slides section.overview-slide .cell-output-display img {
+  max-height: 600px;
+}
+
+.reveal table {
+  font-size: 0.85em;
+}
+
+.reveal .slides section p,
+.reveal .slides section li {
+  line-height: 1.3;
+}
