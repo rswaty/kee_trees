@@ -30,9 +30,9 @@ gpkg <- file.path(gis_dir, "cfp_sale_story.gpkg")
 GROUPS <- data.frame(
   zone = c("TRG/Verdant retained", "Heartlands (TRG to TNC)", "Songbird (TRG to Songbird, 2026)",
            "TRG other sale / left CFP", "MWF", "Lyme", "Non-institutional kept", "Non-institutional sold / left"),
-  group = c("TRG → Verdant", "TRG → The Nature Conservancy (Heartlands)", "TRG → Verdant → American Songbird (2026)",
-            "TRG → other owners / left CFP", "Molpus → Molpus (mostly kept)", "Lyme → Lyme",
-            "Other private → same owner", "Other private → new owner / left CFP"),
+  group = c("TRG → Verdant", "TRG → Verdant → The Nature Conservancy (Heartlands)", "TRG → Verdant → American Songbird (2026)",
+            "TRG → other owners / left CFP", "Molpus → kept (mostly)", "Lyme → kept",
+            "Other private → kept", "Other private → sold or left CFP"),
   color = c("#7570b3", "#1b9e77", "#d95f02", "#56b4e9", "#e7298a", "#f0c419", "#d2b48c", "#5c3a1e")
 )
 

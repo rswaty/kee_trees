@@ -13,7 +13,7 @@ class_row <- function(group, cohort) {
   b <- by_class[by_class$owner_class == "Non-institutional" & by_class$cohort == cohort, ]
   data.frame(group = group, acres = sum(b$acres), major = sum(b$acres_major_disturbance))
 }
-MW_KEPT <- "Molpus → Molpus (kept)"
+MW_KEPT <- "Molpus → kept"
 
 bars <- bind_rows(
   firm_row(G$SB, "TRG", "songbird"),

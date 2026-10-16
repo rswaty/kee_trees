@@ -42,13 +42,13 @@ PPTX_TEMPLATE <- NULL
 # Group labels: change the wording here and every chart follows.
 G <- list(
   TV = "TRG → Verdant",
-  KH = "TRG → The Nature Conservancy (Heartlands)",
+  KH = "TRG → Verdant → The Nature Conservancy (Heartlands)",
   SB = "TRG → Verdant → American Songbird (2026)",
   TO = "TRG → other owners / left CFP",
-  MW = "Molpus → Molpus (mostly kept)",
-  LY = "Lyme → Lyme",
-  NK = "Other private → same owner",
-  NS = "Other private → new owner / left CFP"
+  MW = "Molpus → kept (mostly)",
+  LY = "Lyme → kept",
+  NK = "Other private → kept",
+  NS = "Other private → sold or left CFP"
 )
 
 # Group colours, in the same order as G.
@@ -58,7 +58,7 @@ GROUP_COLS <- setNames(
 )
 
 # Groups shown in the by-year line charts.
-FOCUS <- c(G$TV, G$KH, G$SB, G$NK)
+FOCUS <- c(G$TV, G$KH, G$SB, G$MW, G$LY, G$NK)
 
 # Disturbance type colours (all-land charts).
 DIST_COLS <- c(

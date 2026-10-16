@@ -43,13 +43,13 @@ fmt_1 <- function(x) sprintf("%.1f", as.numeric(x))
 
 G <- list(
   TV = "TRG → Verdant",
-  KH = "TRG → The Nature Conservancy (Heartlands)",
+  KH = "TRG → Verdant → The Nature Conservancy (Heartlands)",
   SB = "TRG → Verdant → American Songbird (2026)",
   TO = "TRG → other owners / left CFP",
-  MW = "Molpus → Molpus (mostly kept)",
-  LY = "Lyme → Lyme",
-  NK = "Other private → same owner",
-  NS = "Other private → new owner / left CFP"
+  MW = "Molpus → kept (mostly)",
+  LY = "Lyme → kept",
+  NK = "Other private → kept",
+  NS = "Other private → sold or left CFP"
 )
 zone_lab <- c(
   "TRG/Verdant retained" = G$TV,
@@ -65,7 +65,7 @@ zone_col <- setNames(
   c("#7570b3", "#1b9e77", "#d95f02", "#56b4e9", "#e7298a", "#f0c419", "#d2b48c", "#5c3a1e"),
   unlist(G)
 )
-focus <- c(G$TV, G$KH, G$SB, G$NK)
+focus <- c(G$TV, G$KH, G$SB, G$MW, G$LY, G$NK)
 
 terraOptions(progress = 0)
 
@@ -159,9 +159,9 @@ mp <- function(u, col) molpus[[col]][molpus$unit == u]
 
 ## The short answer
 
-- In 2020, **TRG** owned most of the big-company forest land here. By 2026 it had sold nearly all of it, mainly to **Verdant** (a different company) and to **The Nature Conservancy** (the Keweenaw Heartlands). In 2026, Verdant sold part of its land to **American Songbird**.
+- In 2020, **TRG** owned most of the big-company forest land here. By 2026 it had sold nearly all of it to **Verdant** (a different company). Verdant then sold part of that land to **The Nature Conservancy** (the Keweenaw Heartlands) and, in 2026, another part to **American Songbird**.
 - **TRG → Verdant:** canopy slipped from `r fmt_1(td(TV, "tcc20"))`% to `r fmt_1(td(TV, "tcc25"))`%; `r fmt_1(td(TV, "pct_major"))`% of the acres were heavily cut.
-- **TRG → Heartlands:** clearing peaked in 2020–21, then **stopped**. Canopy recovered to `r fmt_1(td(KH, "tcc25"))`%, and **no** acres were heavily cut.
+- **TRG → Verdant → Heartlands:** clearing peaked in 2020–21, then **stopped**. Canopy recovered to `r fmt_1(td(KH, "tcc25"))`%, and **no** acres were heavily cut.
 - **TRG → Verdant → Songbird:** the **heaviest cutting**. `r fmt_1(td(SB, "pct_major"))`% of the acres were heavily cut, mostly in 2024–25, just before the sale.
 - Two independent satellite records, USFS canopy cover and Hansen forest loss, put these drops in the **same places and years**.
 - Overall, big-company land was heavily cut about **`r round(ratio_all)` times as often** as other private land, measured in acres.
@@ -215,7 +215,7 @@ ggplot() +
 ## The questions
 
 1. Where did **TRG's** 2020 forest land go by 2026?
-2. How did tree canopy change on land that went **TRG → Verdant**, compared with land that went **TRG → The Nature Conservancy** (Heartlands)?
+2. How did tree canopy change on land that went **TRG → Verdant**, compared with land that went **TRG → Verdant → The Nature Conservancy** (Heartlands)?
 3. Where does the 2026 **American Songbird** purchase from Verdant fit?
 4. **Where and when** did the canopy drop inside the Heartlands and Songbird boundaries, and do two satellite records agree?
 5. Do big companies treat their land differently from **other private owners**?
@@ -234,7 +234,8 @@ A drop from 75% to 65% canopy is a **10-point** drop.
 
 ## How we defined things
 
-- **TRG and Verdant are different companies.** Land listed under TRG in 2020 and Verdant in 2026 counts as **sold**.
+- **TRG and Verdant are different companies.** TRG in 2020 and Verdant in 2026 counts as **sold**. The Heartlands land went TRG → Verdant → The Nature Conservancy; the state lists show only the first and last owners.
+- **Other private owners:** everyone except the four investment companies: individuals and families, but also other timber companies (Lake Superior Timberlands holds 69% of the "kept" acres). **Kept** = same owner in 2020 and 2026; **sold** = new owner or left the program.
 - **Heavy cutting:** a parcel's average canopy fell by **more than 20 points**, 2020 → 2025. This is our yardstick, not an official standard.
 - **Year the canopy dropped** (maps): the first year a 30 m cell's canopy fell **15 points or more** below its highest value in the previous 3 years.
 - **Important catch:** the 2026 state list still shows the Songbird land as Verdant's, because the sale happened after the list was made. The sale boundary maps fixed this.
@@ -276,7 +277,7 @@ class_row <- function(group, cohort) {
 }
 bars <- bind_rows(
   firm_row(G$SB, "TRG", "songbird"),
-  firm_row("Molpus → Molpus (kept)", "MWF", "kept_same_name"),
+  firm_row("Molpus → kept", "MWF", "kept_same_name"),
   firm_row(G$TV, "TRG", "rebrand_same_family"),
   firm_row(G$TO, "TRG", c("other_sale", "left_cfp")),
   firm_row(G$LY, "Lyme", "kept_same_name"),
@@ -286,7 +287,7 @@ bars <- bind_rows(
 ) |>
   mutate(
     pct = 100 * major / acres,
-    fill = c(zone_col, "Molpus → Molpus (kept)" = zone_col[[G$MW]])[group],
+    fill = c(zone_col, "Molpus → kept" = zone_col[[G$MW]])[group],
     group = reorder(factor(group), pct)
   )
 
@@ -332,7 +333,7 @@ tcc_year |>
   theme(legend.position = "right")
 ```
 
-**TRG → Verdant** drifted down from `r fmt_1(tcc_at(TV, 2018))`% (2018) to `r fmt_1(tcc_at(TV, 2025))`%. **Heartlands** rose from `r fmt_1(tcc_at(KH, 2021))`% (2021) to **`r fmt_1(tcc_at(KH, 2025))`%**. **Songbird** fell from `r fmt_1(tcc_at(SB, 2023))`% (2023) to **`r fmt_1(tcc_at(SB, 2025))`%**.
+**TRG → Verdant** drifted down from `r fmt_1(tcc_at(TV, 2018))`% (2018) to `r fmt_1(tcc_at(TV, 2025))`%. **Heartlands** rose from `r fmt_1(tcc_at(KH, 2021))`% (2021) to **`r fmt_1(tcc_at(KH, 2025))`%**. **Songbird** fell from `r fmt_1(tcc_at(SB, 2023))`% (2023) to **`r fmt_1(tcc_at(SB, 2025))`%**. **Molpus** (kept) slid from `r fmt_1(tcc_at("MWF", 2020))`% (2020) to `r fmt_1(tcc_at("MWF", 2024))`%, then fell to **`r fmt_1(tcc_at("MWF", 2025))`%** in 2025.
 
 ## Forest clearing by year
 
@@ -409,23 +410,34 @@ clip_df <- function(r, poly) {
 
 drop_years <- list(Heartlands = 2012:2022, Songbird = 2015:2025)
 
-drop_map <- function(name, layer, title) {
+drop_panels <- function(name, hansen_label) {
   yrs <- drop_years[[name]]
-  d <- as.data.frame(rast(proc(sprintf("drop_year_%s.tif", tolower(name))))[[layer]], xy = TRUE, na.rm = TRUE)
-  names(d)[3] <- "year"
+  r <- rast(proc(sprintf("drop_year_%s.tif", tolower(name))))
+  panels <- c(tcc_drop_year = "USFS Canopy Loss 15+ Points", hansen_loss_year = hansen_label)
+  d <- bind_rows(lapply(names(panels), function(l) {
+    x <- as.data.frame(r[[l]], xy = TRUE, na.rm = FALSE)
+    names(x)[3] <- "year"
+    mutate(x, panel = panels[[l]])
+  })) |>
+    mutate(panel = factor(panel, levels = panels), year = factor(year, levels = yrs))
   ggplot() +
     geom_sf(data = fp[[name]], fill = "grey92", color = "grey30", linewidth = 0.3) +
-    geom_raster(data = d, aes(x, y, fill = year)) +
-    scale_fill_viridis_c(
-      option = "turbo", begin = 0.05, end = 0.95,
-      limits = range(yrs), breaks = seq(min(yrs), max(yrs), 2),
-      name = "Year canopy dropped"
+    geom_raster(data = d, aes(x, y, fill = year), na.rm = TRUE) +
+    facet_wrap(~panel) +
+    scale_fill_manual(
+      values = setNames(viridisLite::turbo(length(yrs), begin = 0.05, end = 0.95), yrs),
+      drop = FALSE, na.translate = FALSE, name = "Year canopy\ndropped"
     ) +
-    guides(fill = guide_colorbar(barwidth = unit(8, "cm"), title.position = "top")) +
-    coord_sf(datum = NA) +
-    labs(title = title, x = NULL, y = NULL) +
-    theme_void(base_size = 14) +
-    theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 15))
+    guides(fill = guide_legend(ncol = 1, override.aes = list(color = "white"))) +
+    coord_sf(datum = NA, expand = FALSE) +
+    labs(x = NULL, y = NULL) +
+    theme_void(base_size = 15) +
+    theme(
+      strip.text = element_text(face = "bold", size = 16, margin = margin(b = 6)),
+      panel.spacing = unit(0.8, "cm"),
+      legend.position = "right",
+      legend.key.size = unit(0.55, "cm")
+    )
 }
 
 change_map <- function(name) {
@@ -448,51 +460,31 @@ change_map <- function(name) {
 }
 ```
 
-## Heartlands: when the canopy dropped, 2012–2022
+## Heartlands Acres: Canopy Cover Loss, 2012–2022 {.map-slide}
 
-:::: {.columns}
-::: {.column width="50%"}
 ```{r}
-#| label: map-drop-kh-tcc
-#| fig-width: 6
-#| fig-height: 5.4
-drop_map("Heartlands", "tcc_drop_year", "USFS canopy: fell 15+ points")
+#| label: map-drop-kh
+#| fig-width: 11.5
+#| fig-height: 5.6
+drop_panels("Heartlands", "Hansen Forest Cleared")
 ```
-:::
-::: {.column width="50%"}
+
+Before The Nature Conservancy bought it, drops clustered in **2018–2021** (orange and red), in the southern block and the east of the northern blocks. The canopy record (left) flags `r fmt_n(ag("Heartlands", "acres_tcc"))` acres; Hansen (right) flags `r fmt_n(ag("Heartlands", "acres_hansen"))` acres.
+
+[How a cell gets coloured: **left**, the first year its canopy fell 15+ points below its highest value in the previous 3 years; **right**, the year Hansen detected stand-replacing loss (trees across the whole 30 m cell removed or killed). Hansen is yes/no, with no partial-loss scale.]{style="font-size: 0.65em; color: #555;"}
+
+## Songbird Acres: Canopy Cover Loss, 2015–2025 {.map-slide}
+
 ```{r}
-#| label: map-drop-kh-hansen
-#| fig-width: 6
-#| fig-height: 5.4
-drop_map("Heartlands", "hansen_loss_year", "Hansen: forest cleared")
+#| label: map-drop-sb
+#| fig-width: 11.5
+#| fig-height: 5.6
+drop_panels("Songbird", "Hansen Forest Cleared (through 2024)")
 ```
-:::
-::::
 
-Under TRG, drops were spread across the decade, with a cluster in **2018–2021** (orange and red) in the southern block and the east side of the northern blocks, then very little in 2022. The canopy record (left) flags `r fmt_n(ag("Heartlands", "acres_tcc"))` acres; Hansen (right) flags `r fmt_n(ag("Heartlands", "acres_hansen"))` acres.
+The largest drops are recent (dark red, **2024–2025**), in the west-centre and the east. The canopy record flags `r fmt_n(ag("Songbird", "acres_tcc"))` acres; Hansen flags `r fmt_n(ag("Songbird", "acres_hansen"))` acres (its record ends in 2024).
 
-## Songbird: when the canopy dropped, 2015–2025
-
-:::: {.columns}
-::: {.column width="50%"}
-```{r}
-#| label: map-drop-sb-tcc
-#| fig-width: 6
-#| fig-height: 5.4
-drop_map("Songbird", "tcc_drop_year", "USFS canopy: fell 15+ points")
-```
-:::
-::: {.column width="50%"}
-```{r}
-#| label: map-drop-sb-hansen
-#| fig-width: 6
-#| fig-height: 5.4
-drop_map("Songbird", "hansen_loss_year", "Hansen: forest cleared (through 2024)")
-```
-:::
-::::
-
-The big recent blocks (dark red, **2024–2025**) are the largest drops on the property, in the west-centre and the east. The canopy record flags `r fmt_n(ag("Songbird", "acres_tcc"))` acres; Hansen flags `r fmt_n(ag("Songbird", "acres_hansen"))` acres. Hansen's record ends in 2024, so it can't show 2025.
+[How a cell gets coloured: **left**, the first year its canopy fell 15+ points below its highest value in the previous 3 years; **right**, the year Hansen detected stand-replacing loss (trees across the whole 30 m cell removed or killed). Hansen is yes/no, with no partial-loss scale.]{style="font-size: 0.65em; color: #555;"}
 
 ## Do the two records agree?
 
@@ -597,9 +589,9 @@ Since 2020, about **`r fmt_n(hkt(CUR_20s, "annual_acres"))` acres a year** (`r f
 ## What we can't say
 
 - **Intent.** The data show heavy cutting before the Songbird sale, not whether it was planned as part of the deal.
-- **Exact sale dates.** The state lists show owners only in 2020 and 2026, so we can't tell when TRG sold to Verdant, or whether the Heartlands land passed through another owner before The Nature Conservancy.
+- **Exact sale dates.** The state lists show owners only in 2020 and 2026, so we can't tell when TRG sold to Verdant, or when Verdant sold the Heartlands land to The Nature Conservancy.
 - **Cause.** LANDFIRE's annual maps label almost all disturbance on this land "unknown"; harvest records for private timber land evidently aren't in them.
-- **2025 is the newest, least settled year.** Every group dips slightly in 2025 (other private owners: `r fmt_1(tcc_at(NK, 2024))`% → `r fmt_1(tcc_at(NK, 2025))`%), but Songbird dropped far more.
+- **2025 is the newest, least settled year.** Every group dips slightly in 2025 (other private owners: `r fmt_1(tcc_at(NK, 2024))`% → `r fmt_1(tcc_at(NK, 2025))`%), but Songbird and Molpus dropped far more.
 - **Historical rates are model estimates.** They come from expert-built LANDFIRE BpS models, not measurements, and harvest has no historical counterpart.
 - **Our 20-point and 15-point yardsticks are choices.** Other cutoffs would change the counts, probably not the pattern.
 

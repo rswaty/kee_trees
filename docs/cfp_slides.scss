@@ -20,6 +20,10 @@ $presentation-h1-font-size: 2em;
   max-height: 600px;
 }
 
+.reveal .slides section.map-slide .cell-output-display img {
+  max-height: 545px;
+}
+
 .reveal table {
   font-size: 0.85em;
 }
