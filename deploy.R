@@ -13,30 +13,37 @@ if (!dir.exists("output_csvs")) {
 tile_files <- c(
   "www/tiles/hansen_loss.pmtiles",
   "www/tiles/tcc_decline.pmtiles",
-  "www/tiles/landfire_fdist.pmtiles",
-  "www/tiles/cfp_owner_2020.pmtiles",
-  "www/tiles/cfp_owner_2026.pmtiles",
-  "www/tiles/cfp_owner_change.pmtiles"
+  "www/tiles/landfire_fdist.pmtiles"
 )
 if (!all(file.exists(tile_files))) {
   stop(
-    "Missing www/tiles PMTiles. Need hansen_loss, tcc_decline, landfire_fdist, ",
-    "and cfp_owner_{2020,2026,change}.\n",
-    "Rebuild with scripts/02_*, 03_*, 04_*, and 05_cfp_owner_tiles.R"
+    "Missing www/tiles PMTiles. Need hansen_loss, tcc_decline and landfire_fdist.\n",
+    "Rebuild with scripts/02_*, 03_* and 04_*."
   )
 }
 
 app_files <- c(
   "app.R",
   "tiles_app/app.R",
+  "tiles_app/tab_footprints.R",
+  "tiles_app/tab_bigger_picture.R",
+  "output_spatial/app/drop_year.geojson",
+  "output_spatial/app/footprints.geojson",
+  "output_csvs/app_sale_dates.csv",
+  "output_csvs/footprint_drop_year_by_source.csv",
+  "output_csvs/footprint_drop_year_agreement.csv",
+  "output_csvs/cfp_sale_tcc_mean_by_year.csv",
+  "output_csvs/cfp_sale_footprint_hansen_by_year.csv",
+  "output_csvs/cfp_sale_landfire_annual_by_zone.csv",
   "output_csvs/loss_by_county_year.csv",
   "output_csvs/tcc_by_county_year.csv",
   "output_csvs/landfire_fdist_by_agent.csv",
-  "output_csvs/cfp_owner_sankey.csv",
-  "output_csvs/cfp_name_sankey.csv",
-  "output_csvs/cfp_owner_sankey_summary.csv",
-  "output_csvs/cfp_name_sankey_summary.csv",
-  "output_csvs/cfp_min_parcel_acres.csv",
+  "output_csvs/hk_bps_acres.csv",
+  "output_csvs/hk_evt_acres.csv",
+  "output_csvs/hk_disturbance_historical_vs_current.csv",
+  "output_csvs/hk_current_disturbance_by_year.csv",
+  "output_csvs/hk_disturbance_totals.csv",
+  "output_csvs/hk_historical_disturbance_by_bps.csv",
   tile_files
 )
 

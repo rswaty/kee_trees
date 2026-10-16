@@ -10,7 +10,6 @@
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
 za <- zone_acres()
-dates <- owner_start_dates()
 
 # Molpus and Lyme bought most of this land just before the 2020 list, so their panel
 # titles give the purchase dates instead of the 2020 -> 2026 wording.
@@ -24,16 +23,6 @@ panel_lab <- za |>
                         "\n(", fmt_n(zone_acres), " acres)")) |>
   select(group, panel)
 panel_levels <- panel_lab$panel[match(CORP_GROUPS, panel_lab$group)]
-
-events <- bind_rows(
-  data.frame(group = c(G$TV, G$SB, G$KH), x = dates$verdant, label = "Verdant buys"),
-  data.frame(group = G$KH, x = dates$tnc, label = "TNC buys"),
-  data.frame(group = G$MW, x = dates$molpus, label = "Molpus buys"),
-  data.frame(group = G$LY, x = dates$lyme, label = "Lyme buys")
-) |>
-  inner_join(panel_lab, by = "group") |>
-  mutate(panel = factor(panel, levels = panel_levels),
-         hjust = if_else(label == "TNC buys", -0.08, 1.08))
 
 by_group <- function(df, value_fun) {
   corp <- df |>
@@ -52,9 +41,6 @@ by_group <- function(df, value_fun) {
 
 panels_chart <- function(dl, ylab, title, subtitle, source, lim) {
   ggplot() +
-    geom_vline(data = events, aes(xintercept = x), linetype = "dashed", colour = "grey45", linewidth = 0.4) +
-    geom_text(data = events, aes(x = x, y = lim[2], label = label, hjust = hjust), vjust = 1,
-              size = BASE_SIZE / 4.4, colour = "grey30", family = FONT_FAMILY) +
     geom_line(data = dl$other, aes(year, value), colour = "grey65", linewidth = 1) +
     geom_line(data = dl$corp, aes(year, value, colour = group), linewidth = 1.3) +
     geom_point(data = dl$corp, aes(year, value, colour = group), size = 1.6) +

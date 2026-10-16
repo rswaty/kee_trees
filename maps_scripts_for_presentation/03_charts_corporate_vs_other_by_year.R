@@ -9,8 +9,6 @@
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
 za <- zone_acres()
-dates <- owner_start_dates()
-verdant_txt <- owner_date_text("Verdant")
 
 tcc <- csv("cfp_sale_tcc_mean_by_year.csv") |>
   inner_join(za, by = "zone") |>
@@ -33,11 +31,6 @@ class_lines <- function(df, ylab, title, subtitle, source, digits = 1, pad = NUL
   yr <- range(df$year)
   lim <- if (is.null(pad)) c(0, max(df$value) * 1.12) else c(floor(min(df$value)) - pad, ceiling(max(df$value)) + pad)
   ggplot(df, aes(year, value, colour = class)) +
-    annotate("segment", x = dates$verdant, xend = dates$verdant, y = lim[1], yend = lim[2],
-             linetype = "dashed", colour = "grey45", linewidth = 0.5) +
-    annotate("label", x = dates$verdant, y = lim[2], label = paste0("TRG sells to Verdant\n", verdant_txt),
-             hjust = 1.04, vjust = 1, size = BASE_SIZE / 3.6, colour = "grey30", fill = "white",
-             border.colour = NA, lineheight = 0.95, family = FONT_FAMILY) +
     geom_line(linewidth = 1.4) +
     geom_point(size = 2.4) +
     geom_text(data = last, aes(label = paste0(formatC(value, format = "f", digits = digits), "%")),
