@@ -12,9 +12,15 @@ if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" 
 za <- zone_acres()
 dates <- owner_start_dates()
 
+# Molpus and Lyme bought most of this land just before the 2020 list, so their panel
+# titles give the purchase dates instead of the 2020 -> 2026 wording.
+PANEL_TITLE <- setNames(CORP_GROUPS, CORP_GROUPS)
+PANEL_TITLE[G$MW] <- "Molpus: bought 2020 (Vulcan) or 2014 (Ned Lake), mostly kept"
+PANEL_TITLE[G$LY] <- "Lyme: bought March 2020, kept"
+
 panel_lab <- za |>
   filter(group %in% CORP_GROUPS) |>
-  mutate(panel = paste0(vapply(group, function(g) paste(strwrap(g, 36), collapse = "\n"), ""),
+  mutate(panel = paste0(vapply(PANEL_TITLE[group], function(g) paste(strwrap(g, 36), collapse = "\n"), ""),
                         "\n(", fmt_n(zone_acres), " acres)")) |>
   select(group, panel)
 panel_levels <- panel_lab$panel[match(CORP_GROUPS, panel_lab$group)]
@@ -57,9 +63,7 @@ panels_chart <- function(dl, ylab, title, subtitle, source, lim) {
     scale_x_continuous(breaks = function(l) seq(ceiling(l[1] / 2) * 2, floor(l[2]), 4)) +
     scale_y_continuous(limits = lim, labels = function(x) paste0(x, "%")) +
     labs(title = title, subtitle = subtitle, x = NULL, y = ylab,
-         caption = paste0(source, " Grey line: all other private Commercial Forest land.\n",
-                          "Dates are when the new owner took over most of the parcels, from the 2026 Michigan DNR Commercial Forest list. ",
-                          "Verdant sold the Songbird land in 2026, after these records end.")) +
+         caption = paste0(source, " Grey line: all other private Commercial Forest land.")) +
     theme_chart() +
     theme(strip.text = element_text(size = BASE_SIZE - 4, lineheight = 1),
           panel.spacing.x = unit(0.3, "in"), panel.spacing.y = unit(0.2, "in"),

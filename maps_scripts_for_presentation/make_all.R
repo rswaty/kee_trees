@@ -30,14 +30,26 @@ widescreen_template <- function() {
   out
 }
 
+# Pixel width and height from the PNG header.
+png_dim <- function(f) {
+  con <- file(f, "rb")
+  on.exit(close(con))
+  b <- readBin(con, "raw", 24)
+  as.numeric(c(sum(as.integer(b[17:20]) * 256^(3:0)), sum(as.integer(b[21:24]) * 256^(3:0))))
+}
+
 pngs <- sort(list.files(FIG_DIR, pattern = "\\.png$", full.names = TRUE))
 doc <- officer::read_pptx(widescreen_template())
 ss <- officer::slide_size(doc)
 for (f in pngs) {
+  d <- png_dim(f)
+  k <- min(ss$width / d[1], ss$height / d[2])
+  w <- d[1] * k
+  h <- d[2] * k
   doc <- officer::add_slide(doc, layout = "Blank")
-  doc <- officer::ph_with(doc, officer::external_img(f, width = ss$width, height = ss$height),
-                          location = officer::ph_location(left = 0, top = 0,
-                                                          width = ss$width, height = ss$height))
+  doc <- officer::ph_with(doc, officer::external_img(f, width = w, height = h),
+                          location = officer::ph_location(left = (ss$width - w) / 2, top = (ss$height - h) / 2,
+                                                          width = w, height = h))
 }
 deck <- file.path(HERE, "presentation_figures.pptx")
 print(doc, target = deck)
