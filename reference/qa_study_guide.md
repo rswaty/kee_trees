@@ -55,7 +55,17 @@ clearing, and LANDFIRE gives a third view of timing. When they agree on place an
 isn't an artifact of one product.
 
 **Q: Why 2020 and 2026?**
-Those are the two parcel lists we have. That's also why we can't date the sales.
+Those are the two parcel lists we have.
+
+**Q: When did the sales happen?**
+The 2026 list records the date each current owner acquired each parcel (field `OwnerParce`):
+- TRG sold to Verdant in Jul–Aug 2022.
+- Verdant sold the Heartlands land to The Nature Conservancy in Nov 2022–Jan 2023.
+- Verdant sold to American Songbird in 2026, after the list was compiled.
+- Molpus bought most of its land in Jan 2020, and Lyme in Mar–Jul 2020.
+
+The main slide deck still lists exact sale dates under "What we can't say"; the presentation
+figures in `maps_scripts_for_presentation/` use these dates.
 
 **Q: Why does the 2026 list show the Songbird land as Verdant's?**
 The Songbird sale happened after the 2026 list was compiled, so we assigned that land using the
@@ -133,7 +143,8 @@ What happened depends on who ended up with the land:
 
 **Q: Why does the Heartlands show 0% heavily cut when clearing peaked in 2020–21?**
 The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting happened in
-2018–2020, so the 2020 starting canopy was already low, and the land regrew after that.
+2018–2020, so the 2020 starting canopy was already low, and the land regrew after that. The
+2020–21 clearing happened while TRG still owned the land (TRG sold to Verdant in mid-2022).
 
 **Q: How much of all heavy cutting was on TRG's former land?**
 82% of 12,219 acres, even though TRG held about half the enrolled acres.
@@ -175,7 +186,8 @@ The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting h
 - We don't claim a cause.
 
 **Q: Did Songbird's buyers do the cutting?**
-- No. The cutting happened in 2024–25, before the 2026 sale, while Verdant owned the land.
+- No. The cutting happened in 2024–25, before the 2026 sale, while Verdant owned the land (Verdant
+  bought it from TRG in Jul–Aug 2022).
 - We can't say whether it was planned as part of the deal.
 
 **Q: Isn't 2025 unreliable?**
@@ -187,6 +199,8 @@ The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting h
 - Not quite. The Songbird boundary covers 17,236 acres, while parcels at least 50% inside total
   15,350 acres. For the Heartlands it's 32,579 versus 30,813.
 - The parcel table uses parcels; the maps and year-by-year charts use the boundaries.
+- The presentation map of corporate land by destination (figure 05) includes parcels under 20
+  acres, so its acreages differ slightly again (Songbird 16,863 acres, Heartlands 30,828).
 
 **Q: Would different cutoffs change the story?**
 - The counts change, but the ranking doesn't.

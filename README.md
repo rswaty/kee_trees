@@ -10,6 +10,7 @@ land and all land in **Houghton and Keweenaw** counties. Randy Swaty and Julia P
 | `inputs/` | Source data, never written by scripts: boundaries, CFP parcels, USFS canopy cover, Hansen, LANDFIRE, BpS model tables |
 | `scripts/` | Analysis scripts, numbered in run order (see below) |
 | `scripts/charts/` | One script per presentation chart, for PowerPoint |
+| `maps_scripts_for_presentation/` | Maps and charts for the corporate-owner presentation, with their own README, figures and `presentation_figures.pptx` |
 | `output_csvs/` | Every table the analysis writes |
 | `output_spatial/` | Every map layer the analysis writes (GeoTIFF, GeoPackage); see `output_spatial/README.md` for a QGIS guide |
 | `output_visuals/` | Figures written by the analysis scripts |
