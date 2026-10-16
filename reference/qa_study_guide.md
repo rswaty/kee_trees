@@ -64,8 +64,7 @@ The 2026 list records the date each current owner acquired each parcel (field `O
 - Verdant sold to American Songbird in 2026, after the list was compiled.
 - Molpus bought most of its land in Jan 2020, and Lyme in Mar–Jul 2020.
 
-The main slide deck still lists exact sale dates under "What we can't say"; the presentation
-figures in `maps_scripts_for_presentation/` use these dates.
+Only the Songbird sale date is unknown, because it came after the 2026 list.
 
 **Q: Why does the 2026 list show the Songbird land as Verdant's?**
 The Songbird sale happened after the 2026 list was compiled, so we assigned that land using the

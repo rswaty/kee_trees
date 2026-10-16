@@ -234,7 +234,7 @@ A drop from 75% to 65% canopy is a **10-point** drop.
 
 ## How we defined things
 
-- **TRG and Verdant are different companies.** TRG in 2020 and Verdant in 2026 counts as **sold**. The Heartlands land went TRG → Verdant → The Nature Conservancy; the state lists show only the first and last owners.
+- **TRG and Verdant are different companies.** TRG in 2020 and Verdant in 2026 counts as **sold**. The Heartlands land went TRG → Verdant (2022) → The Nature Conservancy (2022–23).
 - **Other private owners:** everyone except the four investment companies: individuals and families, but also other timber companies (Lake Superior Timberlands holds 69% of the "kept" acres). **Kept** = same owner in 2020 and 2026; **sold** = new owner or left the program.
 - **Heavy cutting:** a parcel's average canopy fell by **more than 20 points**, 2020 → 2025. This is our yardstick, not an official standard.
 - **Year the canopy dropped** (maps): the first year a 30 m cell's canopy fell **15 points or more** below its highest value in the previous 3 years.
@@ -589,7 +589,7 @@ Since 2020, about **`r fmt_n(hkt(CUR_20s, "annual_acres"))` acres a year** (`r f
 ## What we can't say
 
 - **Intent.** The data show heavy cutting before the Songbird sale, not whether it was planned as part of the deal.
-- **Exact sale dates.** The state lists show owners only in 2020 and 2026, so we can't tell when TRG sold to Verdant, or when Verdant sold the Heartlands land to The Nature Conservancy.
+- **The Songbird sale date.** The 2026 state list dates the earlier purchases (TRG → Verdant, Jul–Aug 2022; Verdant → The Nature Conservancy, Nov 2022–Jan 2023), so the 2020–21 Heartlands clearing happened under TRG and the 2024–25 Songbird cutting under Verdant. The Songbird sale came after the list, so we don't have its exact date.
 - **Cause.** LANDFIRE's annual maps label almost all disturbance on this land "unknown"; harvest records for private timber land evidently aren't in them.
 - **2025 is the newest, least settled year.** Every group dips slightly in 2025 (other private owners: `r fmt_1(tcc_at(NK, 2024))`% → `r fmt_1(tcc_at(NK, 2025))`%), but Songbird and Molpus dropped far more.
 - **Historical rates are model estimates.** They come from expert-built LANDFIRE BpS models, not measurements, and harvest has no historical counterpart.
