@@ -1,7 +1,8 @@
 # Q&A study guide: methods, input data and results
 
-For the "Who cut, who sold?" deck (`docs/cfp_sale_story_slides.qmd`). Numbers match the rendered deck
-and the CSVs in `output_csvs/`.
+For the presentation figures (`maps_scripts_for_presentation/figures/`) and the "Who cut, who sold?"
+deck (`docs/cfp_sale_story_slides.qmd`). Numbers match the figures, the rendered deck and the CSVs in
+`output_csvs/`.
 
 ## Watch-outs
 
@@ -42,7 +43,7 @@ tree crowns. It's a model, so values jump around a few points from year to year,
 spikes are partly noise.
 
 **Q: What is Hansen?**
-It's a global map of the year a 30 m cell lost its trees outright. It's yes/no, records only
+It's a global map of the year a 30 m cell was cleared of trees. It's yes/no, records only
 stand-replacing loss such as a clearcut, and misses thinning and partial cuts.
 
 **Q: What is LANDFIRE Annual Disturbance?**
@@ -91,6 +92,11 @@ missing from 2026 we use the 2026 parcels covering that spot (72 parcels). A par
 - TRG to Verdant counts as a sale.
 - Land is assigned to Songbird or the Heartlands when at least 50% of the parcel lies inside that
   sale boundary.
+
+**Q: Who is TRG?**
+TRG Threshold Timber, the name on the 2020 state list. It's a timberland investment company and
+was the largest Commercial Forest owner in the two counties in 2020, with about half of the
+enrolled land (figure 12). Its land passed to Verdant Timber in Jul–Aug 2022.
 
 **Q: Who counts as "institutional"?**
 - TRG/Verdant, Molpus (listed as MWF, for Molpus Woodlands Fund) and Lyme.
@@ -186,6 +192,11 @@ The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting h
 - **Other private owners:** 0.6% of 158,203 acres.
 - That's about 11× at our cutoff and 5–8× at others. The direction holds at every cutoff we tried.
 
+**Q: On figure 04, why are the LANDFIRE bars shorter than the other two?**
+All three panels share one scale, but LANDFIRE is an average per year (2020–2025), while the
+canopy and Hansen panels are totals over the whole period. Compare corporate with other private
+within each panel, not heights across panels.
+
 **Q: What about the counties as a whole?**
 - **Area:** 860,741 acres of mainland, not counting open water. Isle Royale isn't in the LANDFIRE
   data.
@@ -211,8 +222,8 @@ The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting h
 - We can't say whether it was planned as part of the deal.
 
 **Q: Isn't 2025 unreliable?**
-- It's the newest and least settled year. Every group dipped slightly (other private: 79.6% to
-  79.0%).
+- It's the newest and least settled year. Every group dipped slightly (other private: 79.3% to
+  78.8%).
 - Songbird and Molpus fell far more, and Hansen and LANDFIRE show the activity starting before 2025.
 
 **Q: Did the sale boundaries match the parcels exactly?**

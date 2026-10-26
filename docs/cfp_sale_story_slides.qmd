@@ -472,7 +472,7 @@ drop_panels("Heartlands", "Hansen Forest Cleared")
 
 Before The Nature Conservancy bought it, drops clustered in **2018–2021** (orange and red), in the southern block and the east of the northern blocks. The canopy record (left) flags `r fmt_n(ag("Heartlands", "acres_tcc"))` acres; Hansen (right) flags `r fmt_n(ag("Heartlands", "acres_hansen"))` acres.
 
-[How a cell gets coloured: **left**, the first year its canopy fell 15+ points below its highest value in the previous 3 years; **right**, the year Hansen detected stand-replacing loss (trees across the whole 30 m cell removed or killed). Hansen is yes/no, with no partial-loss scale.]{style="font-size: 0.65em; color: #555;"}
+[How a cell gets coloured: **left**, the first year its canopy fell 15+ points below its highest value in the previous 3 years; **right**, the year Hansen detected stand-replacing loss (trees across the whole 30 m cell cleared). Hansen is yes/no, with no partial-loss scale.]{style="font-size: 0.65em; color: #555;"}
 
 ## Songbird Acres: Canopy Cover Loss, 2015–2025 {.map-slide}
 
@@ -485,7 +485,7 @@ drop_panels("Songbird", "Hansen Forest Cleared (through 2024)")
 
 The largest drops are recent (dark red, **2024–2025**), in the west-centre and the east. The canopy record flags `r fmt_n(ag("Songbird", "acres_tcc"))` acres; Hansen flags `r fmt_n(ag("Songbird", "acres_hansen"))` acres (its record ends in 2024).
 
-[How a cell gets coloured: **left**, the first year its canopy fell 15+ points below its highest value in the previous 3 years; **right**, the year Hansen detected stand-replacing loss (trees across the whole 30 m cell removed or killed). Hansen is yes/no, with no partial-loss scale.]{style="font-size: 0.65em; color: #555;"}
+[How a cell gets coloured: **left**, the first year its canopy fell 15+ points below its highest value in the previous 3 years; **right**, the year Hansen detected stand-replacing loss (trees across the whole 30 m cell cleared). Hansen is yes/no, with no partial-loss scale.]{style="font-size: 0.65em; color: #555;"}
 
 ## Do the two records agree?
 

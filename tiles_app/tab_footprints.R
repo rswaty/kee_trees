@@ -102,7 +102,7 @@ footprints_ui <- if (has_footprints) {
         tags$p(class = "mb-1", tags$strong("USFS canopy: "),
                "first year a 30 m cell's canopy fell 15+ points below its highest value in the previous 3 years."),
         tags$p(class = "mb-1", tags$strong("Hansen: "),
-               "year Landsat detected stand-replacing loss (trees across the 30 m cell removed or killed). ",
+               "year Landsat detected stand-replacing loss (trees across the 30 m cell cleared). ",
                "Yes/no; record ends 2024."),
         tags$p(class = "mb-0", tags$strong("Both: "),
                "cells both sources flagged within a year of each other, coloured by the canopy year.")

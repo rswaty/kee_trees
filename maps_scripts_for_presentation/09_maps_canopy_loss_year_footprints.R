@@ -18,7 +18,7 @@ how_coloured <- paste0(
   paste(strwrap(paste0("Left: the first year its canopy fell 15+ points below its highest value in ",
                        "the previous 3 years."), 48), collapse = "\n"), "\n\n",
   paste(strwrap(paste0("Right: the year Hansen detected stand-replacing loss: trees across the whole ",
-                       "30 m cell removed or killed. Hansen is yes or no; it has no partial-loss scale."), 48),
+                       "30 m cell cleared. Hansen is yes or no; it has no partial-loss scale."), 48),
         collapse = "\n")
 )
 

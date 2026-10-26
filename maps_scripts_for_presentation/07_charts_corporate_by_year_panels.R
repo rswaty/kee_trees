@@ -73,7 +73,7 @@ hansen <- by_group(
 )
 save_chart(
   panels_chart(hansen, "Share of land cleared", "Forest cleared each year by corporate owner group",
-               "Share of each group's land where trees were removed or killed outright",
+               "Share of each group's land where the trees were cleared",
                "Source: Hansen Global Forest Change (stand-replacing loss only), 2015–2024.",
                c(0, max(hansen$corp$value) * 1.2)),
   "07b_chart_cleared_by_year_corporate_groups.png"

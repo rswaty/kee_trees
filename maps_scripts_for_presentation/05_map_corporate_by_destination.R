@@ -42,24 +42,19 @@ main <- ggplot() +
         legend.key.size = unit(0.36, "in"),
         legend.key.spacing.y = unit(0.06, "in"))
 
-# Side-panel timeline. Dates come from the 2026 state list; Molpus bought in two
-# rounds, so it gets the middle date rather than a range.
-timeline <- paste0(
-  "When the land changed hands\n",
-  "(dates from the 2026 state list)\n\n",
-  "TRG sold to Verdant: ", owner_date_text("Verdant"), "\n",
-  "Verdant sold the Heartlands land to\nThe Nature Conservancy: ", owner_date_text("Nature Conservancy"), "\n",
-  "Verdant sold land to American Songbird: 2026\n",
-  "Molpus bought most of its land: ", month_year(owner_start_dates()$molpus), "\n",
-  "Lyme bought its land: ", owner_date_text("\\bLyme\\b"), "\n\n",
-  "Grey: other private Commercial Forest land."
+notes <- c(
+  paste0("TRG (TRG Threshold Timber) is a timberland investment company and was the largest ",
+         "Commercial Forest owner here in 2020, with about half of the enrolled land."),
+  paste0("Grey: other private Commercial Forest land (for example, Lake Superior Timberlands ",
+         "or a family's woodlot).")
 )
+notes <- paste(vapply(notes, function(x) paste(strwrap(x, 60), collapse = "\n"), ""), collapse = "\n\n")
 
 save_layout(
   "05_map_corporate_by_destination.png",
   panels = list(main + theme(legend.position = "none", plot.margin = margin(4, 4, 4, 40))),
-  side = list(get_legend(main), text_block(timeline, size = BASE_SIZE - 2)),
-  side_heights = c(1, 1.05),
+  side = list(get_legend(main), text_block(notes, size = BASE_SIZE - 2)),
+  side_heights = c(1, 0.6),
   side_width = 0.6,
   title_pos = "side",
   title = "Corporate land by owner, 2020 → 2026",

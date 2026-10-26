@@ -41,13 +41,12 @@ d <- bind_rows(heavy, cleared, disturbed) |>
 p <- ggplot(d, aes(class, value, fill = class)) +
   geom_col(width = 0.65) +
   geom_text(aes(label = paste0(fmt_1(value), "%")), vjust = -0.4, size = BASE_SIZE / 2.9, fontface = "bold") +
-  facet_wrap(~measure, scales = "free_y") +
+  facet_wrap(~measure) +
   scale_fill_manual(values = CLASS_COLS[c(CORP, OTHER)], guide = "none") +
   scale_x_discrete(labels = function(x) gsub(" owners", "\nowners", x)) +
   scale_y_continuous(labels = function(x) paste0(x, "%"), expand = expansion(mult = c(0, 0.15))) +
   labs(
     title = "Corporate land was disturbed more than other private land on every measure",
-    subtitle = "Three independent measures, 2020 onward, all 2020 Commercial Forest land",
     x = NULL, y = NULL,
     caption = paste0(
       "Sources: USFS FIA Tree Canopy Cover (parcel averages, parcels of 20+ acres); Hansen Global Forest Change; LANDFIRE Annual Disturbance.\n",

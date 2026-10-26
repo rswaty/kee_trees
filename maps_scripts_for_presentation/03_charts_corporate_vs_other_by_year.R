@@ -77,7 +77,7 @@ save_chart(p03a, "03a_chart_canopy_by_year_corporate_vs_other.png")
 save_chart(
   class_lines(hansen, "Share of land cleared",
               "Forest cleared each year, corporate vs. other private land",
-              "Share of each owner type's land where trees were removed or killed outright",
+              "Share of each owner type's land where the trees were cleared",
               "Source: Hansen Global Forest Change (stand-replacing loss only), 2015–2024.",
               digits = 2),
   "03b_chart_cleared_by_year_corporate_vs_other.png"
