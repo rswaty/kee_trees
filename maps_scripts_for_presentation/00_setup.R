@@ -29,6 +29,7 @@ SHOW_TITLES <- TRUE      # FALSE drops in-figure titles (use PowerPoint slide ti
 DPI <- 300
 FIG_W <- 13.33           # full 16:9 slide
 FIG_H <- 7.5
+SHOW_SCALE_BAR <- FALSE  # TRUE puts a scale bar back on every map
 SCALE_UNITS <- "mi"      # scale bars in "mi" or "km"
 
 # Owner classes. Change the wording here and every figure follows.
@@ -38,7 +39,7 @@ NONCFP <- "Not in the Commercial Forest Program"
 CORP_NOTE <- "Corporate owners = TRG/Verdant, Molpus and Lyme, investment companies that own forest land for investors."
 OTHER_NOTE <- paste0(
   "Other private owners = everyone else enrolled, including families, clubs and other timber companies ",
-  "(Lake Superior Timberlands holds 69% of the acres other private owners kept)."
+  "(Lake Superior Timberlands alone holds 41% of other private land)."
 )
 
 CLASS_COLS <- setNames(c("#3a4a9f", "#d09a2c", "grey55"), c(CORP, OTHER, NONCFP))
@@ -60,6 +61,11 @@ GROUP_COLS <- setNames(
   unlist(G)
 )
 CORP_GROUPS <- c(G$TV, G$KH, G$SB, G$TO, G$MW, G$LY)
+
+# Figure 05 splits "TRG → other owners / left CFP" in two.
+TO_KEPT <- "TRG → other owners, still enrolled"
+TO_LEFT <- "TRG → left the program"
+TO_SPLIT_COLS <- setNames(c("#56b4e9", "#08306b"), c(TO_KEPT, TO_LEFT))
 OTHER_GROUPS <- c(G$NK, G$NS)
 
 # Zone names used in the analysis CSVs -> display labels.
@@ -145,6 +151,22 @@ read_parcels <- function() {
       !is.na(firm_from_name(owner_2020)) ~ CORP,
       TRUE ~ OTHER
     ))
+}
+
+# Townships (US Census county subdivisions) in the two counties. Downloaded once (needs
+# internet) and saved to data/townships.gpkg.
+read_townships <- function() {
+  f <- file.path(DATA_DIR, "townships.gpkg")
+  if (!file.exists(f)) {
+    options(tigris_use_cache = TRUE)
+    tigris::county_subdivisions("MI", county = c("Houghton", "Keweenaw"), cb = TRUE, year = 2024,
+                                progress_bar = FALSE) |>
+      st_transform(GRID_CRS) |>
+      group_by(township = NAME, county = sub(" County", "", NAMELSADCO)) |>
+      summarise(.groups = "drop") |>
+      st_write(f, quiet = TRUE)
+  }
+  st_read(f, quiet = TRUE)
 }
 
 read_footprint <- function(name) {
@@ -235,6 +257,7 @@ theme_map <- function(base_size = BASE_SIZE) {
 # Scale bar drawn with plain ggplot layers (map units are metres).
 scale_bar <- function(xlim, ylim, length = NULL, units = SCALE_UNITS, pos = "bottomleft",
                       text_size = BASE_SIZE / 3.6) {
+  if (!SHOW_SCALE_BAR) return(NULL)
   per <- if (units == "mi") 1609.344 else 1000
   w <- diff(xlim)
   h <- diff(ylim)
@@ -343,17 +366,58 @@ text_block <- function(txt, size = BASE_SIZE - 3) {
 
 FIGURES <- if (exists("FIGURES")) FIGURES else character()
 
-# Compose one slide-sized PNG: title and subtitle across the top, map panels side by
-# side, an optional right-hand column (legend, notes) and a caption.
+# Compose one slide-sized PNG: title and subtitle, map panels side by side, an optional
+# right-hand column (legend, notes) and a caption.
+# title_pos = "top" puts the title across the top of the slide; "side" puts it,
+# right-aligned, at the top of the right-hand column so the maps get the full height.
 save_layout <- function(file, panels, side = list(), side_heights = NULL, title = NULL,
                         subtitle = NULL, caption = NULL, side_width = 0.27,
-                        width = FIG_W, height = FIG_H) {
+                        width = FIG_W, height = FIG_H, title_pos = "top") {
   path <- file.path(FIG_DIR, file)
   ragg::agg_png(path, width = width, height = height, units = "in", res = DPI, background = "white")
   on.exit(dev.off(), add = TRUE)
   grid.newpage()
   show_t <- SHOW_TITLES && !is.null(title)
   show_s <- SHOW_TITLES && !is.null(subtitle)
+  if (title_pos == "side" && length(side) > 0 && (show_t || show_s)) {
+    # Wrap to the side column's width (rough characters per inch at each font size).
+    side_in <- width * side_width
+    # Wrap into as few lines as fit the column (measured in the actual font), then even
+    # out the line lengths so no word sits alone on the last line.
+    avail_in <- side_in - 0.45
+    widest <- function(lines, gp) {
+      max(vapply(lines, function(l) convertWidth(grobWidth(textGrob(l, gp = gp)), "in", TRUE), 0))
+    }
+    balanced <- function(x, gp) {
+      ws <- seq(nchar(x) + 1, 8)
+      fit <- vapply(ws, function(w) widest(strwrap(x, w), gp) <= avail_in, TRUE)
+      n_lines <- vapply(ws, function(w) length(strwrap(x, w)), 0L)
+      n_min <- min(n_lines[fit], n_lines[length(ws)])
+      w_best <- min(ws[fit & n_lines == n_min], nchar(x) + 1)
+      paste(strwrap(x, w_best), collapse = "\n")
+    }
+    gp_t <- gpar(fontsize = BASE_SIZE + 8, fontface = "bold", fontfamily = FONT_FAMILY)
+    gp_s <- gpar(fontsize = BASE_SIZE, fontfamily = FONT_FAMILY)
+    t_txt <- if (show_t) balanced(title, gp_t) else ""
+    s_txt <- if (show_s) balanced(subtitle, gp_s) else ""
+    n_t <- if (show_t) length(strsplit(t_txt, "\n")[[1]]) else 0
+    n_s <- if (show_s) length(strsplit(s_txt, "\n")[[1]]) else 0
+    head_h <- 0.25 + 0.44 * n_t + 0.3 * n_s
+    header <- gTree(children = gList(
+      if (show_t) textGrob(t_txt, x = unit(1, "npc") - unit(0.3, "in"), y = unit(1, "npc") - unit(0.25, "in"),
+                           just = c("right", "top"),
+                           gp = gpar(fontsize = BASE_SIZE + 8, fontface = "bold", fontfamily = FONT_FAMILY,
+                                     lineheight = 1.05)),
+      if (show_s) textGrob(s_txt, x = unit(1, "npc") - unit(0.3, "in"),
+                           y = unit(1, "npc") - unit(0.3 + 0.44 * n_t, "in"), just = c("right", "top"),
+                           gp = gpar(fontsize = BASE_SIZE, col = "grey30", fontfamily = FONT_FAMILY,
+                                     lineheight = 1.1))
+    ))
+    hts <- if (is.null(side_heights)) rep(1, length(side)) else side_heights
+    side <- c(list(header), side)
+    side_heights <- unit(c(head_h, hts), c("in", rep("null", length(hts))))
+    show_t <- show_s <- FALSE
+  }
   head_in <- 0.15 + if (show_t) 0.5 else 0
   head_in <- head_in + if (show_s) 0.36 else 0
   cap_n <- if (is.null(caption)) 0 else length(strsplit(caption, "\n")[[1]])
@@ -383,7 +447,8 @@ save_layout <- function(file, panels, side = list(), side_heights = NULL, title 
   if (has_side) {
     pushViewport(viewport(layout.pos.col = n + 1))
     hts <- if (is.null(side_heights)) rep(1, length(side)) else side_heights
-    pushViewport(viewport(layout = grid.layout(length(side), 1, heights = unit(hts, "null"))))
+    if (!is.unit(hts)) hts <- unit(hts, "null")
+    pushViewport(viewport(layout = grid.layout(length(side), 1, heights = hts)))
     for (j in seq_along(side)) {
       pushViewport(viewport(layout.pos.row = j))
       g <- side[[j]]

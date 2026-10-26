@@ -7,12 +7,14 @@ if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" 
 
 za <- zone_acres()
 
+# Measure 1: share of acres in parcels whose average canopy fell 20+ points.
 heavy <- csv("cfp_sellers_by_owner_class.csv") |>
   mutate(class = if_else(owner_class == "Institutional", CORP, OTHER)) |>
   group_by(class) |>
   summarise(value = 100 * sum(acres_major_disturbance) / sum(acres), .groups = "drop") |>
-  mutate(measure = "Acres in heavily cut parcels\n(canopy fell 20+ points, 2020–2025)")
+  mutate(measure = "Tree canopy change, 2020–2025\n(FIA, > 20% loss)")
 
+# Measure 2: share of land Hansen marked as cleared at any point, 2020–2024.
 cleared <- csv("cfp_sale_footprint_hansen_by_year.csv") |>
   filter(year >= 2020) |>
   inner_join(select(za, zone, class), by = "zone") |>
@@ -22,6 +24,7 @@ cleared <- csv("cfp_sale_footprint_hansen_by_year.csv") |>
   summarise(value = 100 * sum(loss) / sum(acres), .groups = "drop") |>
   mutate(measure = "Land cleared, 2020–2024\n(Hansen, stand-replacing loss)")
 
+# Measure 3: share of land LANDFIRE recorded as disturbed each year, averaged over 2020–2025.
 disturbed <- csv("cfp_sale_landfire_annual_by_zone.csv") |>
   filter(year >= 2020) |>
   inner_join(select(za, zone, class), by = "zone") |>
@@ -34,20 +37,14 @@ disturbed <- csv("cfp_sale_landfire_annual_by_zone.csv") |>
 d <- bind_rows(heavy, cleared, disturbed) |>
   mutate(class = factor(class, levels = c(CORP, OTHER)),
          measure = factor(measure, levels = unique(measure)))
-ratios <- d |>
-  group_by(measure) |>
-  summarise(r = value[class == CORP] / value[class == OTHER], .groups = "drop")
-d <- d |> left_join(ratios, by = "measure")
 
 p <- ggplot(d, aes(class, value, fill = class)) +
   geom_col(width = 0.65) +
   geom_text(aes(label = paste0(fmt_1(value), "%")), vjust = -0.4, size = BASE_SIZE / 2.9, fontface = "bold") +
-  geom_text(data = ratios, aes(x = 1.5, y = Inf, label = paste0(round(r, 1), "× as much on corporate land")),
-            inherit.aes = FALSE, vjust = 1.4, size = BASE_SIZE / 3.4, colour = "grey25") +
   facet_wrap(~measure, scales = "free_y") +
   scale_fill_manual(values = CLASS_COLS[c(CORP, OTHER)], guide = "none") +
   scale_x_discrete(labels = function(x) gsub(" owners", "\nowners", x)) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = expansion(mult = c(0, 0.3))) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = expansion(mult = c(0, 0.15))) +
   labs(
     title = "Corporate land was disturbed more than other private land on every measure",
     subtitle = "Three independent measures, 2020 onward, all 2020 Commercial Forest land",

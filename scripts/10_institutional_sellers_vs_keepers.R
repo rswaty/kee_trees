@@ -19,6 +19,8 @@ root <- if (dir.exists("inputs/cfp") && dir.exists("output_csvs")) {
 } else {
   stop("Run from the kee_trees project root.")
 }
+# 2026 owner (renumbered parcels followed by location) and same-owner rules.
+source(file.path(root, "scripts/lib_owner_2026.R"))
 
 cfp_dir <- file.path(root, "inputs/cfp")
 csv_dir <- file.path(root, "output_csvs")
@@ -140,16 +142,17 @@ names20 <- p20 |>
   transmute(
     parid = as.character(parid),
     name_2020 = trimws(as.character(search_nam)),
-    acres_attr = as.numeric(acres)
-  )
-
-names26 <- p26 |>
-  st_drop_geometry() |>
-  transmute(
-    parid = as.character(parid),
-    name_2026 = trimws(as.character(FullLegalN))
+    acres_attr = as.numeric(acres),
+    lastname_2020 = lastname,
+    owner_type_raw_2020 = owner_type
   ) |>
   distinct(parid, .keep_all = TRUE)
+
+names26 <- owner_2026_lookup(
+  mutate(p20, parid = as.character(parid)),
+  st_transform(p26, st_crs(p20))
+) |>
+  select(parid, name_2026, matched_by_2026 = matched_by)
 
 message("Overlaying Songbird and Keweenaw Heartlands footprints...")
 p20_eq <- p20 |>
@@ -173,17 +176,11 @@ inst <- rank |>
   left_join(names20, by = "parid") |>
   left_join(names26, by = "parid") |>
   mutate(
-    name_2026 = if_else(
-      is.na(name_2026) | !still_in_cfp_2026,
-      EXIT_LABEL,
-      name_2026
-    ),
+    name_same_loose = same_owner_2026(name_2020, name_2026, owner_type_raw_2020, lastname_2020),
+    name_2026 = if_else(is.na(name_2026), EXIT_LABEL, name_2026),
     institutional_firm = firm_from_name(name_2020),
     is_institutional = !is.na(institutional_firm),
-    name_same_loose = norm_name(name_2020) == norm_name(name_2026) &
-      nzchar(norm_name(name_2020)) &
-      name_2026 != EXIT_LABEL,
-    left_cfp = !still_in_cfp_2026 | name_2026 == EXIT_LABEL,
+    left_cfp = name_2026 == EXIT_LABEL,
     songbird_name = grepl("Songbird", name_2026, ignore.case = TRUE),
     songbird_share = unname(sb_share[parid]),
     heartlands_share = unname(kh_share[parid]),

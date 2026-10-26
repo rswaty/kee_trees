@@ -1,6 +1,5 @@
 # Corporate owners relative to each other, year by year: one panel per corporate
-# group, with all other private land as a grey reference line and the dates the
-# land changed hands marked.
+# group, with all other private land as a grey reference line.
 #   07a canopy cover, 07b forest cleared (Hansen), 07c land disturbed (LANDFIRE).
 #
 # Outputs: figures/07a_chart_canopy_by_year_corporate_groups.png

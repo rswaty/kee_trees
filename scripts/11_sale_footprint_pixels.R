@@ -1,7 +1,9 @@
 # Pixel-level canopy change and Hansen loss timing by sale footprint / owner zone.
 # Zones (2020 CFP parcels >= MIN_ACRES, plus Songbird and Heartlands footprints
-# painted on top): TRG/Verdant retained, TRG other sale / left CFP, Lyme, MWF,
-# non-institutional kept, non-institutional sold / left, Heartlands, Songbird.
+# painted on top of TRG land only): TRG/Verdant retained, TRG other sale / left CFP,
+# Lyme, MWF, non-institutional kept, non-institutional sold / left, Heartlands, Songbird.
+# 2026 owners and same-owner rules come from scripts/lib_owner_2026.R (renumbered
+# parcels are followed by location; names are matched word by word).
 # Run from project root: Rscript scripts/11_sale_footprint_pixels.R
 # Does not touch Shiny.
 
@@ -24,6 +26,7 @@ root <- if (dir.exists("output_csvs") && dir.exists("inputs/tcc")) {
 } else {
   stop("Run from the kee_trees project root.")
 }
+source(file.path(root, "scripts/lib_owner_2026.R"))
 
 cfp_dir <- file.path(root, "inputs/cfp")
 tcc_dir <- file.path(root, "inputs/tcc")
@@ -77,9 +80,8 @@ p20 <- st_read(file.path(cfp_dir, "cfp_hk_2020.shp"), quiet = TRUE) |>
   st_make_valid() |>
   st_transform(crs(tcc20))
 p26 <- st_read(file.path(cfp_dir, "cfp_hk_2026.shp"), quiet = TRUE) |>
-  st_drop_geometry() |>
-  transmute(parid = as.character(parid), name_2026 = trimws(as.character(FullLegalN))) |>
-  distinct(parid, .keep_all = TRUE)
+  st_make_valid() |>
+  st_transform(crs(tcc20))
 
 p20 <- p20 |>
   mutate(
@@ -87,8 +89,9 @@ p20 <- p20 |>
     acres = as.numeric(acres),
     name_2020 = trimws(as.character(search_nam))
   ) |>
-  filter(!is.na(acres), acres >= MIN_ACRES) |>
-  left_join(p26, by = "parid") |>
+  filter(!is.na(acres), acres >= MIN_ACRES)
+p20 <- p20 |>
+  left_join(owner_2026_lookup(p20, p26), by = "parid") |>
   mutate(
     firm = case_when(
       grepl("TRG\\s*THRESHOLD|VERDANT", name_2020, ignore.case = TRUE) ~ "TRG",
@@ -96,7 +99,7 @@ p20 <- p20 |>
       grepl("MOLPUS|\\bMWF\\b", name_2020, ignore.case = TRUE) ~ "MWF",
       TRUE ~ NA_character_
     ),
-    same_name = norm_name(name_2020) == norm_name(name_2026) & nzchar(norm_name(name_2020)),
+    same_name = same_owner_2026(name_2020, name_2026, owner_type, lastname),
     trg_retained = firm %in% "TRG" &
       grepl("verdant|trg|threshold", name_2026, ignore.case = TRUE),
     zone = case_when(
@@ -113,8 +116,13 @@ p20 <- p20 |>
 zr <- rasterize(vect(p20), tcc20, field = "zone_code", background = 0)
 kh <- vect(st_transform(st_read(heartlands_path, quiet = TRUE), crs(tcc20)))
 sb <- vect(st_transform(st_read(songbird_path, quiet = TRUE), crs(tcc20)))
-zr <- mask(zr, rasterize(kh, tcc20), inverse = TRUE, updatevalue = ZONES[["Heartlands (TRG to TNC)"]])
-zr <- mask(zr, rasterize(sb, tcc20), inverse = TRUE, updatevalue = ZONES[["Songbird (TRG to Songbird, 2026)"]])
+# Sale footprints are painted only over 2020 TRG land; other owners' parcels and
+# unenrolled land inside the boundaries keep their own zone.
+trg_cells <- zr %in% ZONES[c("TRG/Verdant retained", "TRG other sale / left CFP")]
+in_kh <- !is.na(rasterize(kh, tcc20)) & trg_cells
+in_sb <- !is.na(rasterize(sb, tcc20)) & trg_cells
+zr <- ifel(in_kh, ZONES[["Heartlands (TRG to TNC)"]], zr)
+zr <- ifel(in_sb, ZONES[["Songbird (TRG to Songbird, 2026)"]], zr)
 names(zr) <- "zone_code"
 writeRaster(
   zr, file.path(gis_dir, "cfp_sale_zones.tif"),

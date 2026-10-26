@@ -1,11 +1,11 @@
 "zone","lf_type","lf_sev","lf_period","n","acres","zone_acres","pct_of_zone"
-"Heartlands (TRG to TNC)","Insects or disease","Low","6-10 yrs ago",73,16.2348235623928,32579.0653876992,0.0498320727411735
-"Heartlands (TRG to TNC)","Unattributed change","High","2-5 yrs ago",6894,1533.19004985117,32579.0653876992,4.70605903394041
-"Heartlands (TRG to TNC)","Unattributed change","High","6-10 yrs ago",2638,586.677596679344,32579.0653876992,1.80078093001665
-"Heartlands (TRG to TNC)","Unattributed change","Low","2-5 yrs ago",7111,1581.44973085171,32579.0653876992,4.85418998989705
-"Heartlands (TRG to TNC)","Unattributed change","Low","6-10 yrs ago",7435,1653.50566008754,32579.0653876992,5.07536247713185
-"Heartlands (TRG to TNC)","Unattributed change","Moderate","2-5 yrs ago",3690,820.636971852456,32579.0653876992,2.51890888239631
-"Heartlands (TRG to TNC)","Unattributed change","Moderate","6-10 yrs ago",2371,527.298173512784,32579.0653876992,1.61851841738798
+"Heartlands (TRG to TNC)","Insects or disease","Low","6-10 yrs ago",73,16.2348235623928,30543.0405971005,0.0531539206477496
+"Heartlands (TRG to TNC)","Unattributed change","High","2-5 yrs ago",6842,1521.62551799851,30543.0405971005,4.98190582290278
+"Heartlands (TRG to TNC)","Unattributed change","High","6-10 yrs ago",2486,552.873580494636,30543.0405971005,1.81014584562062
+"Heartlands (TRG to TNC)","Unattributed change","Low","2-5 yrs ago",6928,1540.75147452407,30543.0405971005,5.04452551024123
+"Heartlands (TRG to TNC)","Unattributed change","Low","6-10 yrs ago",7008,1558.54306198971,30543.0405971005,5.10277638218397
+"Heartlands (TRG to TNC)","Unattributed change","Moderate","2-5 yrs ago",3587,797.73030299045,30543.0405971005,2.61182347073257
+"Heartlands (TRG to TNC)","Unattributed change","Moderate","6-10 yrs ago",2244,499.054028411087,30543.0405971005,1.63393695799384
 "Lyme","Unattributed change","High","2-5 yrs ago",232,51.5956036503441,1696.20547000506,3.04182509505703
 "Lyme","Unattributed change","Low","2-5 yrs ago",654,145.446227531573,1696.20547000506,8.57480005244526
 "Lyme","Unattributed change","Low","6-10 yrs ago",18,4.00310717976808,1696.20547000506,0.236003671168218
@@ -19,73 +19,72 @@
 "MWF","Unattributed change","Moderate","1 yr ago",258,57.3778695766758,5415.75922453957,1.05946123521682
 "MWF","Unattributed change","Moderate","2-5 yrs ago",1698,377.626443958122,5415.75922453957,6.97273324572931
 "MWF","Unattributed change","Moderate","6-10 yrs ago",4,0.889579373281795,5415.75922453957,0.0164257555847569
-"Non-institutional kept","Harvest / mechanical removal","High","6-10 yrs ago",3,0.667184529961346,91211.6866703891,0.000731468251839641
-"Non-institutional kept","Harvest / mechanical removal","Low","1 yr ago",46,10.2301627927406,91211.6866703891,0.0112158465282078
-"Non-institutional kept","Harvest / mechanical removal","Low","2-5 yrs ago",11,2.44634327652494,91211.6866703891,0.00268205025674535
-"Non-institutional kept","Harvest / mechanical removal","Low","6-10 yrs ago",51,11.3421370093429,91211.6866703891,0.0124349602812739
-"Non-institutional kept","Harvest / mechanical removal","Moderate","6-10 yrs ago",6,1.33436905992269,91211.6866703891,0.00146293650367928
-"Non-institutional kept","Insects or disease","Low","2-5 yrs ago",374,83.1756714018479,91211.6866703891,0.091189708729342
-"Non-institutional kept","Insects or disease","Low","6-10 yrs ago",49,10.897347322702,91211.6866703891,0.0119473147800475
-"Non-institutional kept","Unattributed change","High","1 yr ago",413,91.8490702913454,91211.6866703891,0.100698796003257
-"Non-institutional kept","Unattributed change","High","2-5 yrs ago",5619,1249.6366246176,91211.6866703891,1.37004003569565
-"Non-institutional kept","Unattributed change","High","6-10 yrs ago",3827,851.105065387358,91211.6866703891,0.933109666596769
-"Non-institutional kept","Unattributed change","Low","1 yr ago",1432,318.469415634883,91211.6866703891,0.349154178878122
-"Non-institutional kept","Unattributed change","Low","2-5 yrs ago",30476,6777.705245034,91211.6866703891,7.4307421476883
-"Non-institutional kept","Unattributed change","Low","6-10 yrs ago",22199,4936.94312687064,91211.6866703891,5.41262124086273
-"Non-institutional kept","Unattributed change","Moderate","1 yr ago",419,93.183439351268,91211.6866703891,0.102161732506937
-"Non-institutional kept","Unattributed change","Moderate","2-5 yrs ago",6066,1349.04711958184,91211.6866703891,1.47902880521975
-"Non-institutional kept","Unattributed change","Moderate","6-10 yrs ago",4772,1061.26819232518,91211.6866703891,1.16352216592626
-"Non-institutional sold / left","Harvest / mechanical removal","High","1 yr ago",15,3.33592264980673,66019.6883984217,0.00505292092515614
-"Non-institutional sold / left","Harvest / mechanical removal","High","6-10 yrs ago",14,3.11352780648628,66019.6883984217,0.00471605953014573
-"Non-institutional sold / left","Harvest / mechanical removal","Low","1 yr ago",154,34.2488058713491,66019.6883984217,0.0518766548316031
-"Non-institutional sold / left","Harvest / mechanical removal","Low","2-5 yrs ago",43,9.5629782627793,66019.6883984217,0.0144850399854476
-"Non-institutional sold / left","Harvest / mechanical removal","Low","6-10 yrs ago",341,75.836641572273,66019.6883984217,0.11486973569855
-"Non-institutional sold / left","Harvest / mechanical removal","Moderate","6-10 yrs ago",9,2.00155358988404,66019.6883984217,0.00303175255509369
-"Non-institutional sold / left","Insects or disease","High","2-5 yrs ago",14,3.11352780648628,66019.6883984217,0.00471605953014573
-"Non-institutional sold / left","Insects or disease","Low","1 yr ago",29,6.44945045629301,66019.6883984217,0.00976898045530188
-"Non-institutional sold / left","Insects or disease","Low","2-5 yrs ago",215,47.8148913138965,66019.6883984217,0.0724251999272381
-"Non-institutional sold / left","Insects or disease","Low","6-10 yrs ago",481,106.971919637136,66019.6883984217,0.162030331000007
-"Non-institutional sold / left","Insects or disease","Moderate","2-5 yrs ago",5,1.11197421660224,66019.6883984217,0.00168430697505205
-"Non-institutional sold / left","Unattributed change","High","1 yr ago",1412,314.021518768474,66019.6883984217,0.475648289754698
-"Non-institutional sold / left","Unattributed change","High","2-5 yrs ago",2728,606.693132578184,66019.6883984217,0.918957885588397
-"Non-institutional sold / left","Unattributed change","High","6-10 yrs ago",4321,960.968117987659,66019.6883984217,1.45557808783998
-"Non-institutional sold / left","Unattributed change","Low","1 yr ago",2182,485.265548125219,66019.6883984217,0.735031563912714
-"Non-institutional sold / left","Unattributed change","Low","2-5 yrs ago",8556,1902.81027944976,66019.6883984217,2.88218609570906
-"Non-institutional sold / left","Unattributed change","Low","6-10 yrs ago",10828,2408.09136347382,66019.6883984217,3.64753518517272
-"Non-institutional sold / left","Unattributed change","Moderate","1 yr ago",672,149.449334711342,66019.6883984217,0.226370857446995
-"Non-institutional sold / left","Unattributed change","Moderate","2-5 yrs ago",1539,342.265663870171,66019.6883984217,0.51842968692102
-"Non-institutional sold / left","Unattributed change","Moderate","6-10 yrs ago",3133,696.763044122966,66019.6883984217,1.05538675056761
-"Songbird (TRG to Songbird, 2026)","Insects or disease","Low","1 yr ago",209,46.4805222539738,17236.4899367081,0.269663501238646
-"Songbird (TRG to Songbird, 2026)","Insects or disease","Low","6-10 yrs ago",665,147.892570808098,17236.4899367081,0.858020231213873
-"Songbird (TRG to Songbird, 2026)","Unattributed change","High","1 yr ago",2623,583.341674029537,17236.4899367081,3.38434145334435
-"Songbird (TRG to Songbird, 2026)","Unattributed change","High","2-5 yrs ago",2880,640.497148762892,17236.4899367081,3.7159372419488
-"Songbird (TRG to Songbird, 2026)","Unattributed change","High","6-10 yrs ago",1536,341.598479340209,17236.4899367081,1.98183319570603
-"Songbird (TRG to Songbird, 2026)","Unattributed change","Low","1 yr ago",518,115.200528839992,17236.4899367081,0.66835260115607
-"Songbird (TRG to Songbird, 2026)","Unattributed change","Low","2-5 yrs ago",659,146.558201748176,17236.4899367081,0.850278695293146
-"Songbird (TRG to Songbird, 2026)","Unattributed change","Low","6-10 yrs ago",5342,1188.03325301784,17236.4899367081,6.89254748142032
-"Songbird (TRG to Songbird, 2026)","Unattributed change","Moderate","1 yr ago",856,190.369985882304,17236.4899367081,1.10445912469034
-"Songbird (TRG to Songbird, 2026)","Unattributed change","Moderate","2-5 yrs ago",534,118.75884633312,17236.4899367081,0.688996696944674
-"Songbird (TRG to Songbird, 2026)","Unattributed change","Moderate","6-10 yrs ago",1830,406.982563276421,17236.4899367081,2.36116845582164
-"TRG other sale / left CFP","Insects or disease","Low","1 yr ago",34,7.56142467289526,17470.2269170378,0.043281777098848
-"TRG other sale / left CFP","Insects or disease","Low","6-10 yrs ago",454,100.967258867484,17470.2269170378,0.577939023614029
-"TRG other sale / left CFP","Unattributed change","High","1 yr ago",211,46.9253119406147,17470.2269170378,0.268601616701674
-"TRG other sale / left CFP","Unattributed change","High","2-5 yrs ago",1993,443.232922737654,17470.2269170378,2.53707593405894
-"TRG other sale / left CFP","Unattributed change","High","6-10 yrs ago",1270,282.44145101697,17470.2269170378,1.61670167398638
-"TRG other sale / left CFP","Unattributed change","Low","1 yr ago",39,8.6733988894975,17470.2269170378,0.0496467443192668
-"TRG other sale / left CFP","Unattributed change","Low","2-5 yrs ago",1637,364.060358515575,17470.2269170378,2.08389026796512
-"TRG other sale / left CFP","Unattributed change","Low","6-10 yrs ago",3789,842.65406134118,17470.2269170378,4.82337215963338
-"TRG other sale / left CFP","Unattributed change","Moderate","1 yr ago",25,5.55987108301122,17470.2269170378,0.0318248361020941
-"TRG other sale / left CFP","Unattributed change","Moderate","2-5 yrs ago",734,163.237814997209,17470.2269170378,0.934377187957482
-"TRG other sale / left CFP","Unattributed change","Moderate","6-10 yrs ago",980,217.94694645404,17470.2269170378,1.24753357520209
-"TRG/Verdant retained","Insects or disease","Low","1 yr ago",12,2.66873811984539,100642.784791079,0.00265169343772166
-"TRG/Verdant retained","Insects or disease","Low","2-5 yrs ago",113,25.1306172952107,100642.784791079,0.0249701132052123
-"TRG/Verdant retained","Insects or disease","Low","6-10 yrs ago",581,129.211403969181,100642.784791079,0.128386157276357
-"TRG/Verdant retained","Unattributed change","High","1 yr ago",4442,987.877894029433,100642.784791079,0.981568520863301
-"TRG/Verdant retained","Unattributed change","High","2-5 yrs ago",28000,6227.05561297257,100642.784791079,6.1872846880172
-"TRG/Verdant retained","Unattributed change","High","6-10 yrs ago",8190,1821.41376679448,100642.784791079,1.80978077124503
-"TRG/Verdant retained","Unattributed change","Low","1 yr ago",2166,481.707230632092,100642.784791079,0.478630665508759
-"TRG/Verdant retained","Unattributed change","Low","2-5 yrs ago",20188,4489.70709695322,100642.784791079,4.4610322600604
-"TRG/Verdant retained","Unattributed change","Low","6-10 yrs ago",27799,6182.35424946516,100642.784791079,6.14286882293537
-"TRG/Verdant retained","Unattributed change","Moderate","1 yr ago",1560,346.9359555799,100642.784791079,0.344720146903816
-"TRG/Verdant retained","Unattributed change","Moderate","2-5 yrs ago",9073,2017.78841344643,100642.784791079,2.00490121337072
-"TRG/Verdant retained","Unattributed change","Moderate","6-10 yrs ago",7024,1562.10137948283,100642.784791079,1.55212455887974
+"Non-institutional kept","Harvest / mechanical removal","High","6-10 yrs ago",3,0.667184529961346,116910.96757997,0.00057067745120232
+"Non-institutional kept","Harvest / mechanical removal","Low","1 yr ago",75,16.6796132490337,116910.96757997,0.014266936280058
+"Non-institutional kept","Harvest / mechanical removal","Low","2-5 yrs ago",20,4.44789686640898,116910.96757997,0.0038045163413488
+"Non-institutional kept","Harvest / mechanical removal","Low","6-10 yrs ago",317,70.4991653325823,116910.96757997,0.0603015840103785
+"Non-institutional kept","Harvest / mechanical removal","Moderate","6-10 yrs ago",8,1.77915874656359,116910.96757997,0.00152180653653952
+"Non-institutional kept","Insects or disease","Low","2-5 yrs ago",580,128.98900912586,116910.96757997,0.110330973899115
+"Non-institutional kept","Insects or disease","Low","6-10 yrs ago",353,78.5053796921184,116910.96757997,0.0671497134248063
+"Non-institutional kept","Unattributed change","High","1 yr ago",442,98.2985207476384,116910.96757997,0.0840798111438085
+"Non-institutional kept","Unattributed change","High","2-5 yrs ago",5844,1299.6754643647,116910.96757997,1.11167967494212
+"Non-institutional kept","Unattributed change","High","6-10 yrs ago",5158,1147.11260184687,116910.96757997,0.981184764433856
+"Non-institutional kept","Unattributed change","Low","1 yr ago",1820,404.758614843217,116910.96757997,0.346210987062741
+"Non-institutional kept","Unattributed change","Low","2-5 yrs ago",33184,7379.95048074577,116910.96757997,6.31245351356593
+"Non-institutional kept","Unattributed change","Low","6-10 yrs ago",25391,5646.82746674952,116910.96757997,4.83002372115937
+"Non-institutional kept","Unattributed change","Moderate","1 yr ago",463,102.968812457368,116910.96757997,0.0880745533022247
+"Non-institutional kept","Unattributed change","Moderate","2-5 yrs ago",6474,1439.78421565659,116910.96757997,1.23152193969461
+"Non-institutional kept","Unattributed change","Moderate","6-10 yrs ago",5974,1328.58679399636,116910.96757997,1.13640903116089
+"Non-institutional sold / left","Harvest / mechanical removal","High","1 yr ago",15,3.33592264980673,41845.1465346457,0.00797206588115244
+"Non-institutional sold / left","Harvest / mechanical removal","High","6-10 yrs ago",14,3.11352780648628,41845.1465346457,0.00744059482240895
+"Non-institutional sold / left","Harvest / mechanical removal","Low","1 yr ago",125,27.7993554150561,41845.1465346457,0.066433882342937
+"Non-institutional sold / left","Harvest / mechanical removal","Low","2-5 yrs ago",34,7.56142467289526,41845.1465346457,0.0180700159972789
+"Non-institutional sold / left","Harvest / mechanical removal","Low","6-10 yrs ago",75,16.6796132490337,41845.1465346457,0.0398603294057622
+"Non-institutional sold / left","Harvest / mechanical removal","Moderate","6-10 yrs ago",7,1.55676390324314,41845.1465346457,0.00372029741120447
+"Non-institutional sold / left","Insects or disease","High","2-5 yrs ago",14,3.11352780648628,41845.1465346457,0.00744059482240895
+"Non-institutional sold / left","Insects or disease","Low","1 yr ago",29,6.44945045629301,41845.1465346457,0.0154126607035614
+"Non-institutional sold / left","Insects or disease","Low","2-5 yrs ago",9,2.00155358988404,41845.1465346457,0.00478323952869147
+"Non-institutional sold / left","Insects or disease","Low","6-10 yrs ago",210,46.7029170972942,41845.1465346457,0.111608922336134
+"Non-institutional sold / left","Insects or disease","Moderate","2-5 yrs ago",5,1.11197421660224,41845.1465346457,0.00265735529371748
+"Non-institutional sold / left","Unattributed change","High","1 yr ago",1384,307.794463155501,41845.1465346457,0.735555945300999
+"Non-institutional sold / left","Unattributed change","High","2-5 yrs ago",2503,556.654292831083,41845.1465346457,1.33027206003497
+"Non-institutional sold / left","Unattributed change","High","6-10 yrs ago",3083,685.643301956944,41845.1465346457,1.6385252741062
+"Non-institutional sold / left","Unattributed change","Low","1 yr ago",1794,398.976348916885,41845.1465346457,0.953459079385832
+"Non-institutional sold / left","Unattributed change","Low","2-5 yrs ago",5861,1303.45617670115,41845.1465346457,3.11495187529563
+"Non-institutional sold / left","Unattributed change","Low","6-10 yrs ago",7791,1732.67822430962,41845.1465346457,4.14069101867058
+"Non-institutional sold / left","Unattributed change","Moderate","1 yr ago",628,139.663961605242,41845.1465346457,0.333763824890916
+"Non-institutional sold / left","Unattributed change","Moderate","2-5 yrs ago",1136,252.64054201203,41845.1465346457,0.603751122732612
+"Non-institutional sold / left","Unattributed change","Moderate","6-10 yrs ago",1989,442.343343364373,41845.1465346457,1.05709593584081
+"Songbird (TRG to Songbird, 2026)","Insects or disease","Low","1 yr ago",169,37.5847285211558,15152.6502547954,0.248040625825579
+"Songbird (TRG to Songbird, 2026)","Insects or disease","Low","6-10 yrs ago",596,132.547326618987,15152.6502547954,0.874746822438137
+"Songbird (TRG to Songbird, 2026)","Unattributed change","High","1 yr ago",2593,576.669828729924,15152.6502547954,3.80573575601022
+"Songbird (TRG to Songbird, 2026)","Unattributed change","High","2-5 yrs ago",2770,616.033715997643,15152.6502547954,4.06551794992222
+"Songbird (TRG to Songbird, 2026)","Unattributed change","High","6-10 yrs ago",1419,315.578282671717,15152.6502547954,2.08266063932838
+"Songbird (TRG to Songbird, 2026)","Unattributed change","Low","1 yr ago",505,112.309395876827,15152.6502547954,0.741186485455133
+"Songbird (TRG to Songbird, 2026)","Unattributed change","Low","2-5 yrs ago",625,138.996777075281,15152.6502547954,0.917310006751402
+"Songbird (TRG to Songbird, 2026)","Unattributed change","Low","6-10 yrs ago",5129,1140.66315139058,15152.6502547954,7.52781283940471
+"Songbird (TRG to Songbird, 2026)","Unattributed change","Moderate","1 yr ago",848,188.590827135741,15152.6502547954,1.2446062171603
+"Songbird (TRG to Songbird, 2026)","Unattributed change","Moderate","2-5 yrs ago",506,112.531790720147,15152.6502547954,0.742654181465935
+"Songbird (TRG to Songbird, 2026)","Unattributed change","Moderate","6-10 yrs ago",1761,391.63731908731,15152.6502547954,2.58461267502275
+"TRG other sale / left CFP","Insects or disease","Low","1 yr ago",34,7.56142467289526,13111.2879879571,0.0576711050801459
+"TRG other sale / left CFP","Insects or disease","Low","6-10 yrs ago",233,51.8179984936646,13111.2879879571,0.395216690696294
+"TRG other sale / left CFP","Unattributed change","High","1 yr ago",27,6.00466076965212,13111.2879879571,0.0457976422695276
+"TRG other sale / left CFP","Unattributed change","High","2-5 yrs ago",950,211.275101154426,13111.2879879571,1.61139852429819
+"TRG other sale / left CFP","Unattributed change","High","6-10 yrs ago",1131,251.528567795428,13111.2879879571,1.91841234840132
+"TRG other sale / left CFP","Unattributed change","Low","2-5 yrs ago",433,96.2969671577543,13111.2879879571,0.734458485285388
+"TRG other sale / left CFP","Unattributed change","Low","6-10 yrs ago",3257,724.340004694702,13111.2879879571,5.52455262488339
+"TRG other sale / left CFP","Unattributed change","Moderate","1 yr ago",3,0.667184529961346,13111.2879879571,0.0050886269188364
+"TRG other sale / left CFP","Unattributed change","Moderate","2-5 yrs ago",313,69.6095859593005,13111.2879879571,0.530913408531931
+"TRG other sale / left CFP","Unattributed change","Moderate","6-10 yrs ago",835,185.699694172575,13111.2879879571,1.41633449240947
+"TRG/Verdant retained","Insects or disease","Low","1 yr ago",12,2.66873811984539,105001.72372016,0.00254161362813227
+"TRG/Verdant retained","Insects or disease","Low","2-5 yrs ago",113,25.1306172952107,105001.72372016,0.0239335283315788
+"TRG/Verdant retained","Insects or disease","Low","6-10 yrs ago",802,178.360664343,105001.72372016,0.169864510813507
+"TRG/Verdant retained","Unattributed change","High","1 yr ago",4626,1028.7985452004,105001.72372016,0.979792053644989
+"TRG/Verdant retained","Unattributed change","High","2-5 yrs ago",29043,6459.01343455579,105001.72372016,6.15134038348712
+"TRG/Verdant retained","Unattributed change","High","6-10 yrs ago",8329,1852.32665001602,105001.72372016,1.76409165905947
+"TRG/Verdant retained","Unattributed change","Low","1 yr ago",2205,490.38062952159,105001.72372016,0.467021504169304
+"TRG/Verdant retained","Unattributed change","Low","2-5 yrs ago",21392,4757.47048831104,105001.72372016,4.53084989441712
+"TRG/Verdant retained","Unattributed change","Low","6-10 yrs ago",28331,6300.66830611163,105001.72372016,6.0005379748846
+"TRG/Verdant retained","Unattributed change","Moderate","1 yr ago",1582,351.82864213295,105001.72372016,0.335069396642104
+"TRG/Verdant retained","Unattributed change","Moderate","2-5 yrs ago",9494,2111.41664248434,105001.72372016,2.01083998212398
+"TRG/Verdant retained","Unattributed change","Moderate","6-10 yrs ago",7169,1594.3486317643,105001.72372016,1.51840234167335

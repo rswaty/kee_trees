@@ -10,6 +10,8 @@ if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" 
 
 za <- zone_acres()
 
+# Yearly values per owner type. The analysis tables are by sale group, so groups are
+# combined, weighting each by its acres.
 tcc <- csv("cfp_sale_tcc_mean_by_year.csv") |>
   inner_join(za, by = "zone") |>
   group_by(class, year) |>
@@ -25,6 +27,8 @@ landfire <- csv("cfp_sale_landfire_annual_by_zone.csv") |>
   group_by(class, year) |>
   summarise(value = 100 * sum(acres) / sum(zone_acres), .groups = "drop")
 
+# One line chart: corporate vs. other private, with the last year's value labelled at
+# the line end. Use pad to zoom the y-axis instead of starting at zero.
 class_lines <- function(df, ylab, title, subtitle, source, digits = 1, pad = NULL) {
   df <- mutate(df, class = factor(class, levels = c(CORP, OTHER)))
   last <- df |> group_by(class) |> filter(year == max(year))
@@ -44,14 +48,31 @@ class_lines <- function(df, ylab, title, subtitle, source, digits = 1, pad = NUL
     theme_chart()
 }
 
-save_chart(
-  class_lines(tcc, "Average canopy cover",
-              "Tree canopy cover, corporate vs. other private land",
-              "Average share of the ground covered by treetops, each year",
-              "Source: USFS FIA Tree Canopy Cover, 2010–2025, all 30 m cells on each owner type's 2020 Commercial Forest land.",
-              pad = 5),
-  "03a_chart_canopy_by_year_corporate_vs_other.png"
-)
+# Gap between the two canopy lines every 5 years, drawn as a dark grey bracket with
+# its value. The last one is labelled on the left to stay clear of the line-end labels.
+GAP_GREY <- "grey25"
+gap <- tcc |>
+  filter(year %% 5 == 0) |>
+  tidyr::pivot_wider(names_from = class, values_from = value) |>
+  transmute(year, lo = .data[[CORP]], hi = .data[[OTHER]], diff = hi - lo,
+            right = year != max(tcc$year),
+            # 2015 label sits higher, clear of the corporate line rising to 2016
+            label_y = (lo + hi) / 2 + if_else(year == 2015, 0.7, 0))
+
+p03a <- class_lines(tcc, "Average canopy cover",
+                    "Tree canopy cover, corporate vs. other private land",
+                    "Average share of the ground covered by treetops, each year",
+                    paste0("Source: USFS FIA Tree Canopy Cover, 2010–2025, all 30 m cells on each owner type's 2020 ",
+                           "Commercial Forest land. Grey: gap between the lines, in percentage points."),
+                    pad = 5) +
+  geom_segment(data = gap, aes(x = year, xend = year, y = lo + 0.25, yend = hi - 0.25),
+               inherit.aes = FALSE, colour = GAP_GREY, linewidth = 0.6, linetype = "22") +
+  geom_text(data = gap, aes(x = year + if_else(right, 0.15, -0.15), y = label_y,
+                            label = paste0(fmt_1(diff), "%"), hjust = if_else(right, 0, 1)),
+            inherit.aes = FALSE, colour = GAP_GREY, size = BASE_SIZE / 3.4, fontface = "bold",
+            family = FONT_FAMILY)
+
+save_chart(p03a, "03a_chart_canopy_by_year_corporate_vs_other.png")
 
 save_chart(
   class_lines(hansen, "Share of land cleared",

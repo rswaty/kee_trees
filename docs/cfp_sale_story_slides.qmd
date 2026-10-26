@@ -235,7 +235,7 @@ A drop from 75% to 65% canopy is a **10-point** drop.
 ## How we defined things
 
 - **TRG and Verdant are different companies.** TRG in 2020 and Verdant in 2026 counts as **sold**. The Heartlands land went TRG → Verdant (2022) → The Nature Conservancy (2022–23).
-- **Other private owners:** everyone except the four investment companies: individuals and families, but also other timber companies (Lake Superior Timberlands holds 69% of the "kept" acres). **Kept** = same owner in 2020 and 2026; **sold** = new owner or left the program.
+- **Other private owners:** everyone except the four investment companies: individuals and families, but also other timber companies (Lake Superior Timberlands holds 55% of the "kept" acres). **Kept** = same owner in 2020 and 2026; **sold** = new owner or left the program.
 - **Heavy cutting:** a parcel's average canopy fell by **more than 20 points**, 2020 → 2025. This is our yardstick, not an official standard.
 - **Year the canopy dropped** (maps): the first year a 30 m cell's canopy fell **15 points or more** below its highest value in the previous 3 years.
 - **Important catch:** the 2026 state list still shows the Songbird land as Verdant's, because the sale happened after the list was made. The sale boundary maps fixed this.
@@ -261,6 +261,7 @@ trg_dest |>
 
 - Of the `r fmt_n(ac_loss)` acres heavily cut across all enrolled land, **`r round(trg_share_loss)`%** were on land TRG owned in 2020.
 - Most of TRG's land went to **Verdant**, so the TRG → Verdant group is the largest by far.
+- Of the "other owners / left CFP" row, `r fmt_n(bk("TRG", "other_sale", "acres"))` acres went to about 10 other owners and are **still enrolled**; only `r fmt_n(bk("TRG", "left_cfp", "acres"))` acres left the program.
 
 ## Share of acres heavily cut
 

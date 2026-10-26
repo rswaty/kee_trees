@@ -6,7 +6,7 @@ and the CSVs in `output_csvs/`.
 ## Watch-outs
 
 1. **Molpus, not Songbird, has the highest heavy-cut share on the bar chart.** On the land Molpus
-   kept, 25.3% of acres were heavily cut, against 20.2% for Songbird. It's only 3 parcels (4,579
+   kept, 24.1% of acres were heavily cut, against 20.2% for Songbird. It's only 22 parcels (4,820
    acres), but the short-answer slide calls Songbird "the heaviest cutting." Say "the heaviest
    cutting on TRG's former land."
 2. **"About 11 times" is the high end of a range.** At the 20-point cutoff it's 11×. At other
@@ -77,12 +77,17 @@ All 2020 enrolled parcels of 20 acres or more: 2,128 parcels covering 330,094 ac
 80 acres). Smaller parcels have too few cells for a reliable average.
 
 **Q: How did you follow a parcel from 2020 to 2026?**
-By its state parcel ID. A parcel that's missing from the 2026 list counts as "left the program"
-(168 parcels).
+By its state parcel ID. The state renumbered some parcels between the lists, so when an ID is
+missing from 2026 we use the 2026 parcels covering that spot (72 parcels). A parcel counts as
+"left the program" only if 2026 parcels cover less than half of it (96 parcels).
 
 **Q: How did you decide who sold?**
-- We compared the owner names after cleaning out punctuation and suffixes like LLC and Inc.
-- Same name means kept. A different name, or a parcel that left the program, means sold.
+- We compared owner names word by word, ignoring legal and generic words (LLC, Inc, trust,
+  timber, Michigan and so on). Names sharing at least two-thirds of their remaining words are the
+  same owner, so "KAUMA PAUL T." and "Paul T. Kauma" match.
+- For individuals, land that moved to a trust or relative carrying the same last name counts as
+  kept.
+- Same owner means kept. A different owner, or a parcel that left the program, means sold.
 - TRG to Verdant counts as a sale.
 - Land is assigned to Songbird or the Heartlands when at least 50% of the parcel lies inside that
   sale boundary.
@@ -91,8 +96,8 @@ By its state parcel ID. A parcel that's missing from the 2026 list counts as "le
 - TRG/Verdant, Molpus (listed as MWF, for Molpus Woodlands Fund) and Lyme.
 - Manulife was also on our list of investment companies, but it has no enrolled land in these two
   counties.
-- Everyone else is "other private," including timber companies like Lake Superior Timberlands (69%
-  of the "kept" other-private acres).
+- Everyone else is "other private," including timber companies like Lake Superior Timberlands (55%
+  of the "kept" other-private acres, 41% of all other-private acres).
 
 **Q: What does "heavily cut" mean?**
 A parcel's average canopy fell by more than 20 points between 2020 and 2025. It's our own
@@ -129,16 +134,32 @@ years.
 
 **Q: Where did TRG's land go?**
 TRG had 164,825 acres in 2020:
-- 101,301 acres went to Verdant.
-- 30,813 acres went to The Nature Conservancy (the Heartlands).
+- 105,901 acres went to Verdant.
+- 30,973 acres went to The Nature Conservancy (the Heartlands, plus one 160-acre parcel outside it).
 - 15,350 acres went to American Songbird.
-- 17,361 acres went to other owners or left the program.
+- 10,819 acres went to other owners, led by Keweenaw Investment and Development Sites (3,903),
+  the Vanderploeg trust (2,880) and Edward Cole (2,406).
+- 1,781 acres left the program.
+
+An earlier version showed 17,361 acres going to other owners or leaving. That counted renumbered
+parcels as leaving; about 4,600 of those acres are still Verdant's.
+
+**Q: Did the land TRG sold to other owners leave the program?**
+Almost none of it. Of the 10,819 acres, all but about 2 acres are still enrolled in 2026 (checked
+by overlaying the 2026 parcel map). Figure 05 shows the two groups in separate colours. In all,
+about 2,650 acres of TRG's 2020 land is no longer enrolled: the 1,781 acres of whole parcels that
+left, plus parts of parcels and edge slivers elsewhere.
+
+**Q: Does that match county totals of enrolled acres?**
+Yes. Listed acres fell from 189,665 to 185,548 in Houghton (−4,117) and from 141,361 to 137,728 in
+Keweenaw (−3,633) between the 2020 and 2026 lists, −7,750 in all. A reviewer's own tracking shows
+−3,589 for 2022–2025; the rest falls in 2020–22 and 2025–26.
 
 **Q: The headline result?**
 What happened depends on who ended up with the land:
-- **Songbird:** 20.2% heavily cut, with canopy falling from 75.0% in 2023 to 65.8% in 2025.
-- **Verdant:** 6.7% heavily cut, with canopy going from 75.0% to 73.4%.
-- **Heartlands:** 0% heavily cut, with canopy recovering from 70.3% in 2021 to 75.3%.
+- **Songbird:** 20.2% heavily cut, with canopy falling from 75.2% in 2023 to 64.8% in 2025.
+- **Verdant:** 6.5% heavily cut, with canopy going from 74.9% to 73.4%.
+- **Heartlands:** 0% heavily cut, with canopy recovering from 70.3% in 2021 to 75.5%.
 
 **Q: Why does the Heartlands show 0% heavily cut when clearing peaked in 2020–21?**
 The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting happened in
@@ -195,11 +216,12 @@ The heavy-cut measure is the net change from 2020 to 2025. Much of the cutting h
 - Songbird and Molpus fell far more, and Hansen and LANDFIRE show the activity starting before 2025.
 
 **Q: Did the sale boundaries match the parcels exactly?**
-- Not quite. The Songbird boundary covers 17,236 acres, while parcels at least 50% inside total
-  15,350 acres. For the Heartlands it's 32,579 versus 30,813.
-- The parcel table uses parcels; the maps and year-by-year charts use the boundaries.
-- The presentation map of corporate land by destination (figure 05) includes parcels under 20
-  acres, so its acreages differ slightly again (Songbird 16,863 acres, Heartlands 30,828).
+- Not quite. Each boundary also takes in some land TRG never had enrolled: other owners' parcels
+  and unenrolled land. We count only TRG's 2020 enrolled land inside each boundary.
+- Year-by-year charts (30 m cells): Songbird 15,153 acres, Heartlands 30,543.
+- Parcel tables (parcels at least 50% inside): Songbird 15,350 acres, Heartlands 30,813.
+- The 1,476 acres of other owners' land inside the Songbird boundary (mostly Longyear Realty)
+  count with their own 2020 owner, as other private.
 
 **Q: Would different cutoffs change the story?**
 - The counts change, but the ranking doesn't.

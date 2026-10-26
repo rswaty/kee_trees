@@ -205,8 +205,8 @@ m <- ggplot() +
   north_arrow(bb$x, bb$y, pos = "topleft") +
   coord_sf(xlim = bb$x, ylim = bb$y, expand = FALSE, datum = NA) +
   theme_map() +
-  theme(legend.position = "right", legend.title = element_text(size = BASE_SIZE - 1, face = "bold"),
-        legend.text = element_text(size = BASE_SIZE - 3), legend.key.size = unit(0.4, "in"),
+  theme(legend.position = "right", legend.title = element_text(size = BASE_SIZE + 1, face = "bold"),
+        legend.text = element_text(size = BASE_SIZE - 1), legend.key.size = unit(0.4, "in"),
         legend.key.spacing.y = unit(0.12, "in"))
 
 notes <- paste(strwrap(paste0(
@@ -214,14 +214,15 @@ notes <- paste(strwrap(paste0(
   "program in a transaction under ", SMALL_ACRES,
   " acres, 2020 → 2026. Grey: other 2020 Commercial Forest land. ",
   "Parcels that lost only part of their acres are shown whole."
-), 46), collapse = "\n")
+), 60), collapse = "\n")
 
 save_layout(
   "10b_map_small_parcel_sales.png",
-  panels = list(m + theme(legend.position = "none")),
-  side = list(get_legend(m), text_block(notes, size = BASE_SIZE - 4)),
+  panels = list(m + theme(legend.position = "none", plot.margin = margin(4, 4, 4, 40))),
+  side = list(get_legend(m), text_block(notes, size = BASE_SIZE - 2)),
   side_heights = c(0.9, 1.1),
   side_width = 0.6,
+  title_pos = "side",
   title = paste0("Small parcel sales: transactions under ", SMALL_ACRES, " acres"),
   subtitle = "Where small pieces of Commercial Forest land changed hands or left the program, 2020 → 2026",
   caption = "First look. Source: Michigan DNR Commercial Forest lists, 2020 and 2026. Owners matched on name words."

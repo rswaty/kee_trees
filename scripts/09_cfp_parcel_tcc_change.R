@@ -1,6 +1,7 @@
 # Parcel-level TCC change (2020→2025) with CFP owner type 2020 and 2026.
 # Unit: 2020 CFP parcels (attribute acres >= MIN_ACRES). Ranked by |Δ| pp.
-# Ownership 2026 joined on parid; parcels missing in 2026 = left CFP.
+# 2026 owner type: by parcel ID, or for renumbered parcels by overlap (scripts/lib_owner_2026.R);
+# neither = left CFP. acres_2026 = 2020 acres x share of the parcel still enrolled in 2026.
 # Run from project root: Rscript scripts/09_cfp_parcel_tcc_change.R
 # Does not touch Shiny.
 
@@ -17,6 +18,7 @@ root <- if (dir.exists("inputs/cfp") && dir.exists("inputs/tcc")) {
 } else {
   stop("Run from the kee_trees project root.")
 }
+source(file.path(root, "scripts/lib_owner_2026.R"))
 
 cfp_dir <- file.path(root, "inputs/cfp")
 tcc_dir <- file.path(root, "inputs/tcc")
@@ -45,19 +47,17 @@ p20$owner_type_2020[is.na(p20$owner_type_2020) | !nzchar(p20$owner_type_2020)] <
   "(missing owner type)"
 p20$parid <- as.character(p20$parid)
 
-p26$owner_type_2026 <- trimws(as.character(p26$OwnerTypeT))
-p26$owner_type_2026[is.na(p26$owner_type_2026) | !nzchar(p26$owner_type_2026)] <-
-  "(missing owner type)"
 p26$parid <- as.character(p26$parid)
-
-# One row per parid in 2026 (duplicate 37663 is identical)
-own26 <- p26 |>
-  st_drop_geometry() |>
-  distinct(parid, .keep_all = TRUE) |>
-  select(parid, owner_type_2026, acres_2026 = Acres)
 
 p20 <- p20[!is.na(p20$parcel_acres) & p20$parcel_acres >= MIN_ACRES, ]
 message(sprintf("2020 parcels >= %d ac: %d", MIN_ACRES, nrow(p20)))
+
+message("Following each 2020 parcel into the 2026 list...")
+own26 <- owner_2026_lookup(p20, p26) |>
+  left_join(cfp_2026_share(p20, p26), by = "parid") |>
+  mutate(owner_type_2026 = if_else(!is.na(name_2026) & (is.na(owner_type_2026) | !nzchar(owner_type_2026)),
+                                   "(missing owner type)", owner_type_2026)) |>
+  select(parid, owner_type_2026, share_in_cfp_2026)
 
 message("Zonal mean TCC 2020 and 2025 per 2020 parcel...")
 v20 <- vect(p20)
@@ -80,6 +80,7 @@ out <- p20 |>
   mutate(
     owner_type_2026 = if_else(is.na(owner_type_2026), EXIT_LABEL, owner_type_2026),
     still_in_cfp_2026 = owner_type_2026 != EXIT_LABEL,
+    acres_2026 = round(acres_2020 * share_in_cfp_2026, 1),
     owner_type_changed = still_in_cfp_2026 & (owner_type_2020 != owner_type_2026),
     delta_pp = mean_tcc_2025 - mean_tcc_2020,
     abs_delta_pp = abs(delta_pp)

@@ -9,11 +9,13 @@ L <- read_locator()
 hk <- read_counties()
 parcels <- read_parcels()
 
+# Map window: the western Upper Peninsula and the surrounding states and lakes.
 to_grid <- function(lon, lat) st_coordinates(st_transform(st_sfc(st_point(c(lon, lat)), crs = 4326), GRID_CRS))
 win <- st_bbox(st_transform(st_as_sfc(st_bbox(c(xmin = -92.4, ymin = 45.1, xmax = -84.3, ymax = 48.95), crs = 4326)), GRID_CRS))
 xlim <- c(win$xmin, win$xmax)
 ylim <- c(win$ymin, win$ymax)
 
+# Place names (states, lakes, towns), given in longitude/latitude and converted to map units.
 with_xy <- function(df) {
   xy <- t(mapply(to_grid, df$lon, df$lat))
   df$x <- xy[, 1]
@@ -31,9 +33,11 @@ towns <- with_xy(data.frame(
   lon = c(-88.569, -87.395, -92.100),
   lat = c(47.122, 46.544, 46.787)
 ))
+# Where the "Houghton & Keweenaw counties" label sits (out in Lake Superior) and where its line points.
 lab_xy <- to_grid(-86.95, 47.25)
 tip_xy <- to_grid(-87.75, 47.25)
 
+# Draw order: land, county lines, lakes, the two study counties in red, then labels.
 main <- ggplot() +
   geom_sf(data = L$canada, fill = LAND, colour = "grey60", linewidth = 0.25) +
   geom_sf(data = L$region_states, fill = LAND, colour = "grey50", linewidth = 0.4) +
@@ -59,6 +63,8 @@ main <- ggplot() +
   theme(panel.background = element_rect(fill = WATER, colour = NA),
         panel.border = element_rect(fill = NA, colour = "grey40", linewidth = 0.5))
 
+# Side-panel facts. Land area is backed out of the disturbance totals table
+# (acres disturbed per year / percent of the land).
 totals <- csv("hk_disturbance_totals.csv")
 cur <- totals[totals$period == "Current (LANDFIRE average, 2010–2025)", ]
 land_acres <- cur$annual_acres / cur$pct_of_land * 100
@@ -79,8 +85,9 @@ facts <- paste0(
 save_layout(
   "01_map_locator.png",
   panels = list(main),
-  side = list(text_block(facts, size = BASE_SIZE - 1)),
-  side_width = 0.27,
+  side = list(text_block(facts, size = BASE_SIZE + 1)),
+  side_width = 0.32,
+  title_pos = "side",
   title = "Study area: Houghton and Keweenaw counties",
   subtitle = "Western Upper Peninsula of Michigan",
   caption = "Boundaries: US Census Bureau (2024), Natural Earth. Land area is the mainland, open water excluded. Enrolled acres: Michigan DNR Commercial Forest list, 2020."

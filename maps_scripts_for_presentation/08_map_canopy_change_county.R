@@ -1,12 +1,16 @@
-# Where canopy fell 20+ points across the whole landscape, 2020 -> 2025:
-#   left, map of loss cells coloured by owner type;
-#   right, share of each land type where canopy fell 20+ points (doubles as the legend).
+# Where canopy fell 20+ points across the whole landscape, 2025 compared with 2020
+# (net change per 30 m cell, not a sum of yearly losses):
+#   left, map of loss cells coloured by owner type, with the western Houghton townships
+#   that hold the most loss outlined;
+#   right, one 100% bar per land type, so the share that fell 20+ points is seen
+#   against all of that land.
 #
 # Output: figures/08_map_canopy_change_county.png
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
-LOSS_PP <- -20  # "heavy loss" cutoff, canopy points
+LOSS_PP <- -20                         # "heavy loss" cutoff, canopy points
+HOT_TOWNSHIPS <- c("Stanton", "Elm River")  # western Houghton County, highest loss
 
 counties <- read_mainland()
 parcels <- read_parcels()
@@ -18,15 +22,34 @@ cls <- classify(zones, rbind(cbind(CORP_ZONE_CODES, 1), cbind(OTHER_ZONE_CODES, 
 cls <- mask(cls, chg)
 loss <- chg <= LOSS_PP
 
-# Share and acres of each owner type's land where canopy fell 20+ points.
+# Share of each owner type's land where canopy fell 20+ points.
 class_names <- c(CORP, OTHER, NONCFP)
 short <- setNames(c("Corporate", "Other private", "Not enrolled"), class_names)
 share <- zonal(loss, cls, fun = "mean", na.rm = TRUE)
 names(share) <- c("code", "share")
-share$acres <- zonal(loss, cls, fun = "sum", na.rm = TRUE)[[2]] * ACRES_PER_PX
 share$class <- factor(class_names[share$code], levels = class_names)
-all_share <- global(loss, "mean", na.rm = TRUE)[1, 1]
-all_acres <- sum(share$acres)
+
+# Every cell of each land type in one of three change classes (canopy points, 2025 minus 2020).
+# Neutral greys, so the chart doesn't compete with the owner colours on the map.
+CHANGE_LAB <- c("Fell 20+ points", "Fell 10–20", "No major loss")
+CHANGE_COLS <- setNames(c("grey20", "grey60", "grey88"), CHANGE_LAB)
+bins <- classify(chg, rbind(c(-Inf, LOSS_PP, 1), c(LOSS_PP, -10, 2), c(-10, Inf, 3)), right = TRUE)
+stack <- as.data.frame(crosstab(c(cls, bins), long = TRUE))
+names(stack) <- c("code", "bin", "n")
+stack <- stack |>
+  mutate(class = factor(class_names[as.integer(as.character(code))], levels = class_names),
+         change = factor(CHANGE_LAB[as.integer(as.character(bin))], levels = rev(CHANGE_LAB))) |>
+  group_by(class) |>
+  mutate(pct = 100 * n / sum(n)) |>
+  ungroup()
+
+# The outlined townships: their share of all land and of all 20+ point loss.
+hot <- read_townships() |>
+  filter(county == "Houghton", township %in% HOT_TOWNSHIPS) |>
+  summarise()
+in_hot <- !is.na(mask(chg, vect(hot)))
+hot_land <- global(in_hot, "sum", na.rm = TRUE)[1, 1] / global(!is.na(chg), "sum", na.rm = TRUE)[1, 1]
+hot_loss <- global(loss & in_hot, "sum", na.rm = TRUE)[1, 1] / global(loss, "sum", na.rm = TRUE)[1, 1]
 
 # Loss shown at 90 m, where a 90 m cell takes the owner type of any 30 m loss cell
 # inside it (corporate first).
@@ -35,7 +58,11 @@ loss_df <- as.data.frame(loss_cls, xy = TRUE, na.rm = TRUE)
 names(loss_df)[3] <- "code"
 loss_df$class <- factor(class_names[loss_df$code], levels = class_names)
 
+# The township label sits left of the map, in the blank space beside it (clip = "off").
 bb <- pad_bbox(st_bbox(counties), 0.02)
+hb <- st_bbox(hot)
+hot_lab <- paste0(paste(HOT_TOWNSHIPS, collapse = " &\n"), " twps.\n",
+                  round(100 * hot_land), "% of the land\n", round(100 * hot_loss), "% of the loss")
 
 loss_map <- ggplot() +
   geom_sf(data = counties, fill = "grey97", colour = NA) +
@@ -43,45 +70,58 @@ loss_map <- ggplot() +
   geom_sf(data = filter(by_class, class == OTHER), fill = CLASS_PALE[[OTHER]], colour = NA) +
   geom_tile(data = loss_df, aes(x, y, fill = class), width = res(loss_cls)[1], height = res(loss_cls)[2]) +
   geom_sf(data = counties, fill = NA, colour = "grey30", linewidth = 0.4) +
+  geom_sf(data = hot, fill = NA, colour = "grey10", linewidth = 0.9, linetype = "22") +
+  annotate("text", x = hb[["xmin"]] - 3000, y = (hb[["ymin"]] + hb[["ymax"]]) / 2, label = hot_lab,
+           hjust = 1, size = BASE_SIZE / 3.2, lineheight = 0.95, fontface = "bold", colour = "grey10",
+           family = FONT_FAMILY) +
   scale_fill_manual(values = CLASS_COLS, drop = FALSE) +
   scale_bar(bb$x, bb$y, pos = "bottomright") +
   north_arrow(bb$x, bb$y, pos = "topleft") +
-  coord_sf(xlim = bb$x, ylim = bb$y, expand = FALSE, datum = NA) +
+  coord_sf(xlim = bb$x, ylim = bb$y, expand = FALSE, datum = NA, clip = "off") +
   theme_map()
 
-share_chart <- ggplot(share, aes(100 * share, forcats::fct_rev(class), fill = class)) +
-  geom_col(width = 0.65) +
-  geom_text(aes(label = paste0(fmt_1(100 * share), "%  (", fmt_n(acres), " ac)")),
-            hjust = -0.08, size = BASE_SIZE / 3.2, family = FONT_FAMILY) +
-  scale_fill_manual(values = CLASS_COLS, guide = "none") +
+# Side chart: each bar is all of one land type. The owner-type square left of each bar
+# is the map legend; the 20+ point share is printed at the bar end.
+inside <- stack |>
+  group_by(class) |>
+  arrange(desc(change), .by_group = TRUE) |>
+  mutate(mid = cumsum(pct) - pct / 2) |>
+  ungroup() |>
+  filter(change == "No major loss")
+
+share_chart <- ggplot(stack, aes(pct, forcats::fct_rev(class))) +
+  geom_col(aes(fill = change), width = 0.62) +
+  geom_text(data = inside, aes(mid, forcats::fct_rev(class), label = paste0(round(pct), "%")),
+            size = (BASE_SIZE + 2) / 3.8, colour = "grey30", family = FONT_FAMILY) +
+  geom_point(data = share, aes(-7, forcats::fct_rev(class), colour = class), shape = 15, size = 9) +
+  geom_text(data = share, aes(103, forcats::fct_rev(class), label = paste0(fmt_1(100 * share), "%")),
+            hjust = 0, size = (BASE_SIZE + 2) / 3, fontface = "bold", colour = "grey10", family = FONT_FAMILY) +
+  scale_fill_manual(values = CHANGE_COLS, breaks = CHANGE_LAB, name = NULL) +
+  scale_colour_manual(values = CLASS_COLS, guide = "none") +
   scale_y_discrete(labels = function(x) short[x]) +
-  scale_x_continuous(labels = function(x) paste0(x, "%"), expand = expansion(mult = c(0, 0.75))) +
-  labs(title = "Share of each land type where\ncanopy fell 20+ points", x = NULL, y = NULL) +
+  scale_x_continuous(limits = c(-12, 122), expand = expansion(0)) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
+  labs(title = "Share of each land type where canopy fell", x = NULL, y = NULL) +
   theme_chart() +
   theme(
-    plot.title = element_text(face = "bold", size = BASE_SIZE + 1),
-    axis.text.y = element_text(size = BASE_SIZE, colour = "grey15"),
-    panel.grid.major.y = element_blank(),
-    plot.margin = margin(60, 30, 10, 10)
+    plot.title = element_text(face = "bold", size = BASE_SIZE + 3),
+    axis.text.y = element_text(size = BASE_SIZE + 2, colour = "grey15"),
+    axis.text.x = element_blank(),
+    panel.grid = element_blank(),
+    legend.text = element_text(size = BASE_SIZE - 1),
+    plot.margin = margin(30, 20, 60, 10)
   )
-
-summary_text <- paste(strwrap(paste0(
-  "Across all land, canopy fell 20+ points on ", fmt_1(100 * all_share), "% (",
-  fmt_n(all_acres), " acres). Most of this land is northern hardwoods, ",
-  "so anything above 1–5% is notable; corporate land reached ",
-  fmt_1(100 * share$share[share$class == CORP]), "%."
-), 52), collapse = "\n")
 
 save_layout(
   "08_map_canopy_change_county.png",
-  panels = list(loss_map),
-  side = list(share_chart, text_block(summary_text, size = BASE_SIZE)),
-  side_heights = c(1, 0.55),
-  side_width = 0.5,
+  panels = list(loss_map + theme(plot.margin = margin(4, 4, 4, 130))),
+  side = list(share_chart),
+  side_width = 0.45,
+  title_pos = "side",
   title = "Where Canopy Cover Fell 20+ Points, 2020–2025",
-  subtitle = "Houghton and Keweenaw counties",
+  subtitle = "Houghton and Keweenaw counties. 2025 canopy compared with 2020, cell by cell",
   caption = paste0(
-    "Pale colours on the map: Commercial Forest land. Not enrolled: all land outside the program, public and private.\n",
-    "USFS FIA Tree Canopy Cover, 30 m cells (map shown at 90 m); owner type from the 2020 Michigan DNR Commercial Forest list."
+    "Map: cells where canopy fell 20+ points, coloured by owner type (squares beside the bars). Pale: Commercial Forest land.\n",
+    "USFS FIA Tree Canopy Cover, 30 m cells; owner type from the 2020 Michigan DNR Commercial Forest list."
   )
 )
