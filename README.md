@@ -52,6 +52,7 @@ Run from the project root, e.g. `Rscript scripts/13_footprint_tcc_bins.R`.
 | `17_footprint_drop_year_maps.R` | Year-the-canopy-dropped rasters (canopy and Hansen) and their agreement |
 | `18_bps_evt_disturbance_regimes.R` | BpS, EVT, historical vs current disturbance, all land |
 | `19_export_gis_layers.R` | Sale-story GeoPackage, canopy change raster and QGIS styles |
+| `21_structure_changing_proxies.R` | Current structure-changing disturbance, all land: LANDFIRE high severity, Hansen, canopy fell 20+ points |
 
 The Quarto documents in `docs/` read from `output_csvs/`, `output_spatial/` and `output_visuals/`.
 Render with `quarto render docs/cfp_sale_story_slides.qmd`.

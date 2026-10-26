@@ -44,6 +44,8 @@ app_files <- c(
   "output_csvs/hk_current_disturbance_by_year.csv",
   "output_csvs/hk_disturbance_totals.csv",
   "output_csvs/hk_historical_disturbance_by_bps.csv",
+  "output_csvs/hk_structure_changing_by_year.csv",
+  "output_csvs/hk_structure_changing_summary.csv",
   tile_files
 )
 

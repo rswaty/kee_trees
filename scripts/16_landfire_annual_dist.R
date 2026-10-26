@@ -1,14 +1,18 @@
 # LANDFIRE Final Annual Disturbance (2010-2025) by sale zone and year.
 # Inputs: inputs/landfire/annual_disturbance/<layer>/ from scripts/15_get_landfire_annual_dist.py
 # and cfp_sale_zones.tif from scripts/11_sale_footprint_pixels.R.
-# Each annual layer is reprojected (nearest neighbour) onto the TCC grid and its
-# raster attribute table supplies DIST_TYPE and SEVERITY. "No Severity" pixels
-# are mapped from disturbance records (e.g. harvest polygons) with no detected
+# Each annual layer is reprojected (nearest neighbour) onto the Tree Canopy Cover (TCC)
+# grid and its raster attribute table supplies DIST_TYPE and SEVERITY. "No Severity"
+# pixels are mapped from disturbance records (e.g. harvest polygons) with no detected
 # image change; they are kept and flagged.
 # Run from project root: Rscript scripts/16_landfire_annual_dist.R
 
+# ---- Setup ----
+# Stop the PROJ library from trying to download projection grids from the internet.
 Sys.setenv(PROJ_NETWORK = "OFF")
 
+# terra reads rasters, foreign reads the .dbf attribute tables that come with
+# each LANDFIRE layer, dplyr/tidyr reshape tables, ggplot2 draws the charts.
 suppressPackageStartupMessages({
   library(terra)
   library(foreign)
@@ -17,17 +21,24 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+# Make sure the script is run from the project folder and the LANDFIRE
+# downloads from script 15 are present.
 root <- if (dir.exists("output_csvs") && dir.exists("inputs/landfire/annual_disturbance")) {
   "."
 } else {
   stop("Run from the kee_trees project root after scripts/15_get_landfire_annual_dist.py.")
 }
 
+# Input and output folders.
 lf_dir <- file.path(root, "inputs/landfire/annual_disturbance")
 csv_dir <- file.path(root, "output_csvs")
 gis_dir <- file.path(root, "output_spatial")
 fig_dir <- file.path(root, "output_visuals")
 
+# ---- Disturbance type groups ----
+# LANDFIRE uses many detailed disturbance type names. Collapse them into a few
+# groups that are easier to read on a chart. Harvest-related types (clearcut,
+# harvest, thinning) stay separate because they are the main interest.
 TYPE_GROUP <- c(
   "Clearcut" = "Clearcut",
   "Harvest" = "Harvest",
@@ -48,6 +59,7 @@ TYPE_GROUP <- c(
   "Chemical" = "Other",
   "Herbicide" = "Other"
 )
+# Chart colours for each group (harvest types in shades of orange-brown).
 TYPE_COLS <- c(
   "Clearcut" = "#8c2d04",
   "Harvest" = "#d95f02",
@@ -59,6 +71,9 @@ TYPE_COLS <- c(
   "Other" = "grey60"
 )
 
+# ---- Sale zone labels ----
+# Translate the short zone names stored in the zone raster into reader-friendly
+# "seller → buyer" labels, and give each zone a fixed colour.
 zone_lab <- c(
   "Songbird (TRG to Songbird, 2026)" = "TRG → American Songbird (2026)",
   "Heartlands (TRG to TNC)" = "TRG → The Nature Conservancy (Heartlands)",
@@ -73,20 +88,33 @@ zone_col <- setNames(
   c("#d95f02", "#1b9e77", "#7570b3", "#56b4e9", "#e7298a", "#f0c419", "#d2b48c", "#5c3a1e"),
   zone_lab
 )
+# The five groups shown in the comparison line chart.
 focus <- zone_lab[c(1, 2, 3, 5, 7)]
 
+# ---- Zone cells ----
+# Read the sale zone raster (on the 30 m TCC grid) and its code-to-name table.
+# 4046.856 square metres = 1 acre, so each 30 m cell is about 0.22 acres.
 zr <- rast(file.path(gis_dir, "cfp_sale_zones.tif"))
 labels <- read.csv(file.path(csv_dir, "cfp_sale_zone_labels.csv"), stringsAsFactors = FALSE)
 px_acres <- prod(res(zr)) / 4046.8564224
 
+# Keep only cells that belong to a known zone, record each cell's zone name,
+# and total the area of each zone in acres.
 z <- values(zr, mat = FALSE)
 idx <- which(!is.na(z) & z %in% labels$zone_code)
 zone <- labels$zone[match(z[idx], labels$zone_code)]
 zone_acres <- tapply(rep(px_acres, length(idx)), zone, sum)
 
+# Find the annual disturbance folders (names end in "_Dist" plus a two-digit year).
 layers <- sort(list.dirs(lf_dir, recursive = FALSE, full.names = TRUE))
 layers <- layers[grepl("_Dist[0-9]{2}$", basename(layers))]
 
+# ---- Read each year ----
+# For each year: get the year from the folder name (e.g. "_Dist21" = 2021),
+# read the raster and its attribute table, move the raster onto the zone grid
+# with nearest neighbour (so codes are not averaged), and keep cells with a
+# disturbance code above zero. The attribute table turns each code into a
+# disturbance type and a severity; "No Severity" records are flagged.
 annual <- bind_rows(lapply(layers, function(d) {
   year <- 2000L + as.integer(sub(".*_Dist", "", basename(d)))
   message("Year ", year)
@@ -102,12 +130,20 @@ annual <- bind_rows(lapply(layers, function(d) {
     no_severity = vat$SEVERITY[m] %in% "No Severity"
   )
 })) |>
+  # Assign each disturbance type to its group; any type not in the list becomes "Other".
   mutate(type_group = unname(TYPE_GROUP[dist_type]), type_group = coalesce(type_group, "Other"))
 
+# ---- Summaries ----
+# Acres disturbed per zone, year and type group.
 by_type <- annual |>
   count(zone, year, type_group, name = "n_pixels") |>
   mutate(acres = n_pixels * px_acres)
 
+# Per zone and year: total disturbed cells, cells of harvest types, and cells
+# flagged "No Severity". Years with no disturbance are filled in as zero.
+# Then express these as acres and as percentages of the zone's area.
+# pct_no_severity is the share of disturbed cells (not of the zone) with no
+# detected image change.
 by_zone_year <- annual |>
   group_by(zone, year) |>
   summarise(
@@ -126,6 +162,7 @@ by_zone_year <- annual |>
     pct_no_severity = ifelse(n_pixels > 0, 100 * n_no_severity / n_pixels, NA)
   )
 
+# Save both tables.
 write.csv(
   by_type |> mutate(pct_of_zone = 100 * acres / as.numeric(zone_acres[zone])),
   file.path(csv_dir, "cfp_sale_landfire_annual_by_type.csv"),
@@ -133,6 +170,7 @@ write.csv(
 )
 write.csv(by_zone_year, file.path(csv_dir, "cfp_sale_landfire_annual_by_zone.csv"), row.names = FALSE)
 
+# Print a rounded year-by-year summary for the two sale footprints.
 fp_zones <- c("Songbird (TRG to Songbird, 2026)", "Heartlands (TRG to TNC)")
 print(
   by_zone_year |>
@@ -144,6 +182,9 @@ print(
 
 years <- sort(unique(annual$year))
 
+# ---- Chart: footprints by type ----
+# Stacked bars of acres disturbed each year by type group, one panel per
+# sale footprint.
 p_fp <- by_type |>
   filter(zone %in% fp_zones) |>
   mutate(
@@ -174,6 +215,9 @@ p_fp <- by_type |>
 ggsave(file.path(fig_dir, "cfp_footprint_landfire_annual_by_type.png"), p_fp,
        width = 9, height = 7, dpi = 150, bg = "white")
 
+# ---- Chart: ownership groups compared ----
+# Lines showing the percent of each group's land disturbed each year (all
+# types), so groups of very different sizes can be compared.
 p_groups <- by_zone_year |>
   mutate(group = zone_lab[zone]) |>
   filter(group %in% focus) |>

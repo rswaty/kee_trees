@@ -1,12 +1,14 @@
 # "The bigger picture" tab: all land in Houghton and Keweenaw counties (mainland, open
 # water excluded). What the land would naturally support (LANDFIRE 2020 BpS), what grows
 # there now (LANDFIRE 2024 EVT), and historical vs. current disturbance per year.
-# Data: output_csvs/hk_*.csv from scripts/18_bps_evt_disturbance_regimes.R.
+# Data: output_csvs/hk_*.csv from scripts/18_bps_evt_disturbance_regimes.R and
+# scripts/21_structure_changing_proxies.R.
 # Sourced by tiles_app/app.R; defines bigger_picture_ui and bigger_picture_server().
 
 bp_files <- c("hk_bps_acres.csv", "hk_evt_acres.csv", "hk_disturbance_historical_vs_current.csv",
               "hk_current_disturbance_by_year.csv", "hk_disturbance_totals.csv",
-              "hk_historical_disturbance_by_bps.csv")
+              "hk_historical_disturbance_by_bps.csv", "hk_structure_changing_by_year.csv",
+              "hk_structure_changing_summary.csv")
 has_bigger_picture <- all(file.exists(file.path(processed, bp_files)))
 
 BP_HIST_ALL <- "Historical: all disturbances"
@@ -25,6 +27,13 @@ BP_TYPE_COLS <- c(
   "Unknown cause" = "#08519c",
   "Other" = "grey"
 )
+# Structure-changing measures: low end (LANDFIRE severity is conservative) to high end.
+BP_SC_COLS <- c(
+  "LANDFIRE high severity" = "#111827",
+  "Hansen stand-replacing loss" = "#b45309",
+  "Canopy fell 20+ points" = "#059669"
+)
+BP_SC_LAB <- "Current,<br>structure-changing,<br>2020 onward"
 BP_PHYS_COLS <- c(
   "Hardwood" = "#66a61e", "Conifer" = "#1b7837", "Hardwood-Conifer" = "#a6d96a",
   "Conifer-Hardwood" = "#a6d96a", "Riparian" = "#41b6c4", "Agricultural" = "#e6ab02",
@@ -52,6 +61,12 @@ if (has_bigger_picture) {
       summarise(annual_acres = mean(annual_acres), .groups = "drop")
   ) |>
     mutate(pct_of_land = 100 * annual_acres / bp_land)
+
+  bp_sc_year <- bp_read("hk_structure_changing_by_year.csv")
+  bp_sc <- bp_read("hk_structure_changing_summary.csv") |> filter(period == "2020 onward")
+  bp_sc_lo <- min(bp_sc$annual_acres)
+  bp_sc_hi <- max(bp_sc$annual_acres)
+  bp_sc_x <- function(a) sprintf("%.1f", a / bp_tot(BP_HIST_CHG))
 
   bp_bps_table <- bp_read("hk_historical_disturbance_by_bps.csv") |>
     group_by(BPS_NAME) |>
@@ -95,7 +110,7 @@ bigger_picture_ui <- if (has_bigger_picture) {
       "Isle Royale excluded), not just Commercial Forest land."
     ),
     layout_columns(
-      col_widths = c(3, 3, 3, 3),
+      col_widths = c(2, 2, 2, 3, 3),
       gap = "0.5rem",
       bp_stat("Historical, structure-changing", paste(bp_fmt(bp_tot(BP_HIST_CHG)), "ac/yr"),
               paste0(round(bp_tot(BP_HIST_CHG, "pct_of_land"), 2), "% of the land a year")),
@@ -104,8 +119,10 @@ bigger_picture_ui <- if (has_bigger_picture) {
       bp_stat("Current, 2010–2019", paste(bp_fmt(bp_tot(BP_CUR_10s)), "ac/yr"),
               paste0(round(bp_tot(BP_CUR_10s, "pct_of_land"), 2), "% of the land a year")),
       bp_stat("Current, 2020–2025", paste(bp_fmt(bp_tot(BP_CUR_20s)), "ac/yr"),
-              paste0(round(bp_tot(BP_CUR_20s, "pct_of_land"), 2), "%, about ",
-                     round(bp_tot(BP_CUR_20s) / bp_tot(BP_HIST_CHG)), "× the structure-changing rate"))
+              paste0(round(bp_tot(BP_CUR_20s, "pct_of_land"), 2), "% of the land a year, all disturbances")),
+      bp_stat("Current structure-changing, 2020 onward",
+              paste0(bp_fmt(bp_sc_lo), "–", bp_fmt(bp_sc_hi), " ac/yr"),
+              paste0("about ", bp_sc_x(bp_sc_lo), "–", bp_sc_x(bp_sc_hi), "× the historical structure-changing rate"))
     ),
     layout_columns(
       col_widths = c(6, 6),
@@ -117,15 +134,18 @@ bigger_picture_ui <- if (has_bigger_picture) {
         ),
         plotlyOutput("bp_year_chart", height = "380px"),
         tags$p(class = "small text-muted mb-0 px-3 pb-2",
-               "Bars: LANDFIRE Annual Disturbance. Dashed line: historical structure-changing rate; ",
-               "dotted line: historical rate including light disturbances (BpS models).")
+               "Bars: LANDFIRE Annual Disturbance, all severities. Coloured lines: three measures of ",
+               "structure-changing disturbance, from LANDFIRE high severity (conservative) to canopy cover ",
+               "falling 20+ points (includes heavy partial cuts). Dashed line: historical structure-changing ",
+               "rate; dotted line: historical rate including light disturbances (BpS models).")
       ),
       card(
         full_screen = TRUE,
         card_header("Disturbance per year: historical vs. now"),
         plotlyOutput("bp_period_chart", height = "380px"),
         tags$p(class = "small text-muted mb-0 px-3 pb-2",
-               "Structure-changing = moves a stand to a different succession class. ",
+               "Structure-changing = moves a stand to a different succession class. The last bar spans ",
+               "the three current measures (dark = lowest, light = up to the highest). ",
                "Harvest has no historical counterpart; \"unknown cause\" is likely mostly harvest.")
       )
     ),
@@ -183,7 +203,14 @@ bigger_picture_server <- function(input, output, session) {
       list(x = 0.01, xref = "paper", y = y, text = text, showarrow = FALSE, xanchor = "left",
            yanchor = "bottom", font = list(size = 11), bgcolor = "rgba(255,255,255,0.8)")
     }
-    type_bars(plot_ly(), bp_by_year, "year", "annual_acres") |>
+    p <- type_bars(plot_ly(), bp_by_year, "year", "annual_acres")
+    for (m in names(BP_SC_COLS)) {
+      dm <- bp_sc_year[bp_sc_year$measure == m, ]
+      p <- add_trace(p, x = dm$year, y = dm$annual_acres, type = "scatter", mode = "lines+markers", name = m,
+                     line = list(color = BP_SC_COLS[[m]], width = 2), marker = list(color = BP_SC_COLS[[m]], size = 5),
+                     hovertemplate = paste0("%{x}<br>", m, ": %{y:,.0f} acres<extra></extra>"))
+    }
+    p |>
       layout(barmode = "stack", xaxis = list(title = "", dtick = 1, tickangle = -45),
              yaxis = list(title = "Acres disturbed", tickformat = ",d"),
              shapes = list(ref(hist_chg, "dash"), ref(hist_all, "dot")),
@@ -195,18 +222,29 @@ bigger_picture_server <- function(input, output, session) {
   })
 
   output$bp_period_chart <- renderPlotly({
+    levs <- c(BP_PERIOD_LAB, BP_SC_LAB)
     d <- bp_periods |>
-      mutate(period = factor(BP_PERIOD_LAB[match(period, BP_PERIODS)], levels = BP_PERIOD_LAB))
+      mutate(period = factor(BP_PERIOD_LAB[match(period, BP_PERIODS)], levels = levs))
     totals <- d |> group_by(period) |> summarise(a = sum(annual_acres), p = sum(pct_of_land), .groups = "drop")
+    sc_x <- factor(BP_SC_LAB, levels = levs)
+    bar_labels <- lapply(seq_len(nrow(totals)), function(i) {
+      list(x = totals$period[i], y = totals$a[i], yanchor = "bottom", showarrow = FALSE,
+           text = paste0(bp_fmt(totals$a[i]), " ac/yr<br>(", round(totals$p[i], 2), "%)"),
+           font = list(size = 11))
+    })
+    sc_label <- list(x = sc_x, y = bp_sc_hi, yanchor = "bottom", showarrow = FALSE, font = list(size = 11),
+                     text = paste0(bp_fmt(bp_sc_lo), "–", bp_fmt(bp_sc_hi), " ac/yr<br>(",
+                                   bp_sc_x(bp_sc_lo), "–", bp_sc_x(bp_sc_hi), "× historical)"))
+    sc_hover <- paste(paste0(bp_sc$measure, ": ", bp_fmt(bp_sc$annual_acres), " ac/yr"), collapse = "<br>")
     type_bars(plot_ly(), d, "period", "annual_acres") |>
+      add_trace(x = sc_x, y = bp_sc_lo, type = "bar", name = "Structure-changing, lowest measure",
+                marker = list(color = "#4b5563"), hovertext = sc_hover, hoverinfo = "text") |>
+      add_trace(x = sc_x, y = bp_sc_hi - bp_sc_lo, type = "bar", name = "Structure-changing, range",
+                marker = list(color = "#d1d5db"), hovertext = sc_hover, hoverinfo = "text") |>
       layout(barmode = "stack", xaxis = list(title = ""),
              yaxis = list(title = "Acres disturbed per year", tickformat = ",d",
                           range = c(0, max(totals$a) * 1.2)),
-             annotations = lapply(seq_len(nrow(totals)), function(i) {
-               list(x = totals$period[i], y = totals$a[i], yanchor = "bottom", showarrow = FALSE,
-                    text = paste0(bp_fmt(totals$a[i]), " ac/yr<br>(", round(totals$p[i], 2), "%)"),
-                    font = list(size = 11))
-             }),
+             annotations = c(bar_labels, list(sc_label)),
              legend = list(orientation = "h", x = 0, y = -0.2, font = list(size = 10)),
              margin = list(t = 10, b = 40, l = 60, r = 10)) |>
       config(displayModeBar = FALSE)

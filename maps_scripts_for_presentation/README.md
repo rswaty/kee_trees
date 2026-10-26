@@ -27,7 +27,7 @@ outlines the same way, to `data/townships.gpkg`. Later runs use the saved copies
 | Corporate owners as a whole | 02 map, 08 map of where canopy fell 20+ points |
 | Corporate vs. other private owners | 03a–c by-year charts, 04 three-measure bars, 08 bar chart by land type |
 | Corporate owners relative to each other | 05 map by destination, 06 heavily-cut bars, 07a–c by-year panels, 09a–b Heartlands and Songbird maps |
-| What: disturbance | 03–09; 11 acres disturbed per year, historical vs. current (all land) |
+| What: disturbance | 03–09; 11 acres disturbed per year, historical vs. current, with current structure-changing disturbance as a range (all land); 11b the same in one colour, without causes |
 | What: small parcel sales (first look) | 10a chart, 10b map; tables in `tables/` |
 
 ## Definitions

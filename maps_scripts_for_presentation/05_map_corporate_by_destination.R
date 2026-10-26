@@ -5,11 +5,14 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# 2020 Commercial Forest Program parcels with owner group, and the county outlines.
 parcels <- read_parcels()
 counties <- read_mainland()
 
 # One shape per corporate group, with its acres in the legend label. TRG land sold to
 # other owners is split by whether the parcel is still enrolled in 2026.
+# The two split groups take the place of the single "TRG → other owners" group in
+# the legend order (after the first three TRG groups).
 levels05 <- append(setdiff(CORP_GROUPS, G$TO), c(TO_KEPT, TO_LEFT), after = 3)
 cols05 <- c(GROUP_COLS[setdiff(CORP_GROUPS, G$TO)], TO_SPLIT_COLS)[levels05]
 grp <- parcels |>
@@ -23,10 +26,13 @@ grp <- parcels |>
   summarise(acres = sum(acres), .groups = "drop") |>
   mutate(group = factor(group, levels = levels05))
 lab <- setNames(paste0(grp$group, " (", fmt_n(grp$acres), " ac)"), as.character(grp$group))
+# All other private land merged into one shape, drawn in grey for context.
 other <- parcels |> filter(class == OTHER) |> summarise()
 
 bb <- pad_bbox(st_bbox(parcels), 0.04)
 
+# Map layers: pale county land, grey other private land, corporate land coloured by
+# where it went, then county borders on top.
 main <- ggplot() +
   geom_sf(data = counties, fill = "grey97", colour = NA) +
   geom_sf(data = other, fill = "grey85", colour = NA) +
@@ -42,6 +48,7 @@ main <- ggplot() +
         legend.key.size = unit(0.36, "in"),
         legend.key.spacing.y = unit(0.06, "in"))
 
+# Notes for the side column, each wrapped to about 60 characters per line.
 notes <- c(
   paste0("TRG (TRG Threshold Timber) is a timberland investment company and was the largest ",
          "Commercial Forest owner here in 2020, with about half of the enrolled land."),
@@ -50,6 +57,7 @@ notes <- c(
 )
 notes <- paste(vapply(notes, function(x) paste(strwrap(x, 60), collapse = "\n"), ""), collapse = "\n\n")
 
+# Map without its legend on the left; title, legend and notes in the side column.
 save_layout(
   "05_map_corporate_by_destination.png",
   panels = list(main + theme(legend.position = "none", plot.margin = margin(4, 4, 4, 40))),

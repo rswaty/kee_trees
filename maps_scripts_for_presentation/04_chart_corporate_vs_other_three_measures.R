@@ -5,9 +5,11 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# ---- Data: three measures ----
+# Acres and owner class of each analysis zone (sale group).
 za <- zone_acres()
 
-# Measure 1: share of acres in parcels whose average canopy fell 20+ points.
+# Measure 1 (USFS FIA Tree Canopy Cover): share of acres in parcels whose average canopy fell 20+ points.
 heavy <- csv("cfp_sellers_by_owner_class.csv") |>
   mutate(class = if_else(owner_class == "Institutional", CORP, OTHER)) |>
   group_by(class) |>
@@ -15,6 +17,7 @@ heavy <- csv("cfp_sellers_by_owner_class.csv") |>
   mutate(measure = "Tree canopy change, 2020–2025\n(FIA, > 20% loss)")
 
 # Measure 2: share of land Hansen marked as cleared at any point, 2020–2024.
+# Yearly loss is added up per zone, then zones are pooled by owner type.
 cleared <- csv("cfp_sale_footprint_hansen_by_year.csv") |>
   filter(year >= 2020) |>
   inner_join(select(za, zone, class), by = "zone") |>
@@ -34,10 +37,15 @@ disturbed <- csv("cfp_sale_landfire_annual_by_zone.csv") |>
   summarise(value = mean(pct), .groups = "drop") |>
   mutate(measure = "Land disturbed per year, 2020–2025\n(LANDFIRE, average)")
 
+# Stack the three measures into one table, keeping corporate first and the measures
+# in the order above.
 d <- bind_rows(heavy, cleared, disturbed) |>
   mutate(class = factor(class, levels = c(CORP, OTHER)),
          measure = factor(measure, levels = unique(measure)))
 
+# ---- Chart ----
+# One small bar chart per measure, side by side, with the percent written above each bar.
+# The panels share a y-axis scale.
 p <- ggplot(d, aes(class, value, fill = class)) +
   geom_col(width = 0.65) +
   geom_text(aes(label = paste0(fmt_1(value), "%")), vjust = -0.4, size = BASE_SIZE / 2.9, fontface = "bold") +

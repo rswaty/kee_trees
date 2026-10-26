@@ -94,6 +94,9 @@ hk_totals <- rd("hk_disturbance_totals.csv")
 hk_types <- rd("hk_disturbance_historical_vs_current.csv")
 hk_bps <- rd("hk_bps_acres.csv")
 hk_evt <- rd("hk_evt_acres.csv")
+hk_sc <- rd("hk_structure_changing_summary.csv") |> filter(period == "2020 onward")
+sc_lo <- min(hk_sc$annual_acres)
+sc_hi <- max(hk_sc$annual_acres)
 fig <- function(f) file.path(root, "output_visuals", f)
 hkt <- function(p, col) hk_totals[[col]][hk_totals$period == p]
 HIST_CHG <- "Historical: structure-changing only"
@@ -577,7 +580,7 @@ Northern hardwoods still dominate (**`r fmt_1(hk_evt$pct[1])`%**). Spruce-fir is
 
 ## Disturbance per year: historical vs. now
 
-![](`r fig("hk_disturbance_historical_vs_current.png")`){height="470px" fig-align="center"}
+![](../maps_scripts_for_presentation/figures/11_chart_disturbance_historical_vs_current.png){height="470px" fig-align="center"}
 
 Historically, disturbances that changed forest structure hit about **`r fmt_n(hkt(HIST_CHG, "annual_acres"))` acres a year** (`r fmt_1(hkt(HIST_CHG, "pct_of_land"))`% of the land). Many more were light, like windthrow that leaves an old forest old; counting those gives `r fmt_n(hkt(HIST_ALL, "annual_acres"))` acres a year.
 
@@ -585,7 +588,7 @@ Historically, disturbances that changed forest structure hit about **`r fmt_n(hk
 
 ![](`r fig("hk_disturbance_by_year_vs_historical.png")`){height="460px" fig-align="center"}
 
-Since 2020, about **`r fmt_n(hkt(CUR_20s, "annual_acres"))` acres a year** (`r fmt_1(hkt(CUR_20s, "pct_of_land"))`%) were disturbed, about **`r round(hkt(CUR_20s, "annual_acres") / hkt(HIST_CHG, "annual_acres"))` times** the historical structure-changing rate, up from `r fmt_n(hkt(CUR_10s, "annual_acres"))` a year in 2010–19. LANDFIRE labels `r round(cur_share("Unknown cause"))`% "unknown cause" (likely mostly harvest), `r round(cur_share("Harvest or mechanical"))`% harvest and `r round(cur_share("Insects or disease"))`% insects or disease.
+Since 2020, about **`r fmt_n(hkt(CUR_20s, "annual_acres"))` acres a year** (`r fmt_1(hkt(CUR_20s, "pct_of_land"))`%) were disturbed, up from `r fmt_n(hkt(CUR_10s, "annual_acres"))` a year in 2010–19. Much of that is light. The structure-changing part is **`r fmt_n(sc_lo)`–`r fmt_n(sc_hi)` acres a year, about `r fmt_1(sc_lo / hkt(HIST_CHG, "annual_acres"))`–`r fmt_1(sc_hi / hkt(HIST_CHG, "annual_acres"))` times** the historical rate (low end: Hansen and LANDFIRE high severity, which is conservative; high end: canopy cover falling 20+ points, which includes heavy partial cuts). LANDFIRE labels `r round(cur_share("Unknown cause"))`% "unknown cause" (likely mostly harvest), `r round(cur_share("Harvest or mechanical"))`% harvest and `r round(cur_share("Insects or disease"))`% insects or disease.
 
 ## What we can't say
 

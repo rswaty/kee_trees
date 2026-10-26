@@ -1,4 +1,5 @@
-# Process LANDFIRE FDist-coded hist raster → agent polygons + PMTiles.
+# Process the LANDFIRE disturbance raster (coded with FDist, the "fuel disturbance"
+# codes) into map shapes grouped by disturbance agent, plus a PMTiles web-map file.
 # From project root: Rscript scripts/03_landfire_fdist_tiles.R
 #
 # Input:  inputs/landfire/lf_hist_dist.tif  (FDist codes 111–733 despite "hist" name)
@@ -7,7 +8,12 @@
 #
 # Map features are dissolved by disturbance agent + years-since bin
 # (severity is ignored / collapsed).
+#
+# How FDist codes read: hundreds digit = disturbance type, tens digit = severity,
+# ones digit = how long ago (years-since bin). For example, 312 = harvest,
+# low severity, about 2-5 years ago.
 
+# Stop the PROJ library from trying to download projection files from the internet.
 Sys.setenv(PROJ_NETWORK = "OFF")
 
 suppressPackageStartupMessages({
@@ -17,6 +23,8 @@ suppressPackageStartupMessages({
   library(freestiler)
 })
 
+# ---- Folders and settings ----
+# All paths are relative to the project folder, so stop early if run from elsewhere.
 root <- if (dir.exists("inputs/tcc")) {
   normalizePath(".")
 } else {
@@ -35,9 +43,14 @@ for (d in c(csv_dir, gis_dir)) dir.create(d, showWarnings = FALSE, recursive = T
 dir.create(tile_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(www_tile_dir, showWarnings = FALSE, recursive = TRUE)
 
+# Compression settings for output GeoTIFFs (smaller files, no loss of information).
 gdal_opts <- c("COMPRESS=DEFLATE", "ZLEVEL=9", "TILED=YES")
 
+# ---- Helpers to decode FDist codes ----
 # Collapsed agents for the map (drop Mech Add / Mastication / 0).
+# The hundreds digit gives the disturbance type: 1 = fire, 3 = harvest/removal,
+# 5 = insects or disease, 6 = other mechanical. Any other type returns NA and
+# is left off the map.
 agent_from_code <- function(code) {
   type <- as.integer(code) %/% 100L
   dplyr::case_when(
@@ -54,6 +67,7 @@ years_since_from_code <- function(code) {
   as.integer(code) %% 10L
 }
 
+# Plain-English labels shown in the map legend and pop-ups.
 agent_label <- c(
   harvest_remove = "Timber harvest or clearing",
   mech_unknown = "Other mechanical change",
@@ -68,8 +82,11 @@ years_since_label <- c(
   "4" = "About 11+ years since disturbance"
 )
 
+# Short numeric ID for each agent, used to build compact class codes below.
 id_lookup <- c(harvest_remove = 1L, mech_unknown = 2L, insects = 3L, fire = 4L)
 
+# ---- Load the tree canopy cover (TCC) grid and county boundaries ----
+# The 2010 TCC raster is the template grid (30 m cells) that everything lines up to.
 message("Loading TCC template + counties...")
 tcc_template <- rast(file.path(tcc_dir, "HK_TCC_2010.tif"))
 counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
@@ -78,11 +95,16 @@ counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_countie
 counties_v <- vect(counties)
 county_mask <- rasterize(counties_v, tcc_template, field = 1)
 
+# ---- Put the LANDFIRE raster on the TCC grid ----
+# Nearest-neighbour resampling keeps the original codes (no averaging of codes),
+# then cells outside the two counties are dropped.
 message("Reprojecting FDist raster onto TCC Albers grid...")
 fdist_src <- rast(src_tif)
 fdist <- project(fdist_src, tcc_template, method = "near")
 fdist <- mask(fdist, county_mask)
 
+# List the codes present, and split them into ones we map and ones we drop
+# (types not in the four agents above, such as mechanical add or mastication).
 codes <- as.integer(unique(freq(fdist)$value))
 codes <- codes[!is.na(codes) & codes > 0]
 keep <- codes[!is.na(agent_from_code(codes))]
@@ -91,7 +113,9 @@ if (length(drop)) {
   message("Dropping FDist codes (Add/Mastication/etc.): ", paste(sort(drop), collapse = ", "))
 }
 
+# ---- Recode to agent + years-since classes ----
 # class_id = agent_id * 10 + years_since_bin (severity collapsed).
+# For example, 13 = harvest, about 6-10 years since disturbance.
 class_id_from_code <- function(code) {
   agent <- agent_from_code(code)
   agent_id <- unname(id_lookup[agent])
@@ -99,6 +123,8 @@ class_id_from_code <- function(code) {
   as.integer(agent_id * 10L + ys)
 }
 
+# Build a two-column "old code -> new class" table and apply it to the raster.
+# Any code not in the table becomes missing.
 rcl <- cbind(keep, vapply(keep, class_id_from_code, integer(1)))
 class_ras <- classify(fdist, rcl = rcl, others = NA)
 names(class_ras) <- "class_id"
@@ -107,7 +133,12 @@ writeRaster(
   overwrite = TRUE, wopt = list(datatype = "INT1U", gdal = gdal_opts)
 )
 
+# ---- Acres by class ----
+# Acres per cell: 30 m x 30 m = 900 square metres, divided by 4046.856 square
+# metres per acre (about 0.22 acres).
 px_acres <- prod(res(tcc_template)) / 4046.8564224
+# Count cells in each class, then split the class back into agent and
+# years-since bin and attach readable labels.
 fr_class <- terra::freq(class_ras)
 fr_class <- fr_class[!is.na(fr_class$value), c("value", "count")]
 names(fr_class) <- c("class_id", "n_pixels")
@@ -135,6 +166,9 @@ print(as.data.frame(fr_agent[, c("agent", "label", "acres", "n_pixels")]), row.n
 message("Acres by agent + years since:")
 print(as.data.frame(fr_class[, c("agent", "years_since", "acres", "n_pixels")]), row.names = FALSE)
 
+# ---- Convert to map shapes ----
+# All cells of the same class are merged into one feature, labels and acres
+# are attached, and shapes are converted to latitude/longitude (EPSG:4326).
 message("Polygonizing by agent + years since...")
 poly <- as.polygons(class_ras, dissolve = TRUE, na.rm = TRUE)
 sf_poly <- st_as_sf(poly)
@@ -149,6 +183,9 @@ sf_poly <- st_make_valid(st_transform(sf_poly, 4326))
 st_write(sf_poly, file.path(gis_dir, "landfire_fdist_by_agent.gpkg"), delete_dsn = TRUE, quiet = TRUE)
 message("Features: ", nrow(sf_poly))
 
+# ---- Build the web-map tile file ----
+# PMTiles is a single-file format of pre-cut map tiles, viewable from zoom 8
+# (regional) to zoom 14 (close-up). A copy is also kept under output_spatial/tiles.
 pm_path <- file.path(www_tile_dir, "landfire_fdist.pmtiles")
 message("Building PMTiles -> ", pm_path)
 freestile(

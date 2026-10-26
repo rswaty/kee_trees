@@ -12,17 +12,26 @@ if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" 
 LOSS_PP <- -20                         # "heavy loss" cutoff, canopy points
 HOT_TOWNSHIPS <- c("Stanton", "Elm River")  # western Houghton County, highest loss
 
+# ---- Data ----
+# County outlines, and the 2020 Commercial Forest Program (CFP) parcels merged into
+# one shape per owner type (drawn as pale background on the map).
 counties <- read_mainland()
 parcels <- read_parcels()
 by_class <- parcels |> group_by(class) |> summarise(.groups = "drop")
 
+# Canopy change raster (USFS FIA Tree Canopy Cover (TCC), 2025 minus 2020, in canopy
+# points), clipped to the mainland. Each cell is given an owner type from the sale
+# zones raster: 1 = corporate, 2 = other private, 3 = not enrolled. loss is TRUE
+# where canopy fell 20 points or more.
 chg <- mask(rast(spatial("tcc_change_2020_2025.tif")), vect(counties))
 zones <- rast(spatial("cfp_sale_zones.tif"))
 cls <- classify(zones, rbind(cbind(CORP_ZONE_CODES, 1), cbind(OTHER_ZONE_CODES, 2)), others = 3)
 cls <- mask(cls, chg)
 loss <- chg <= LOSS_PP
 
-# Share of each owner type's land where canopy fell 20+ points.
+# ---- Summaries ----
+# Share of each owner type's land where canopy fell 20+ points (the mean of a
+# TRUE/FALSE layer is the share of TRUE cells).
 class_names <- c(CORP, OTHER, NONCFP)
 short <- setNames(c("Corporate", "Other private", "Not enrolled"), class_names)
 share <- zonal(loss, cls, fun = "mean", na.rm = TRUE)
@@ -33,6 +42,8 @@ share$class <- factor(class_names[share$code], levels = class_names)
 # Neutral greys, so the chart doesn't compete with the owner colours on the map.
 CHANGE_LAB <- c("Fell 20+ points", "Fell 10–20", "No major loss")
 CHANGE_COLS <- setNames(c("grey20", "grey60", "grey88"), CHANGE_LAB)
+# Sort cells into the three change classes, count cells for every owner type and
+# change class combination, and turn the counts into percents of each owner type.
 bins <- classify(chg, rbind(c(-Inf, LOSS_PP, 1), c(LOSS_PP, -10, 2), c(-10, Inf, 3)), right = TRUE)
 stack <- as.data.frame(crosstab(c(cls, bins), long = TRUE))
 names(stack) <- c("code", "bin", "n")
@@ -47,12 +58,16 @@ stack <- stack |>
 hot <- read_townships() |>
   filter(county == "Houghton", township %in% HOT_TOWNSHIPS) |>
   summarise()
+# Count cells inside the townships against all mainland cells, and loss cells inside
+# them against all loss cells.
 in_hot <- !is.na(mask(chg, vect(hot)))
 hot_land <- global(in_hot, "sum", na.rm = TRUE)[1, 1] / global(!is.na(chg), "sum", na.rm = TRUE)[1, 1]
 hot_loss <- global(loss & in_hot, "sum", na.rm = TRUE)[1, 1] / global(loss, "sum", na.rm = TRUE)[1, 1]
 
+# ---- Loss map ----
 # Loss shown at 90 m, where a 90 m cell takes the owner type of any 30 m loss cell
-# inside it (corporate first).
+# inside it (corporate first). Coarser cells keep small patches visible at slide size
+# and make the map faster to draw. The result is a table of cell centres for plotting.
 loss_cls <- aggregate(ifel(loss, cls, NA), 3, "min", na.rm = TRUE)
 loss_df <- as.data.frame(loss_cls, xy = TRUE, na.rm = TRUE)
 names(loss_df)[3] <- "code"
@@ -64,6 +79,8 @@ hb <- st_bbox(hot)
 hot_lab <- paste0(paste(HOT_TOWNSHIPS, collapse = " &\n"), " twps.\n",
                   round(100 * hot_land), "% of the land\n", round(100 * hot_loss), "% of the loss")
 
+# Map layers: pale county land, pale owner-type land, loss cells in strong owner
+# colours, county borders, then the dashed township outline and its label.
 loss_map <- ggplot() +
   geom_sf(data = counties, fill = "grey97", colour = NA) +
   geom_sf(data = filter(by_class, class == CORP), fill = CLASS_PALE[[CORP]], colour = NA) +
@@ -82,6 +99,8 @@ loss_map <- ggplot() +
 
 # Side chart: each bar is all of one land type. The owner-type square left of each bar
 # is the map legend; the 20+ point share is printed at the bar end.
+# "inside" finds the middle of the "No major loss" segment of each bar, where its
+# percent is printed.
 inside <- stack |>
   group_by(class) |>
   arrange(desc(change), .by_group = TRUE) |>
@@ -89,6 +108,9 @@ inside <- stack |>
   ungroup() |>
   filter(change == "No major loss")
 
+# Stacked 100% bars, one per land type, listed top to bottom in the order corporate,
+# other private, not enrolled. The x-axis runs from -12 to 122 so there is room for
+# the coloured square on the left (at -7) and the bold share label on the right (at 103).
 share_chart <- ggplot(stack, aes(pct, forcats::fct_rev(class))) +
   geom_col(aes(fill = change), width = 0.62) +
   geom_text(data = inside, aes(mid, forcats::fct_rev(class), label = paste0(round(pct), "%")),
@@ -112,6 +134,9 @@ share_chart <- ggplot(stack, aes(pct, forcats::fct_rev(class))) +
     plot.margin = margin(30, 20, 60, 10)
   )
 
+# ---- Save ----
+# Map on the left with a wide left margin for the township label; title and bar chart
+# in the right-hand column.
 save_layout(
   "08_map_canopy_change_county.png",
   panels = list(loss_map + theme(plot.margin = margin(4, 4, 4, 130))),

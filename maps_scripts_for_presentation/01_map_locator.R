@@ -5,10 +5,14 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# ---- Data ----
+# Regional background layers (states, Michigan counties, lakes, Canada), the two
+# study counties, and the 2020 Commercial Forest Program (CFP) parcels for the facts panel.
 L <- read_locator()
 hk <- read_counties()
 parcels <- read_parcels()
 
+# ---- Map window and labels ----
 # Map window: the western Upper Peninsula and the surrounding states and lakes.
 to_grid <- function(lon, lat) st_coordinates(st_transform(st_sfc(st_point(c(lon, lat)), crs = 4326), GRID_CRS))
 win <- st_bbox(st_transform(st_as_sfc(st_bbox(c(xmin = -92.4, ymin = 45.1, xmax = -84.3, ymax = 48.95), crs = 4326)), GRID_CRS))
@@ -22,12 +26,14 @@ with_xy <- function(df) {
   df$y <- xy[, 2]
   df
 }
+# Region and lake names; lake names are flagged so they can be styled in blue italics.
 labels <- with_xy(data.frame(
   lon = c(-86.55, -89.9, -91.75, -87.2, -86.55, -86.2),
   lat = c(46.2, 45.45, 47.35, 48.75, 47.75, 45.4),
   label = c("MICHIGAN", "WISCONSIN", "MINNESOTA", "ONTARIO", "Lake Superior", "Lake Michigan"),
   water = c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE)
 ))
+# A few towns for orientation, shown as dots with names.
 towns <- with_xy(data.frame(
   name = c("Houghton", "Marquette", "Duluth"),
   lon = c(-88.569, -87.395, -92.100),
@@ -37,7 +43,11 @@ towns <- with_xy(data.frame(
 lab_xy <- to_grid(-86.95, 47.25)
 tip_xy <- to_grid(-87.75, 47.25)
 
+# ---- Map ----
 # Draw order: land, county lines, lakes, the two study counties in red, then labels.
+# Town names sit just below their dots. The study-area label is out in the lake with
+# a red line pointing back to the counties. The panel background is water colour,
+# so anything not covered by land reads as lake.
 main <- ggplot() +
   geom_sf(data = L$canada, fill = LAND, colour = "grey60", linewidth = 0.25) +
   geom_sf(data = L$region_states, fill = LAND, colour = "grey50", linewidth = 0.4) +
@@ -63,11 +73,13 @@ main <- ggplot() +
   theme(panel.background = element_rect(fill = WATER, colour = NA),
         panel.border = element_rect(fill = NA, colour = "grey40", linewidth = 0.5))
 
+# ---- Facts panel ----
 # Side-panel facts. Land area is backed out of the disturbance totals table
 # (acres disturbed per year / percent of the land).
 totals <- csv("hk_disturbance_totals.csv")
 cur <- totals[totals$period == "Current (LANDFIRE average, 2010–2025)", ]
 land_acres <- cur$annual_acres / cur$pct_of_land * 100
+# Enrolled acres in total and for corporate owners, then the text for the side panel.
 cls <- parcels |>
   st_drop_geometry() |>
   group_by(class) |>
@@ -82,6 +94,8 @@ facts <- paste0(
   round(100 * corp_acres / cfp_acres), "% of enrolled land)"
 )
 
+# ---- Save ----
+# Map on the left; title and facts in a wide right-hand column.
 save_layout(
   "01_map_locator.png",
   panels = list(main),

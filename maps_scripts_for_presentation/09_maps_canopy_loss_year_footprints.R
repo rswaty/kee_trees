@@ -29,11 +29,13 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
   r <- rast(spatial(sprintf("drop_year_%s.tif", tolower(name))))
   fp <- read_footprint(name)
 
+  # ---- Main map and inset pieces ----
   # Split the sale area into separate pieces. Pieces near the big blocks (1,000+ acres)
   # form the main map; any piece farther away (the Heartlands strip to the south) goes
   # in an inset, so the main map can zoom in on the big blocks.
   parts <- suppressWarnings(st_cast(st_cast(fp, "MULTIPOLYGON"), "POLYGON"))
   parts$acres <- as.numeric(st_area(parts)) / 4046.8564224
+  # A piece counts as attached if it touches the box around the big blocks (widened by 500 m).
   big <- filter(parts, acres >= 1000)
   big_box <- st_as_sfc(st_bbox(big)) |> st_buffer(500)
   attached <- lengths(st_intersects(parts, big_box)) > 0
@@ -47,6 +49,7 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
   xlim <- c(main_bb[["xmin"]] - 0.02 * w, main_bb[["xmax"]] + 0.02 * w)
   ylim <- c(main_bb[["ymin"]] - 0.12 * h, main_bb[["ymax"]] + 0.02 * h)
 
+  # ---- Colours and plotting data ----
   # One distinct colour per year, so the legend shows a separate box for each year.
   pal <- setNames(viridisLite::turbo(length(years), begin = 0.05, end = 0.95), years)
 
@@ -60,9 +63,11 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
     x$year <- factor(x$year, levels = years)
     filter(x, !is.na(year))
   }
+  # Every year stays in the legend, even years with no loss on this sale area.
   fill_scale <- scale_fill_manual(values = pal, drop = FALSE, na.translate = FALSE,
                                   name = "Year canopy\ndropped")
 
+  # ---- Map builders ----
   # Small enlarged map of the detached piece, placed in the lower right of the main map.
   # Returns nothing when the sale area has no detached piece (Songbird).
   inset <- function(layer) {
@@ -70,6 +75,8 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
     d <- layer_df(layer, detached)
     db <- st_bbox(detached)
     pad <- 300
+    # Same layers as the main map (grey piece, loss cells, outline), zoomed to the
+    # piece with 300 m of margin, a small title and a thin frame.
     mini <- ggplot() +
       geom_sf(data = detached, fill = "grey90", colour = NA) +
       geom_raster(data = d, aes(x, y, fill = year)) +
@@ -82,6 +89,8 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
       theme(legend.position = "none", plot.title = element_text(hjust = 0.5, colour = "grey25", lineheight = 0.95),
             panel.border = element_rect(fill = NA, colour = "grey50", linewidth = 0.4),
             plot.background = element_rect(fill = "white", colour = NA))
+    # Place the inset in the lower-right part of the main map window, positioned as
+    # fractions of the window's width and height.
     annotation_custom(ggplotGrob(mini),
                       xmin = xlim[1] + 0.60 * diff(xlim), xmax = xlim[2] - 0.01 * diff(xlim),
                       ymin = ylim[1] + 0.13 * diff(ylim), ymax = ylim[1] + 0.47 * diff(ylim))
@@ -102,12 +111,14 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
       theme(legend.position = "right", legend.title = element_text(size = BASE_SIZE),
             legend.text = element_text(size = BASE_SIZE - 1),
             legend.key.size = unit(0.3, "in"))
+    # Add the scale bar if asked, and the inset if this sale area has a detached piece.
     if (with_scale) p <- p + scale_bar(xlim, ylim, pos = "bottomleft")
     ins <- inset(layer)
     if (!is.null(ins)) p <- p + ins
     p
   }
 
+  # ---- Compose the slide ----
   # Both maps share one legend (taken from the left map) and one scale bar (left map only).
   left <- panel("tcc_drop_year", "USFS Canopy Loss 15+ Points", TRUE)
   right <- panel("hansen_loss_year", hansen_label, FALSE)
@@ -127,6 +138,8 @@ footprint_maps <- function(name, years, file, title, hansen_label, owners) {
 }
 
 # ---- 09a Heartlands and 09b Songbird ------------------------------------------
+# Each sale area is shown over the ten or so years before its sale, with the owner
+# history at the bottom of the side notes.
 
 footprint_maps(
   "Heartlands", 2012:2022, "09a_map_canopy_loss_year_heartlands.png",

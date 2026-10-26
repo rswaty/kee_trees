@@ -8,6 +8,8 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# ---- Data ----
+# Acres and owner class of each analysis zone (sale group), used as weights below.
 za <- zone_acres()
 
 # Yearly values per owner type. The analysis tables are by sale group, so groups are
@@ -17,22 +19,27 @@ tcc <- csv("cfp_sale_tcc_mean_by_year.csv") |>
   group_by(class, year) |>
   summarise(value = weighted.mean(mean_tcc, zone_acres), .groups = "drop")
 
+# Hansen forest loss: acres cleared each year as a percent of the owner type's land.
 hansen <- csv("cfp_sale_footprint_hansen_by_year.csv") |>
   inner_join(select(za, zone, class), by = "zone") |>
   group_by(class, year) |>
   summarise(value = 100 * sum(loss_acres) / sum(zone_acres), .groups = "drop")
 
+# LANDFIRE disturbance: acres with any disturbance each year as a percent of the land.
 landfire <- csv("cfp_sale_landfire_annual_by_zone.csv") |>
   inner_join(select(za, zone, class), by = "zone") |>
   group_by(class, year) |>
   summarise(value = 100 * sum(acres) / sum(zone_acres), .groups = "drop")
 
+# ---- Chart helper ----
 # One line chart: corporate vs. other private, with the last year's value labelled at
 # the line end. Use pad to zoom the y-axis instead of starting at zero.
 class_lines <- function(df, ylab, title, subtitle, source, digits = 1, pad = NULL) {
   df <- mutate(df, class = factor(class, levels = c(CORP, OTHER)))
   last <- df |> group_by(class) |> filter(year == max(year))
   yr <- range(df$year)
+  # The y-axis starts at zero, or with pad, spans the data plus pad points either side.
+  # The x-axis runs a little past the last year to leave room for the end labels.
   lim <- if (is.null(pad)) c(0, max(df$value) * 1.12) else c(floor(min(df$value)) - pad, ceiling(max(df$value)) + pad)
   ggplot(df, aes(year, value, colour = class)) +
     geom_line(linewidth = 1.4) +
@@ -48,6 +55,7 @@ class_lines <- function(df, ylab, title, subtitle, source, digits = 1, pad = NUL
     theme_chart()
 }
 
+# ---- 03a canopy cover ----
 # Gap between the two canopy lines every 5 years, drawn as a dark grey bracket with
 # its value. The last one is labelled on the left to stay clear of the line-end labels.
 GAP_GREY <- "grey25"
@@ -59,6 +67,8 @@ gap <- tcc |>
             # 2015 label sits higher, clear of the corporate line rising to 2016
             label_y = (lo + hi) / 2 + if_else(year == 2015, 0.7, 0))
 
+# Canopy chart, zoomed to the range of the data, with the dashed gap brackets and
+# their values added on top.
 p03a <- class_lines(tcc, "Average canopy cover",
                     "Tree canopy cover, corporate vs. other private land",
                     "Average share of the ground covered by treetops, each year",
@@ -74,6 +84,8 @@ p03a <- class_lines(tcc, "Average canopy cover",
 
 save_chart(p03a, "03a_chart_canopy_by_year_corporate_vs_other.png")
 
+# ---- 03b forest cleared and 03c land disturbed ----
+# Both start the y-axis at zero. Cleared shares are small, so they get two decimals.
 save_chart(
   class_lines(hansen, "Share of land cleared",
               "Forest cleared each year, corporate vs. other private land",

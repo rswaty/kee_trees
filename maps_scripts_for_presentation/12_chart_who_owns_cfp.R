@@ -6,6 +6,9 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# ---- Data ----
+# The 2020 Michigan Department of Natural Resources (DNR) Commercial Forest Program
+# (CFP) list: owner name, owner type and acres per parcel, plus the total enrolled acres.
 p20 <- st_read(input("cfp/cfp_hk_2020.shp"), quiet = TRUE) |>
   st_drop_geometry() |>
   transmute(owner = trimws(search_nam), type = owner_type, acres = as.numeric(acres))
@@ -30,6 +33,8 @@ owners <- p20 |>
     class = if_else(!is.na(firm), CORP, OTHER)
   )
 
+# Acres, number of owners and share of all enrolled land per group. Groups are
+# ordered by share so the largest bar ends up at the top of the chart.
 by_group <- owners |>
   group_by(group, class) |>
   summarise(acres = sum(acres), n_owners = n_distinct(owner), .groups = "drop") |>
@@ -38,6 +43,9 @@ by_group <- owners |>
   mutate(group = factor(group, levels = group))
 
 # Numbers for the bullets.
+# top4: share held by the four largest single owners. other_timber: acres held by
+# timber companies within other private land. indiv: acres per individual or family.
+# pct_of() looks up a group's rounded share.
 per_owner <- owners |> group_by(owner) |> summarise(acres = sum(acres), .groups = "drop") |> arrange(desc(acres))
 top4 <- 100 * sum(per_owner$acres[1:4]) / total
 other_acres <- sum(by_group$acres[by_group$class == OTHER])
@@ -46,6 +54,10 @@ other_timber <- sum(by_group$acres[by_group$group %in% c("Lake Superior Timberla
 indiv <- owners |> filter(group == "Individuals and families") |> group_by(owner) |> summarise(a = sum(acres))
 pct_of <- function(g) round(by_group$pct[by_group$group == g])
 
+# ---- Chart ----
+# Horizontal bars coloured corporate vs. other private, each labelled with its share
+# ("<1%" for tiny groups) and acres. The x-axis has no labels and extends to the right
+# so the bar labels fit.
 p <- ggplot(by_group, aes(pct, group, fill = class)) +
   geom_col(width = 0.7) +
   geom_text(aes(label = paste0(if_else(pct < 1, "<1", as.character(round(pct))), "%  (", fmt_n(acres), " ac)")),
@@ -59,6 +71,8 @@ p <- ggplot(by_group, aes(pct, group, fill = class)) +
         legend.position = "top", legend.text = element_text(size = BASE_SIZE - 2),
         plot.margin = margin(10, 10, 10, 10))
 
+# ---- Side bullets ----
+# Each bullet is wrapped to 40 characters, with continuation lines indented under the text.
 bullet <- function(x) paste0("•  ", paste(strwrap(x, 40, exdent = 3), collapse = "\n"))
 bullets <- paste(
   bullet(paste0("Four owners hold ", round(top4), "% of the enrolled land: TRG's two funds, ",
@@ -71,6 +85,7 @@ bullets <- paste(
   sep = "\n\n"
 )
 
+# Bar chart on the left, bullets in the right-hand column, title across the top.
 save_layout(
   "12_chart_who_owns_cfp.png",
   panels = list(p),

@@ -4,6 +4,8 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# 2020 Commercial Forest Program (CFP) parcels with owner class, and the county
+# outlines without Isle Royale.
 parcels <- read_parcels()
 counties <- read_mainland()
 
@@ -20,8 +22,11 @@ by_class <- parcels |>
   group_by(class) |>
   summarise(.groups = "drop")
 
+# Zoom the map to the enrolled parcels, with a little margin.
 bb <- pad_bbox(st_bbox(parcels), 0.04)
 
+# Map layers: pale county land, enrolled land coloured by owner type, then county
+# borders on top. The legend is styled large here because it is moved to the side column.
 main <- ggplot() +
   geom_sf(data = counties, fill = "grey96", colour = NA) +
   geom_sf(data = by_class, aes(fill = class), colour = NA) +
@@ -40,6 +45,7 @@ main <- ggplot() +
 notes <- paste(strwrap(CORP_NOTE, 62), collapse = "\n") |>
   paste0("\n\n", paste(strwrap(OTHER_NOTE, 62), collapse = "\n"))
 
+# The map is drawn without its legend; the legend and notes fill a wide side column.
 save_layout(
   "02_map_corporate_vs_other.png",
   panels = list(main + theme(legend.position = "none", plot.margin = margin(4, 4, 4, 40))),

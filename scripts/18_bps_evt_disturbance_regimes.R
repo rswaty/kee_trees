@@ -11,8 +11,13 @@
 # Open water is excluded from all areas.
 # Run from project root: Rscript scripts/18_bps_evt_disturbance_regimes.R
 
+# ---- Setup ----
+# Stop the PROJ library from trying to download projection grids from the internet.
 Sys.setenv(PROJ_NETWORK = "OFF")
 
+# terra reads rasters, sf reads the county boundary, foreign reads the .dbf
+# attribute tables that come with LANDFIRE rasters, dplyr/tidyr reshape
+# tables, ggplot2 draws the charts.
 suppressPackageStartupMessages({
   library(terra)
   library(sf)
@@ -22,12 +27,14 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+# Make sure the script is being run from the project folder so relative paths work.
 root <- if (dir.exists("inputs/landfire") && dir.exists("inputs/landfire/annual_disturbance")) {
   "."
 } else {
   stop("Run from the kee_trees project root.")
 }
 
+# Input and output folders.
 veg_dir <- file.path(root, "inputs/landfire")
 dist_dir <- file.path(root, "inputs/landfire/annual_disturbance")
 model_dir <- file.path(root, "inputs/bps_models")
@@ -35,9 +42,16 @@ csv_dir <- file.path(root, "output_csvs")
 gis_dir <- file.path(root, "output_spatial")
 fig_dir <- file.path(root, "output_visuals")
 
+# ---- Settings ----
+# LANDFIRE cells are 30 m x 30 m = 900 square metres. With 4046.856 square
+# metres per acre, each cell is about 0.22 acres.
+# TOP_N is how many BpS and EVT types to print and chart.
 ACRES_PER_PX <- 900 / 4046.8564224
 TOP_N <- 10
 
+# Disturbance groups for the historical side. Names on the left are the
+# transition types used in the BpS state-and-transition models. Native
+# grazing and the "optional" slots are rare here and are lumped as "Other".
 HIST_GROUP <- c(
   "Replacement Fire" = "Fire",
   "Mixed Fire" = "Fire",
@@ -48,6 +62,9 @@ HIST_GROUP <- c(
   "Optional 1" = "Other",
   "Optional 2" = "Other"
 )
+# Disturbance groups for the current side. Names on the left are LANDFIRE
+# Annual Disturbance types. All harvest and mechanical types are combined
+# because the BpS models have no harvest category to compare them to.
 CUR_GROUP <- c(
   "Clearcut" = "Harvest or mechanical",
   "Harvest" = "Harvest or mechanical",
@@ -68,6 +85,7 @@ CUR_GROUP <- c(
   "Chemical" = "Other",
   "Herbicide" = "Other"
 )
+# Chart colours shared by the historical and current groups.
 GROUP_COLS <- c(
   "Fire" = "#e31a1c",
   "Wind, weather or stress" = "#41b6c4",
@@ -77,19 +95,26 @@ GROUP_COLS <- c(
   "Other" = "grey65"
 )
 
+# ---- Read LANDFIRE layers ----
+# Helper: read the GeoTIFF in a LANDFIRE folder plus its value attribute
+# table (the .vat.dbf file that names each raster code).
 read_lf <- function(dir) {
   r <- rast(list.files(dir, pattern = "\\.tif$", full.names = TRUE)[1])
   vat <- read.dbf(list.files(dir, pattern = "vat\\.dbf$", full.names = TRUE)[1], as.is = TRUE)
   list(r = r, vat = vat)
 }
 
+# BpS (2020 version) and EVT (2024 version). Both are on the same LANDFIRE grid.
 bps <- read_lf(file.path(veg_dir, "LF2020_BPS"))
 evt <- read_lf(file.path(veg_dir, "LF2024_EVT"))
 
+# Flag the cells that fall inside Houghton and Keweenaw counties.
 counties <- st_read(file.path(root, "inputs/boundaries/houghton_keweenaw_counties.shp"), quiet = TRUE) |>
   st_transform(crs(bps$r))
 inside <- !is.na(values(rasterize(vect(counties), bps$r), mat = FALSE))
 
+# "Land" = cells inside the counties that have a BpS value and are not open
+# water. Every area and percentage below uses this land total.
 bps_v <- values(bps$r, mat = FALSE)
 evt_v <- values(evt$r, mat = FALSE)
 water <- bps$vat$Value[bps$vat$BPS_NAME == "Open Water"]
@@ -97,17 +122,24 @@ land <- inside & !is.na(bps_v) & !(bps_v %in% water)
 land_acres <- sum(land) * ACRES_PER_PX
 
 # ---- BpS and EVT summaries ----
+# Acres of each BpS code on land, with its model ID, name, vegetation group
+# and fire return interval from the attribute table. bps_tab is kept at the
+# code level because it is joined to the BpS models later.
 bps_tab <- data.frame(Value = bps_v[land]) |>
   count(Value, name = "n") |>
   left_join(bps$vat |> select(Value, BPS_MODEL, BPS_NAME, GROUPVEG, FRI_ALLFIR), by = "Value") |>
   mutate(acres = n * ACRES_PER_PX)
 
+# Several codes can share a BpS name, so total by name and sort from largest
+# to smallest.
 bps_by_name <- bps_tab |>
   group_by(BPS_NAME, GROUPVEG) |>
   summarise(acres = sum(acres), .groups = "drop") |>
   mutate(pct = 100 * acres / land_acres) |>
   arrange(desc(acres))
 
+# Same for EVT, on the same land cells. A few cells that are land in BpS but
+# open water in EVT are dropped here.
 evt_by_name <- data.frame(Value = evt_v[land]) |>
   count(Value, name = "n") |>
   left_join(evt$vat |> select(Value, EVT_NAME, EVT_PHYS), by = "Value") |>
@@ -121,6 +153,13 @@ write.csv(bps_by_name, file.path(csv_dir, "hk_bps_acres.csv"), row.names = FALSE
 write.csv(evt_by_name, file.path(csv_dir, "hk_evt_acres.csv"), row.names = FALSE)
 
 # ---- Historical annual disturbance from BpS models ----
+# Three tables exported from the LANDFIRE BpS model database:
+#   ref:   the reference (historical) percent of each BpS in succession
+#          classes A to E. Other labels (e.g. uncharacteristic classes) are dropped.
+#   scls:  links each class letter to the state class ID used in the models.
+#   prob:  annual probability of each disturbance transition, from a source
+#          class to a destination class. Only disturbance types listed in
+#          HIST_GROUP are kept, which drops succession and maintenance transitions.
 ref <- read.csv(file.path(model_dir, "ref_con_long.csv"), stringsAsFactors = FALSE) |>
   filter(ref_label %in% LETTERS[1:5]) |>
   select(bps_model_id, ref_label, ref_percent)
@@ -131,6 +170,11 @@ prob <- read.csv(file.path(model_dir, "probabilistic.csv"), stringsAsFactors = F
 
 # class_change = the transition moves the stand to a different succession class
 # (structure-changing); otherwise it is a light, maintenance-type disturbance.
+# For each transition: share of the BpS disturbed per year =
+#   (reference % of the source class / 100) x (annual transition probability).
+# Example: a class that is 40% of the BpS with a 0.01 replacement fire
+# probability contributes 0.4 x 0.01 = 0.004, or 0.4% of the BpS per year.
+# These are summed by BpS model, disturbance group and structure-changing flag.
 model_rates <- prob |>
   inner_join(scls, by = c("bps_model_id", "state_class_source" = "state_class_id")) |>
   inner_join(ref, by = c("bps_model_id", "ref_label")) |>
@@ -140,12 +184,19 @@ model_rates <- prob |>
   group_by(bps_model_id, type_group, class_change) |>
   summarise(annual_frac = sum(annual_frac), .groups = "drop")
 
+# Multiply each BpS's mapped acres by its annual disturbed share to get the
+# expected acres disturbed per year historically. "many-to-many" is expected:
+# one BpS has several disturbance groups.
 hist_by_bps <- bps_tab |>
   group_by(BPS_MODEL, BPS_NAME) |>
   summarise(acres = sum(acres), .groups = "drop") |>
   inner_join(model_rates, by = c("BPS_MODEL" = "bps_model_id"), relationship = "many-to-many") |>
   mutate(annual_acres = acres * annual_frac)
 
+# Two historical totals: all disturbances, and only structure-changing ones
+# (those that move a stand to a different succession class). The second
+# shows how much historical disturbance actually reset or changed stand
+# structure, which is what most current harvest does.
 HIST_ALL <- "Historical: all disturbances"
 HIST_CHG <- "Historical: structure-changing only"
 hist_by_type <- bind_rows(
@@ -158,9 +209,14 @@ hist_by_type <- bind_rows(
 write.csv(hist_by_bps, file.path(csv_dir, "hk_historical_disturbance_by_bps.csv"), row.names = FALSE)
 
 # ---- Current annual disturbance from LANDFIRE ----
+# Find the annual disturbance folders (names end in "_Dist" plus a two-digit year).
 layers <- sort(list.dirs(dist_dir, recursive = FALSE, full.names = TRUE))
 layers <- layers[grepl("_Dist[0-9]{2}$", basename(layers))]
 
+# For each year, count disturbed land cells (code above zero) by code, look up
+# the disturbance type, and take the year from the folder name ("_Dist21" =
+# 2021). These layers are already on the BpS grid, so no reprojection is
+# needed. Types are then grouped and converted to acres per year.
 cur_by_year <- bind_rows(lapply(layers, function(d) {
   x <- read_lf(d)
   v <- values(x$r, mat = FALSE)
@@ -176,6 +232,8 @@ cur_by_year <- bind_rows(lapply(layers, function(d) {
 
 write.csv(cur_by_year, file.path(csv_dir, "hk_current_disturbance_by_year.csv"), row.names = FALSE)
 
+# Average acres per year for each group over the whole record. Years in which
+# a group had no disturbance are filled in as zero so they pull the average down.
 cur_years <- range(cur_by_year$year)
 cur_mean <- cur_by_year |>
   complete(year = cur_years[1]:cur_years[2], type_group, fill = list(annual_acres = 0)) |>
@@ -183,14 +241,22 @@ cur_mean <- cur_by_year |>
   summarise(annual_acres = mean(annual_acres), .groups = "drop") |>
   mutate(period = sprintf("Current (LANDFIRE average, %d–%d)", cur_years[1], cur_years[2]))
 
+# ---- Historical vs. current comparison ----
+# Stack the historical and current rows and express each as a percent of land.
 summary_tab <- bind_rows(hist_by_type, cur_mean) |>
   mutate(pct_of_land = 100 * annual_acres / land_acres)
 write.csv(summary_tab, file.path(csv_dir, "hk_disturbance_historical_vs_current.csv"), row.names = FALSE)
 
+# Totals across groups for each period. Rotation (years) = 100 / percent of
+# land disturbed per year, i.e. how long it would take to disturb an area
+# equal to the whole landscape at that rate.
 totals <- summary_tab |>
   group_by(period) |>
   summarise(annual_acres = sum(annual_acres), pct_of_land = sum(pct_of_land), .groups = "drop") |>
   mutate(rotation_years = 100 / pct_of_land)
+# Also split the current record into 2010–2019 and 2020–2025 averages to show
+# whether disturbance has picked up recently. These rows go in the CSV only;
+# they are filtered out before charting.
 cur_periods <- cur_by_year |>
   group_by(year) |>
   summarise(annual_acres = sum(annual_acres), .groups = "drop") |>
@@ -202,6 +268,7 @@ totals <- bind_rows(totals, cur_periods)
 write.csv(totals, file.path(csv_dir, "hk_disturbance_totals.csv"), row.names = FALSE)
 totals <- totals |> filter(period %in% summary_tab$period)
 
+# Print key results to the console.
 message(sprintf("Land area (excluding open water): %s acres", format(round(land_acres), big.mark = ",")))
 print(bps_by_name |> head(TOP_N) |> mutate(across(c(acres, pct), ~ round(.x, 1))))
 print(evt_by_name |> head(TOP_N) |> mutate(across(c(acres, pct), ~ round(.x, 1))))
@@ -209,10 +276,12 @@ print(summary_tab |> mutate(across(c(annual_acres, pct_of_land), ~ round(.x, 2))
 print(totals |> mutate(across(where(is.numeric), ~ round(.x, 2))))
 
 # ---- Figures ----
+# Shared chart styling.
 theme_fig <- theme_minimal(base_size = 13) +
   theme(panel.grid.minor = element_blank(), plot.title.position = "plot",
         plot.title = element_text(face = "bold"), plot.subtitle = element_text(color = "grey35"))
 
+# Colours for vegetation groups (BpS GROUPVEG) and physiognomy classes (EVT_PHYS).
 PHYS_COLS <- c(
   "Hardwood" = "#66a61e",
   "Conifer" = "#1b7837",
@@ -228,6 +297,8 @@ PHYS_COLS <- c(
   "Sparsely Vegetated" = "#d9d9d9"
 )
 
+# Helper: horizontal bar chart of the TOP_N largest types, coloured by group,
+# with percent of land printed at the end of each bar.
 bar_chart <- function(d, name_col, fill_col, title, subtitle, file) {
   d <- head(d, TOP_N) |> mutate(name = reorder(.data[[name_col]], acres))
   p <- ggplot(d, aes(acres, name, fill = .data[[fill_col]])) +
@@ -241,6 +312,7 @@ bar_chart <- function(d, name_col, fill_col, title, subtitle, file) {
   ggsave(file.path(fig_dir, file), p, width = 10, height = 6, dpi = 150, bg = "white")
 }
 
+# Top BpS and top EVT charts.
 bar_chart(bps_by_name, "BPS_NAME", "GROUPVEG",
           "Top Biophysical Settings: what the land would naturally support",
           "LANDFIRE 2020 BpS, Houghton and Keweenaw counties (mainland), percent of land area",
@@ -250,11 +322,16 @@ bar_chart(evt_by_name, "EVT_NAME", "EVT_PHYS",
           "LANDFIRE 2024 EVT, Houghton and Keweenaw counties (mainland), percent of land area",
           "hk_evt_top10.png")
 
+# Historical totals (used as reference lines below) and the order and
+# wrapped labels of the bars in the comparison chart.
 hist_all <- totals$annual_acres[totals$period == HIST_ALL]
 hist_chg <- totals$annual_acres[totals$period == HIST_CHG]
 period_levels <- c(HIST_ALL, HIST_CHG, unique(cur_mean$period))
 period_labels <- setNames(stringr::str_wrap(period_levels, 20), period_levels)
 
+# Comparison chart: one stacked bar each for historical (all), historical
+# (structure-changing only) and current average, labelled with acres per
+# year and percent of land.
 p_cmp <- summary_tab |>
   mutate(
     period = factor(period, levels = period_levels),
@@ -278,6 +355,8 @@ p_cmp <- summary_tab |>
   theme_fig + theme(legend.position = "right", panel.grid.major.x = element_blank())
 ggsave(file.path(fig_dir, "hk_disturbance_historical_vs_current.png"), p_cmp, width = 10, height = 6, dpi = 150, bg = "white")
 
+# Year-by-year chart: current disturbance as stacked bars, with the two
+# historical expectations drawn as dotted (all) and dashed (structure-changing) lines.
 p_year <- cur_by_year |>
   mutate(type_group = factor(type_group, levels = rev(names(GROUP_COLS)))) |>
   ggplot(aes(year, annual_acres, fill = type_group)) +

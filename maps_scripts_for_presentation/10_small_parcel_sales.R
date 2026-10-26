@@ -17,6 +17,9 @@
 
 if (!exists("SETUP_LOADED")) source(if (file.exists("00_setup.R")) "00_setup.R" else "maps_scripts_for_presentation/00_setup.R")
 
+# ---- Settings ----
+# Size classes for the chart (160 acres = a quarter section; 640 acres = one square
+# mile) and the names and colours of the three kinds of transaction.
 SMALL_ACRES <- 160  # transactions under this size count as "small"
 SIZE_BREAKS <- c(0, 40, 160, 640, Inf)
 SIZE_LABELS <- c("Under 40 ac", "40–159 ac", "160–639 ac", "640 ac or more")
@@ -27,6 +30,9 @@ TYPE_LABELS <- c(
 )
 TYPE_COLS <- setNames(c("#4d7ea8", "#d1495b", "#edae49"), TYPE_LABELS)
 
+# ---- Owner name matching ----
+# Words ignored when comparing owner names: legal forms, filler words and generic
+# company words, so only the distinctive part of a name is compared.
 STOP <- c("llc", "inc", "ltd", "co", "company", "corp", "corporation", "limited", "lp", "the", "of",
           "and", "trust", "trustee", "trustees", "et", "al", "etal", "jr", "sr", "ii", "iii", "iv",
           "rev", "revocable", "living", "family", "estate",
@@ -34,11 +40,15 @@ STOP <- c("llc", "inc", "ltd", "co", "company", "corp", "corporation", "limited"
           "timber", "timberlands", "michigan", "mi", "land", "lands", "forest", "forests", "holding",
           "holdings", "resources", "properties", "investment", "investments", "management", "cub",
           "natural", "great", "lakes", "realty")
+# Breaks a name into lower-case words, drops punctuation and the ignored words, and
+# keeps each word once.
 name_tokens <- function(s) {
   s <- gsub("[^a-z0-9 ]", " ", tolower(ifelse(is.na(s), "", s)))
   t <- strsplit(s, "\\s+")[[1]]
   unique(t[nzchar(t) & !t %in% STOP])
 }
+# Two names are the same owner if at least two-thirds of the shorter name's words also
+# appear in the other name. Word order doesn't matter.
 same_owner <- function(a, b) {
   ta <- name_tokens(a)
   tb <- name_tokens(b)
@@ -50,8 +60,14 @@ same_family <- function(type, last, b) {
   isTRUE(type == "Private Individual(s)") && !is.na(last) && nchar(trimws(last)) > 2 &&
     tolower(trimws(last)) %in% name_tokens(b)
 }
+# A standard form of each name (its words in alphabetical order), used to group
+# parcels by seller and buyer.
 owner_key <- function(s) vapply(s, function(x) paste(sort(name_tokens(x)), collapse = " "), "")
 
+# ---- Read the 2020 and 2026 parcel lists ----
+# The 2020 and 2026 Michigan Department of Natural Resources (DNR) Commercial Forest
+# lists, one row per parcel, with owner name and enrolled acres. The 2020 list also
+# has the owner's last name and owner type, used for the family check above.
 p20 <- st_read(input("cfp/cfp_hk_2020.shp"), quiet = TRUE) |>
   st_make_valid() |>
   st_transform(GRID_CRS) |>
@@ -66,11 +82,15 @@ a26 <- p26 |> st_drop_geometry() |> distinct(parid, .keep_all = TRUE)
 
 # 2026 owner: by parcel number, or, for renumbered parcels, the 2026 parcel covering
 # most of the 2020 parcel (at least half of it).
+# A 2020 parcel with no 2026 owner after both steps is treated as having left the program.
 st <- p20 |> left_join(a26, by = "parid")
 miss <- which(is.na(st$owner_2026))
 if (length(miss)) {
+  # Overlay the unmatched 2020 parcels on the 2026 parcels and measure each overlap.
   ix <- suppressWarnings(st_intersection(st[miss, "parid"], select(p26, owner_new = owner_2026)))
   ix$a <- as.numeric(st_area(ix))
+  # For each 2020 parcel: total area covered by 2026 parcels, and the owner of the
+  # 2026 parcel with the largest overlap. Keep it only if at least half is covered.
   best <- st_drop_geometry(ix) |>
     group_by(parid) |>
     summarise(cover = sum(a), owner_new = owner_new[which.max(a)], .groups = "drop")
@@ -80,6 +100,12 @@ if (length(miss)) {
   st$owner_2026[miss] <- best$owner_new[j]
 }
 
+# ---- What happened to each 2020 parcel ----
+# Seller class comes from the 2020 owner name. Status of each parcel:
+#   left = no 2026 owner (left the program);
+#   sold = 2026 owner is a different owner (and not the same family);
+#   trim = same owner, but enrolled acres fell by more than 1 acre or 2%, whichever is larger;
+#   kept = same owner, same acres.
 st <- st |>
   mutate(
     seller_class = if_else(!is.na(firm_from_name(owner_2020)), CORP, OTHER),
@@ -94,7 +120,9 @@ st <- st |>
     buyer_key = if_else(status == "sold", owner_key(owner_2026), NA_character_)
   )
 
+# ---- Group parcels into transactions ----
 # Transactions.
+# Sales: all parcels going from one seller to one buyer form one transaction.
 sold <- st |>
   st_drop_geometry() |>
   filter(status == "sold") |>
@@ -103,6 +131,9 @@ sold <- st |>
             acres = sum(acres_2020), parids = paste(parid, collapse = ";"), .groups = "drop") |>
   mutate(type = "sold")
 
+# Exits: for each seller, parcels that left the program are grown by 15 m and merged,
+# so parcels that touch (or nearly touch) form one block. Each block gets its own
+# number, and each block counts as one transaction.
 left_blocks <- st |> filter(status == "left")
 left_blocks$block <- NA_integer_
 next_id <- 0L
@@ -120,23 +151,28 @@ left <- left_blocks |>
   mutate(type = "left") |>
   select(-block)
 
+# Partial removals: each trimmed parcel is one transaction, sized by the acres removed.
 trim <- st |>
   st_drop_geometry() |>
   filter(status == "trim") |>
   transmute(seller_class, seller_key, seller = owner_2020, buyer = NA_character_, n_parcels = 1L,
             acres = acres_2020 - acres_2026, parids = parid, type = "trim")
 
+# All transactions in one table, with a size class, sorted by seller class and size.
 tx <- bind_rows(sold, left, trim) |>
   mutate(size = cut(acres, SIZE_BREAKS, SIZE_LABELS, right = FALSE),
          type_label = factor(TYPE_LABELS[type], levels = TYPE_LABELS),
          seller_class = factor(seller_class, levels = c(CORP, OTHER))) |>
   arrange(seller_class, desc(acres))
 
+# Save the transactions and the parcel-by-parcel status as tables for checking.
 write.csv(select(tx, seller_class, seller, buyer, type = type_label, n_parcels, acres, size, parids),
           file.path(TAB_DIR, "small_parcel_transactions.csv"), row.names = FALSE)
 write.csv(st_drop_geometry(select(st, parid, owner_2020, owner_2026, acres_2020, acres_2026, seller_class, status)),
           file.path(TAB_DIR, "small_parcel_status_2020_parcels.csv"), row.names = FALSE)
 
+# Per seller class: number of transactions, how many were small, and their acres.
+# Used in the chart panel titles and the map legend.
 summ <- tx |>
   group_by(seller_class) |>
   summarise(n = n(), n_small = sum(acres < SMALL_ACRES), acres_small = sum(acres[acres < SMALL_ACRES]),
@@ -145,13 +181,18 @@ print(summ)
 
 # ---- 10a: transactions by size ----------------------------------------------
 
+# Number of transactions per size class and type (for the stacked bars), and the total
+# per size class (printed above each bar). Empty combinations are kept as zero.
 counts <- tx |> count(seller_class, size, type_label, .drop = FALSE)
 totals <- tx |> count(seller_class, size, .drop = FALSE)
+# Panel titles give the seller class with its number of transactions and acres.
 facet_lab <- setNames(
   paste0(summ$seller_class, " as sellers\n", summ$n, " transactions, ", fmt_n(summ$acres), " acres"),
   summ$seller_class
 )
 
+# Two panels (corporate and other private sellers): stacked bars of transaction counts
+# by size class, coloured by what happened to the land.
 p <- ggplot(counts, aes(size, n, fill = type_label)) +
   geom_col(width = 0.7) +
   geom_text(data = totals, aes(size, n, label = n), inherit.aes = FALSE, vjust = -0.4,
@@ -178,22 +219,28 @@ save_chart(p, "10a_chart_small_parcel_sales.png")
 
 # ---- 10b: map of the small transactions --------------------------------------
 
+# Parcels that took part in a small transaction, each tagged with its transaction type.
+# The parcel ID lists stored per transaction are split back into one row per parcel.
 small_ids <- unlist(strsplit(tx$parids[tx$acres < SMALL_ACRES], ";"))
 small <- st |>
   filter(parid %in% small_ids) |>
   left_join(st_drop_geometry(select(tx, parids, type_label)) |>
               tidyr::separate_rows(parids, sep = ";") |>
               rename(parid = parids), by = "parid")
+# Background: county outlines and all 2020 enrolled land merged into one grey shape.
 counties <- read_mainland()
 all_cfp <- st |> summarise()
 bb <- pad_bbox(st_bbox(p20), 0.04)
 
+# Map layers: pale county land, grey enrolled land, small-transaction parcels coloured
+# by seller class, county borders, then a dot on each small parcel. The legend labels
+# add each seller class's count and acres of small transactions.
 m <- ggplot() +
   geom_sf(data = counties, fill = "grey97", colour = NA) +
   geom_sf(data = all_cfp, fill = "grey85", colour = NA) +
   geom_sf(data = small, aes(fill = seller_class), colour = "grey15", linewidth = 0.15) +
   geom_sf(data = counties, fill = NA, colour = "grey35", linewidth = 0.4) +
-  # parcels are too small to see at county scale, so each also gets a point
+  # Parcels are too small to see at county scale, so each also gets a point.
   geom_sf(data = suppressWarnings(st_point_on_surface(small)), aes(fill = seller_class),
           shape = 21, size = 2.6, colour = "white", stroke = 0.35, show.legend = FALSE) +
   scale_fill_manual(values = CLASS_COLS[c(CORP, OTHER)], name = "Seller", drop = FALSE,
@@ -209,6 +256,7 @@ m <- ggplot() +
         legend.text = element_text(size = BASE_SIZE - 1), legend.key.size = unit(0.4, "in"),
         legend.key.spacing.y = unit(0.12, "in"))
 
+# Side notes explaining the map, wrapped to about 60 characters per line.
 notes <- paste(strwrap(paste0(
   "Coloured parcels (marked with a dot so they show at this scale) changed hands or left the ",
   "program in a transaction under ", SMALL_ACRES,
@@ -216,6 +264,7 @@ notes <- paste(strwrap(paste0(
   "Parcels that lost only part of their acres are shown whole."
 ), 60), collapse = "\n")
 
+# Map without its legend on the left; title, legend and notes in the side column.
 save_layout(
   "10b_map_small_parcel_sales.png",
   panels = list(m + theme(legend.position = "none", plot.margin = margin(4, 4, 4, 40))),

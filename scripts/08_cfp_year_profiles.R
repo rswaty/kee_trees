@@ -1,7 +1,10 @@
-# Year profiles: Hansen loss by year + mean TCC 2010-2025 by CFP ownership cohort.
+# Year-by-year profiles for Commercial Forest Program (CFP) ownership cohorts:
+# Hansen tree-cover loss in each year and mean tree canopy cover (TCC) 2010-2025.
 # Run from project root: Rscript scripts/08_cfp_year_profiles.R
 # Does not touch Shiny.
+# Needs outputs from scripts 01 (Hansen) and 04 (CFP owners).
 
+# Stop the PROJ library from trying to download projection files from the internet.
 Sys.setenv(PROJ_NETWORK = "OFF")
 
 suppressPackageStartupMessages({
@@ -10,11 +13,14 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 
+# Charts are optional: if ggplot2 is not installed, only the CSV tables are written.
 has_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
 if (has_ggplot) {
   suppressPackageStartupMessages(library(ggplot2))
 }
 
+# ---- Folders ----
+# All paths are relative to the project folder, so stop early if run from elsewhere.
 root <- if (dir.exists("output_csvs") && dir.exists("inputs/tcc")) {
   "."
 } else {
@@ -28,6 +34,10 @@ fig_dir <- file.path(root, "output_visuals")
 tcc_dir <- file.path(root, "inputs/tcc")
 dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 
+# ---- Load CFP owner rasters and Hansen loss ----
+# Owner rasters hold a number per cell for owner type (parcels of 20 acres or
+# more only). Look up the numbers for "Forest Industry" and "Other Business",
+# the two owner types compared directly below; stop if either is not found.
 r20 <- rast(file.path(gis_dir, "cfp_owner_2020.tif"))
 r26 <- rast(file.path(gis_dir, "cfp_owner_2026.tif"))
 lut <- read.csv(file.path(csv_dir, "cfp_owner_labels.csv"), stringsAsFactors = FALSE)
@@ -36,14 +46,26 @@ fi_code <- lut$code[lut$label == "Forest Industry"]
 ob_code <- lut$code[lut$label == "Other Business"]
 stopifnot(length(fi_code) == 1L, length(ob_code) == 1L)
 
+# Trim or pad Hansen loss to exactly the CFP raster's extent so cells line up.
 hansen <- extend(crop(rast(file.path(gis_dir, "hansen_lossyear.tif")), r20), r20)
+# Acres per cell: 30 m x 30 m = 900 square metres, divided by 4046.856 square
+# metres per acre (about 0.22 acres).
 px_acres <- prod(res(r20)) / 4046.8564224
 
+# Pull every cell's value into simple lists, all in the same cell order.
+# Hansen codes loss year as 1 = 2001 ... 24 = 2024 and 0 = no loss; convert to
+# calendar years, with no loss as missing.
 v20 <- values(r20, mat = FALSE)
 v26 <- values(r26, mat = FALSE)
 h <- values(hansen, mat = FALSE)
 h_year <- ifelse(!is.na(h) & h > 0, 2000L + as.integer(h), NA_integer_)
 
+# ---- Define ownership cohorts ----
+# Each cohort is a TRUE/FALSE flag per cell, among land in CFP in both 2020 and 2026:
+#   changed    = owner type differs between years
+#   stable     = same owner type both years
+#   fi_to_ob   = Forest Industry (FI) in 2020, Other Business in 2026
+#   stable_fi  = Forest Industry in both years
 both_cfp <- !is.na(v20) & !is.na(v26)
 changed <- both_cfp & (v20 != v26)
 stable <- both_cfp & (v20 == v26)
@@ -57,14 +79,18 @@ cohort_defs <- list(
   "Stable Forest Industry" = stable_fi
 )
 
+# Total acres in each cohort; used to turn loss acres into a percent of the cohort.
 cohort_acres <- vapply(cohort_defs, function(idx) sum(idx) * px_acres, numeric(1))
 
 # --- Hansen acres + % of cohort by loss year ---
+# For each cohort, count loss cells in each year and express them as acres and
+# as a percent of the cohort's total acres (so cohorts of different size compare fairly).
 hansen_rows <- list()
 for (nm in names(cohort_defs)) {
   idx <- cohort_defs[[nm]]
   hy <- h_year[idx]
   hy <- hy[!is.na(hy)]
+  # A cohort with no loss at all gets an empty table rather than an error.
   if (!length(hy)) {
     hansen_rows[[nm]] <- data.frame(
       cohort = nm, year = integer(), n_pixels = integer(),
@@ -86,6 +112,7 @@ hansen_by_year <- bind_rows(hansen_rows) |>
   arrange(cohort, year)
 
 # Fill missing years 2001-2024 with 0 for cleaner plots
+# (a year with no loss would otherwise be absent rather than shown as zero).
 years_all <- 2001:2024
 hansen_by_year_full <- tidyr::expand_grid(
   cohort = names(cohort_defs),
@@ -99,12 +126,15 @@ hansen_by_year_full <- tidyr::expand_grid(
   )
 
 # --- Mean annual TCC 2010-2025 by cohort ---
+# Find the yearly TCC files and read the year from each file name.
 tcc_files <- sort(list.files(
   tcc_dir, pattern = "^HK_TCC_[0-9]{4}\\.tif$", full.names = TRUE
 ))
 tcc_years <- as.integer(sub(".*HK_TCC_([0-9]{4})\\.tif$", "\\1", basename(tcc_files)))
 stopifnot(length(tcc_files) > 0)
 
+# For each year: set TCC no-data codes 254 and 255 to missing, line the raster up
+# with the CFP grid, then average TCC over each cohort's cells that have a value.
 tcc_rows <- list()
 for (i in seq_along(tcc_files)) {
   yr <- tcc_years[[i]]
@@ -136,13 +166,16 @@ cohort_summary <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# ---- Save tables ----
 write.csv(cohort_summary, file.path(csv_dir, "cfp_year_profile_cohort_acres.csv"), row.names = FALSE)
 write.csv(hansen_by_year_full, file.path(csv_dir, "cfp_hansen_loss_by_year_cohort.csv"), row.names = FALSE)
 write.csv(tcc_by_year, file.path(csv_dir, "cfp_mean_tcc_by_year_cohort.csv"), row.names = FALSE)
 
+# ---- Print summaries to the console ----
 cat("=== Cohort sizes ===\n")
 print(cohort_summary |> mutate(acres = round(acres, 1)), row.names = FALSE)
 
+# The five years with the highest loss (as % of cohort) for each cohort.
 cat("\n=== Hansen: peak years by % of cohort acres ===\n")
 peaks <- hansen_by_year_full |>
   group_by(cohort) |>
@@ -152,6 +185,7 @@ print(as.data.frame(peaks |> mutate(
   acres = round(acres, 1), pct_of_cohort = round(pct_of_cohort, 3)
 )), row.names = FALSE)
 
+# Total loss (% of cohort) in three time windows and over the whole record.
 cat("\n=== Hansen window totals (% of cohort) ===\n")
 windows <- hansen_by_year_full |>
   group_by(cohort) |>
@@ -164,6 +198,8 @@ windows <- hansen_by_year_full |>
   )
 print(as.data.frame(windows |> mutate(across(where(is.numeric), ~ round(.x, 2)))), row.names = FALSE)
 
+# Mean TCC in four snapshot years, one column per year, plus the change
+# (percentage points) over each five-year step after 2015.
 cat("\n=== Mean TCC selected years ===\n")
 tcc_wide <- tcc_by_year |>
   filter(year %in% c(2010, 2015, 2020, 2025)) |>
@@ -173,9 +209,11 @@ tcc_wide$delta_2015_2020 <- tcc_wide$tcc_2020 - tcc_wide$tcc_2015
 tcc_wide$delta_2020_2025 <- tcc_wide$tcc_2025 - tcc_wide$tcc_2020
 print(as.data.frame(tcc_wide |> mutate(across(where(is.numeric), ~ round(.x, 2)))), row.names = FALSE)
 
+# ---- Charts (only if ggplot2 is installed) ----
 if (has_ggplot) {
   # Pair A: all changed vs stable
   # Pair B: FI→OB vs stable FI
+  # plot_hansen(): line chart of yearly loss (% of cohort acres), 2010 onward.
   plot_hansen <- function(cohorts, title, outfile) {
     d <- hansen_by_year_full |> filter(cohort %in% cohorts, year >= 2010)
     d$cohort <- factor(d$cohort, levels = cohorts)
@@ -194,6 +232,7 @@ if (has_ggplot) {
     message("Wrote ", outfile)
   }
 
+  # plot_tcc(): line chart of mean TCC by year for the chosen cohorts.
   plot_tcc <- function(cohorts, title, outfile) {
     d <- tcc_by_year |> filter(cohort %in% cohorts)
     d$cohort <- factor(d$cohort, levels = cohorts)
@@ -212,6 +251,7 @@ if (has_ggplot) {
     message("Wrote ", outfile)
   }
 
+  # Four charts: loss and TCC, each for both cohort pairs.
   plot_hansen(
     c("Owner type changed", "Stable owner type"),
     "Hansen loss by year: type-changed vs stable",

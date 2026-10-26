@@ -203,9 +203,23 @@ within each panel, not heights across panels.
 - **Vegetation:** northern hardwoods with hemlock make up 54.6% of the BpS and 52.3% of current
   vegetation.
 - **Disturbance:** since 2020, about 14,128 acres a year have been disturbed (1.6% of the land), up
-  from 8,699 a year in 2010–19. That's about 6× the historical structure-changing rate of 2,495
-  acres a year (0.3%), but close to the historical rate when light disturbances are included
-  (13,238 acres a year).
+  from 8,699 a year in 2010–19. That's close to the historical rate when light disturbances are
+  included (13,238 acres a year). Don't compare it with the historical structure-changing rate
+  (2,495 acres a year); compare the structure-changing part instead (next question).
+
+**Q: How much of today's disturbance is structure-changing?**
+No single map says, so figure 11 shows a range from three measures, 2020 onward:
+- **LANDFIRE high severity:** 3,528 acres a year (1.4× historical). LANDFIRE's severity ratings are
+  conservative, so this is a floor.
+- **Hansen stand-replacing loss:** 3,082 acres a year through 2024 (1.2×).
+- **Canopy cover fell 20+ points** below its high of the previous 3 years: 8,537 acres a year
+  (3.4×). This includes heavy partial cuts that don't reset a stand, so it's a ceiling.
+
+So structure-changing disturbance is about 1.2–3.4× the historical rate. The rise is recent: in the
+2010s, LANDFIRE high severity (1,090 a year) and Hansen (1,759) were below the historical rate.
+Canopy cover drops were about 7,600 a year in the 2010s as well, so that measure shows less of a
+rise. ("6×" compared all of today's disturbance, much of it light, with the structure-changing rate;
+don't use it.)
 
 ## Skeptical questions
 
