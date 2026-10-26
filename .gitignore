@@ -27,3 +27,4 @@ archive/tile_html_tests/
 
 # Slide screenshot scratch
 .slide_check/
+__pycache__/
