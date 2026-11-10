@@ -13,6 +13,7 @@
 *.vat.cpg
 *.sr.lock
 *.lock
+.~lock.*
 *.sbn
 *.sbx
 
