@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Baraga County Commercial Forest, 2020 to 2026</title>
+<style>
+  @page { size: letter; margin: 0.48in 0.55in 0.42in 0.55in; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Liberation Sans", "Nimbus Sans", sans-serif;
+    color: #1c1c1c;
+    font-size: 10.5pt;
+    line-height: 1.35;
+  }
+  h1 { font-size: 18pt; font-weight: 700; margin: 0 0 2px 0; letter-spacing: -0.01em; }
+  h2 { font-size: 12pt; font-weight: 700; margin: 11px 0 4px 0; }
+  p { margin: 0 0 8px 0; }
+  .kicker { font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: #5c5c5c; margin: 0 0 4px 0; }
+  .lede { font-size: 11.5pt; margin: 6px 0 10px 0; }
+  .stats { display: flex; gap: 10px; margin: 8px 0 8px 0; }
+  .stat { flex: 1; border-top: 2px solid #1c1c1c; padding-top: 4px; }
+  .stat b { display: block; font-size: 13pt; font-weight: 700; }
+  .stat span { font-size: 8.5pt; color: #444; }
+  img { width: 100%; height: auto; margin: 2px 0 2px 0; }
+  img.flow { max-height: 3.05in; width: auto; max-width: 100%; display: block; margin: 0 auto 4px auto; }
+  img.map { max-height: 6.05in; width: auto; max-width: 100%; display: block; margin: 4px auto 0 auto; }
+  img.lf { max-height: 3.25in; width: auto; max-width: 100%; display: block; margin: 2px auto 4px auto; }
+  .caption { font-size: 8.5pt; color: #555; margin: 0 0 8px 0; }
+  .footer { margin-top: 10px; font-size: 8pt; color: #555; border-top: 1px solid #ccc; padding-top: 6px; }
+  h2.break, .break { break-before: page; }
+</style>
+</head>
+<body>
+
+<p class="kicker">Michigan DNR Commercial Forest Program</p>
+<h1>Baraga County, 2020 to 2026</h1>
+<p class="lede">Enrolled acreage barely changed. Most of it changed hands: Weyerhaeuser and Great Lakes Forests 2 sold to Lyme, and TRG sold to Verdant. Molpus stayed. Parcel-average canopy was almost flat.</p>
+
+<div class="stats">
+  <div class="stat"><b>264,890</b><span>Listed acres in 2020</span></div>
+  <div class="stat"><b>264,481</b><span>Listed acres in 2026</span></div>
+  <div class="stat"><b>138</b><span>Owner names in 2026</span></div>
+  <div class="stat"><b>2,193</b><span>Acres heavily cut</span></div>
+</div>
+
+<h2>Who holds the land</h2>
+<img src="figures/01_who_owns.png" alt="Acres by owner group in 2020 and 2026">
+<p>In 2020, Weyerhaeuser and Great Lakes Forests 2 held 144,313 acres and TRG held 45,271. In 2026 Lyme holds 140,958 acres and Verdant holds 40,958 (Verdant Timber Michigan II 24,912, Verdant Timber Michigan 15,727, Verdant Timber Cub 320). Molpus (MWF Ned Lake) went from 26,760 acres to 26,604. The Nature Conservancy went from 6,182 to 13,301. Everyone else totals about 42,300 acres in both years. The state list codes Lyme Great Lakes Timberlands LLC as Private Individual(s) for 136,551 of those acres.</p>
+
+<div class="break">
+<img class="flow" src="figures/02_where_2020_acres_went.png" alt="Share of 2020 acres by 2026 destination">
+<p>Each 2020 parcel was matched to a 2026 owner by parcel id (1,577 parcels), or, when the id was gone, to the 2026 owner covering at least half the parcel (47). Forty-five parcels, 2,917 acres, matched neither way and left the program. Of the Weyerhaeuser and Great Lakes Forests 2 land, 141,456 acres are now Lyme and 2,856 went elsewhere, including 440 acres still under the old names. Of the TRG land, 41,268 acres are now Verdant and 4,003 went elsewhere. One Molpus parcel, 157 acres, left that owner.</p>
+<img class="map" src="figures/04_map_destination.png" alt="Map of 2020 Baraga parcels colored by 2026 destination">
+</div>
+
+<h2 class="break">Canopy, 2020 to 2025</h2>
+<img src="figures/03_heavily_cut.png" alt="Percent of acres whose canopy fell more than 20 points">
+<p>A parcel counts as heavily cut when its average tree canopy fell more than 20 points between 2020 and 2025, and it is at least 20 acres. That is 2,193 acres, 0.8 percent of the enrolled land with a canopy reading. The acre-weighted average change is a gain of 0.9 points. The 7 percent bar is 200 acres inside a 2,856-acre remainder, so the acres are small even where the share is higher. The Nature Conservancy’s 2020 land, the TRG remainder, the other owners who sold or left, and the one Molpus parcel that left had no parcels over the 20-point line.</p>
+<p>Raw owner lists, with blank columns for carbon and easement notes, are in <b>tables/owners_2020.csv</b> and <b>tables/owners_2026.csv</b>. One row is one legal name and one state owner type. Lyme Great Lakes Timberlands LLC appears twice in 2026 because the state file gives it two types.</p>
+
+<h2 class="break">LANDFIRE disturbance, 2010 to 2025</h2>
+<img class="lf" src="figures/05_landfire_by_year.png" alt="Acres disturbed each year by type">
+<p>On the 2020 enrolled parcels, the annual totals add to about 85,100 acres, counting an acre again when it is disturbed in more than one year. Clearcut, harvest, and thinning together are 381 acres over the sixteen years, and no fire was mapped. The rest is coded Unknown or Insects. Unknown is a satellite change that did not fall on a mapped harvest, fire, or insect event, and most of it is low severity. Insects account for the 2023 and 2024 spike: 16,300 acres in 2023 and 11,200 in 2024. Nearly all of the 2023 insect acres are a low-severity event polygon, and about 9,000 of the 2024 insect acres had no detected image change. That fits the canopy result, which barely moved.</p>
+<img class="lf" src="figures/06_landfire_by_destination.png" alt="Percent of each owner group disturbed each year">
+<p>Molpus land carries the insect years: 28 percent of it in 2023 and 22 percent in 2024. The land that went from Weyerhaeuser and Great Lakes Forests 2 to Lyme was about 6 percent in 2023, and the land that went from TRG to Verdant about 7 percent. The Nature Conservancy’s 2020 parcels sit near zero in both years.</p>
+
+<p class="footer">Listed acres and owner names are the Michigan Commercial Forest statewide layers, Baraga County, 2020 and 2026. A 2020 parcel keeps its owner when the distinctive words in the two names overlap, and a private individual’s last name carries a family transfer. Canopy is USFS NLCD Tree Canopy Cover v2025.6, 30 m cells, clipped to the county (data.fs.usda.gov/geodata/rastergateway/treecanopycover). Disturbance is LANDFIRE Final Annual Disturbance, 2010–2025 (landfire.gov), counted on the 2020 parcels. County outline is the Census 2023 cartographic boundary. The same owner-matching rules, the same 20-point canopy definition, and the same disturbance layers are used for Houghton and Keweenaw.</p>
+
+</body>
+</html>

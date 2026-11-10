@@ -1,0 +1,145 @@
+"went_to","year","n_pixels","n_harvest","n_no_severity","group_acres","acres","harvest_acres","pct_of_group","pct_no_severity"
+"Molpus kept",2010,120,0,0,26630.2,26.7,0,0.1,0
+"Molpus kept",2011,2834,0,0,26630.2,630.3,0,2.37,0
+"Molpus kept",2012,1207,0,0,26630.2,268.4,0,1.01,0
+"Molpus kept",2013,1849,0,0,26630.2,411.2,0,1.54,0
+"Molpus kept",2014,936,0,0,26630.2,208.2,0,0.78,0
+"Molpus kept",2015,669,0,0,26630.2,148.8,0,0.56,0
+"Molpus kept",2016,1729,0,0,26630.2,384.5,0,1.44,0
+"Molpus kept",2017,4419,0,0,26630.2,982.8,0,3.69,0
+"Molpus kept",2018,312,24,0,26630.2,69.4,5.3,0.26,0
+"Molpus kept",2019,1069,0,0,26630.2,237.7,0,0.89,0
+"Molpus kept",2020,1220,0,0,26630.2,271.3,0,1.02,0
+"Molpus kept",2021,623,0,0,26630.2,138.6,0,0.52,0
+"Molpus kept",2022,1762,0,0,26630.2,391.9,0,1.47,0
+"Molpus kept",2023,33962,0,0,26630.2,7553,0,28.36,0
+"Molpus kept",2024,26917,0,20705,26630.2,5986.2,0,22.48,76.9
+"Molpus kept",2025,137,0,0,26630.2,30.5,0,0.11,0
+"Molpus sold or left",2010,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2011,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2012,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2013,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2014,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2015,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2016,2,0,0,151,0.4,0,0.29,0
+"Molpus sold or left",2017,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2018,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2019,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2020,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2021,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2022,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2023,0,0,0,151,0,0,0,NA
+"Molpus sold or left",2024,135,0,0,151,30,0,19.88,0
+"Molpus sold or left",2025,0,0,0,151,0,0,0,NA
+"Other owners kept",2010,201,0,0,26037.5,44.7,0,0.17,0
+"Other owners kept",2011,479,0,0,26037.5,106.5,0,0.41,0
+"Other owners kept",2012,702,0,0,26037.5,156.1,0,0.6,0
+"Other owners kept",2013,1253,0,0,26037.5,278.7,0,1.07,0
+"Other owners kept",2014,18,0,0,26037.5,4,0,0.02,0
+"Other owners kept",2015,3244,253,0,26037.5,721.4,56.3,2.77,0
+"Other owners kept",2016,770,0,0,26037.5,171.2,0,0.66,0
+"Other owners kept",2017,1011,24,0,26037.5,224.8,5.3,0.86,0
+"Other owners kept",2018,645,25,0,26037.5,143.4,5.6,0.55,0
+"Other owners kept",2019,1337,0,0,26037.5,297.3,0,1.14,0
+"Other owners kept",2020,1536,0,0,26037.5,341.6,0,1.31,0
+"Other owners kept",2021,1905,0,0,26037.5,423.7,0,1.63,0
+"Other owners kept",2022,174,0,0,26037.5,38.7,0,0.15,0
+"Other owners kept",2023,1377,0,0,26037.5,306.2,0,1.18,0
+"Other owners kept",2024,1077,14,830,26037.5,239.5,3.1,0.92,77.1
+"Other owners kept",2025,1050,13,356,26037.5,233.5,2.9,0.9,33.9
+"Other owners sold or left",2010,0,0,0,16193.5,0,0,0,NA
+"Other owners sold or left",2011,369,0,0,16193.5,82.1,0,0.51,0
+"Other owners sold or left",2012,3675,0,0,16193.5,817.3,0,5.05,0
+"Other owners sold or left",2013,198,0,0,16193.5,44,0,0.27,0
+"Other owners sold or left",2014,325,0,0,16193.5,72.3,0,0.45,0
+"Other owners sold or left",2015,522,0,0,16193.5,116.1,0,0.72,0
+"Other owners sold or left",2016,168,0,0,16193.5,37.4,0,0.23,0
+"Other owners sold or left",2017,2881,9,0,16193.5,640.7,2,3.96,0
+"Other owners sold or left",2018,641,0,0,16193.5,142.6,0,0.88,0
+"Other owners sold or left",2019,530,0,0,16193.5,117.9,0,0.73,0
+"Other owners sold or left",2020,263,0,0,16193.5,58.5,0,0.36,0
+"Other owners sold or left",2021,472,0,0,16193.5,105,0,0.65,0
+"Other owners sold or left",2022,320,0,0,16193.5,71.2,0,0.44,0
+"Other owners sold or left",2023,4667,0,0,16193.5,1037.9,0,6.41,0
+"Other owners sold or left",2024,2098,11,639,16193.5,466.6,2.4,2.88,30.5
+"Other owners sold or left",2025,130,14,14,16193.5,28.9,3.1,0.18,10.8
+"The Nature Conservancy kept",2010,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2011,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2012,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2013,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2014,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2015,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2016,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2017,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2018,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2019,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2020,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2021,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2022,1,0,0,6181.5,0.2,0,0,0
+"The Nature Conservancy kept",2023,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2024,0,0,0,6181.5,0,0,0,NA
+"The Nature Conservancy kept",2025,0,0,0,6181.5,0,0,0,NA
+"TRG to other or left",2010,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2011,1232,0,0,3960.9,274,0,6.92,0
+"TRG to other or left",2012,851,0,0,3960.9,189.3,0,4.78,0
+"TRG to other or left",2013,55,0,0,3960.9,12.2,0,0.31,0
+"TRG to other or left",2014,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2015,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2016,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2017,3,0,0,3960.9,0.7,0,0.02,0
+"TRG to other or left",2018,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2019,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2020,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2021,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2022,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2023,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2024,0,0,0,3960.9,0,0,0,NA
+"TRG to other or left",2025,0,0,0,3960.9,0,0,0,NA
+"TRG to Verdant",2010,447,0,0,41172.6,99.4,0,0.24,0
+"TRG to Verdant",2011,5248,0,0,41172.6,1167.1,0,2.83,0
+"TRG to Verdant",2012,5515,0,0,41172.6,1226.5,0,2.98,0
+"TRG to Verdant",2013,981,0,0,41172.6,218.2,0,0.53,0
+"TRG to Verdant",2014,1120,0,0,41172.6,249.1,0,0.6,0
+"TRG to Verdant",2015,3315,0,0,41172.6,737.2,0,1.79,0
+"TRG to Verdant",2016,1051,0,0,41172.6,233.7,0,0.57,0
+"TRG to Verdant",2017,1535,0,0,41172.6,341.4,0,0.83,0
+"TRG to Verdant",2018,1408,0,0,41172.6,313.1,0,0.76,0
+"TRG to Verdant",2019,1441,0,0,41172.6,320.5,0,0.78,0
+"TRG to Verdant",2020,624,0,0,41172.6,138.8,0,0.34,0
+"TRG to Verdant",2021,1426,0,0,41172.6,317.1,0,0.77,0
+"TRG to Verdant",2022,1552,0,0,41172.6,345.2,0,0.84,0
+"TRG to Verdant",2023,13771,0,0,41172.6,3062.6,0,7.44,0
+"TRG to Verdant",2024,10102,36,7760,41172.6,2246.6,8,5.46,76.8
+"TRG to Verdant",2025,2515,11,222,41172.6,559.3,2.4,1.36,8.8
+"Weyerhaeuser and Great Lakes Forests to Lyme",2010,1903,0,0,140856.2,423.2,0,0.3,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2011,17739,0,0,140856.2,3945.1,0,2.8,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2012,19551,3,0,140856.2,4348,0.7,3.09,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2013,3344,0,0,140856.2,743.7,0,0.53,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2014,2962,0,0,140856.2,658.7,0,0.47,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2015,12097,7,0,140856.2,2690.3,1.6,1.91,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2016,12081,0,0,140856.2,2686.8,0,1.91,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2017,9131,1001,0,140856.2,2030.7,222.6,1.44,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2018,10248,30,0,140856.2,2279.1,6.7,1.62,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2019,8557,0,0,140856.2,1903,0,1.35,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2020,4819,0,0,140856.2,1071.7,0,0.76,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2021,10303,12,0,140856.2,2291.3,2.7,1.63,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2022,15497,0,0,140856.2,3446.5,0,2.45,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2023,36124,0,0,140856.2,8033.8,0,5.7,0
+"Weyerhaeuser and Great Lakes Forests to Lyme",2024,25675,176,10364,140856.2,5710,39.1,4.05,40.4
+"Weyerhaeuser and Great Lakes Forests to Lyme",2025,21861,50,366,140856.2,4861.8,11.1,3.45,1.7
+"Weyerhaeuser and Great Lakes Forests to other or left",2010,292,0,0,2890.2,64.9,0,2.25,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2011,150,0,0,2890.2,33.4,0,1.15,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2012,228,0,0,2890.2,50.7,0,1.75,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2013,1,0,0,2890.2,0.2,0,0.01,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2014,6,0,0,2890.2,1.3,0,0.05,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2015,85,0,0,2890.2,18.9,0,0.65,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2016,1,0,0,2890.2,0.2,0,0.01,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2017,0,0,0,2890.2,0,0,0,NA
+"Weyerhaeuser and Great Lakes Forests to other or left",2018,0,0,0,2890.2,0,0,0,NA
+"Weyerhaeuser and Great Lakes Forests to other or left",2019,34,0,0,2890.2,7.6,0,0.26,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2020,0,0,0,2890.2,0,0,0,NA
+"Weyerhaeuser and Great Lakes Forests to other or left",2021,0,0,0,2890.2,0,0,0,NA
+"Weyerhaeuser and Great Lakes Forests to other or left",2022,59,0,0,2890.2,13.1,0,0.45,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2023,680,0,0,2890.2,151.2,0,5.23,0
+"Weyerhaeuser and Great Lakes Forests to other or left",2024,805,0,569,2890.2,179,0,6.19,70.7
+"Weyerhaeuser and Great Lakes Forests to other or left",2025,297,0,0,2890.2,66.1,0,2.29,0
